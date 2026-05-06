@@ -1,5 +1,6 @@
 // /functions/[[default]].js
 // This file catches ALL requests to www.stiqr.top
+// Auth routes (/auth/*) are handled by /functions/auth/[[default]].js
 
 // Helper function to send JSON responses
 function jsonResponse(data, status = 200) {
@@ -9,71 +10,13 @@ function jsonResponse(data, status = 200) {
   });
 }
 
-// Handle POST requests (login, signup, QR code saving)
+// Handle POST requests (QR code saving)
 export async function onRequestPost(context) {
   const url = new URL(context.request.url);
   const pathname = url.pathname;
   
   try {
     const body = await context.request.json();
-    
-    // Handle login - proxy to backend API with manual redirect handling
-    if (pathname === '/auth/login') {
-      const { email, password } = body;
-
-      // Fetch the backend API with 'manual' redirect to capture Set-Cookie headers
-      const backendResponse = await fetch('https://www.stiqr.top/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        redirect: 'manual'
-      });
-
-      // Get the Set-Cookie header from the backend response
-      const setCookieHeader = backendResponse.headers.get('set-cookie');
-
-      // Create the final response for the browser
-      const clientResponse = new Response(backendResponse.body, {
-        status: backendResponse.status,
-        statusText: backendResponse.statusText
-      });
-
-      // If a Set-Cookie header exists, manually add it to the browser response
-      if (setCookieHeader) {
-        clientResponse.headers.set('Set-Cookie', setCookieHeader);
-      }
-
-      return clientResponse;
-    }
-    
-    // Handle signup - proxy to backend API with manual redirect handling
-    if (pathname === '/auth/signup') {
-      const { email, password, displayName } = body;
-
-      // Fetch the backend API with 'manual' redirect to capture Set-Cookie headers
-      const backendResponse = await fetch('https://www.stiqr.top/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName }),
-        redirect: 'manual'
-      });
-
-      // Get the Set-Cookie header from the backend response
-      const setCookieHeader = backendResponse.headers.get('set-cookie');
-
-      // Create the final response for the browser
-      const clientResponse = new Response(backendResponse.body, {
-        status: backendResponse.status,
-        statusText: backendResponse.statusText
-      });
-
-      // If a Set-Cookie header exists, manually add it to the browser response
-      if (setCookieHeader) {
-        clientResponse.headers.set('Set-Cookie', setCookieHeader);
-      }
-
-      return clientResponse;
-    }
     
     // Handle QR code saving
     if (pathname === '/api/qrcodes' || pathname === '/qrcodes') {
@@ -95,16 +38,10 @@ export async function onRequestPost(context) {
   }
 }
 
-// Handle GET requests (auth status, tracking)
+// Handle GET requests (tracking)
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const pathname = url.pathname;
-  
-  // Handle auth status check
-  if (pathname === '/auth/status') {
-    // Check if user is logged in (from JWT token or session)
-    return jsonResponse({ authenticated: false });
-  }
   
   // Handle QR code tracking redirect
   if (pathname.startsWith('/track/')) {
