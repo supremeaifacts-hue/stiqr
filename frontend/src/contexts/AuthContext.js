@@ -2,12 +2,17 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext({});
 
-// For EdgeOne Pages deployment, use window.location.origin so API calls work on any domain
-// In development, we use localhost:3000 for the backend server
+// For EdgeOne Pages deployment, use VITE_BACKEND_URL when available.
+// Otherwise, fall back to same-origin in production and localhost backend in development.
 const getBaseUrl = () => {
+  if (import.meta.env.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+
   if (process.env.NODE_ENV === 'production') {
     return typeof window !== 'undefined' ? window.location.origin : '';
   }
+
   return 'http://localhost:3000';
 };
 export const API_BASE_URL = getBaseUrl();
