@@ -1,6 +1,22 @@
 // /edge-functions/auth/[[default]].js
 // This handles ALL requests to /auth/*
 
+import { MongoClient } from 'mongodb';
+
+let cachedClient = null;
+
+async function getDb() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error('MONGODB_URI environment variable is not set');
+  }
+  if (!cachedClient) {
+    cachedClient = new MongoClient(uri);
+    await cachedClient.connect();
+  }
+  return cachedClient.db('stiqr');
+}
+
 // Helper for JSON responses with CORS headers
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -51,33 +67,21 @@ export async function onRequestPost(context) {
       return clientResponse;
     }
     
-    // Handle signup - proxy to backend API with manual redirect handling
+    // Temporary mock signup - bypasses MongoDB
     if (pathname === '/auth/signup') {
-      const { email, password, displayName } = body;
-
-      // Fetch the backend API with 'manual' redirect to capture Set-Cookie headers
-      const backendResponse = await fetch('/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName }),
-        redirect: 'manual'
-      });
-
-      // Get the Set-Cookie header from the backend response
-      const setCookieHeader = backendResponse.headers.get('set-cookie');
-
-      // Create the final response for the browser
-      const clientResponse = new Response(backendResponse.body, {
-        status: backendResponse.status,
-        statusText: backendResponse.statusText
-      });
-
-      // If a Set-Cookie header exists, manually add it to the browser response
-      if (setCookieHeader) {
-        clientResponse.headers.set('Set-Cookie', setCookieHeader);
+      try {
+        const body = await context.request.json();
+        console.log('[MOCK SIGNUP] Received:', body.email);
+        
+        // Just return success without database
+        return jsonResponse({ 
+          success: true, 
+          message: 'Mock signup successful (no database)',
+          email: body.email 
+        }, 201);
+      } catch (error) {
+        return jsonResponse({ error: error.message }, 500);
       }
-
-      return clientResponse;
     }
     
     return jsonResponse({ error: 'Not found' }, 404);
