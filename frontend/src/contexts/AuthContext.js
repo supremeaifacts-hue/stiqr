@@ -2,9 +2,15 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext({});
 
-// For EdgeOne Pages deployment, use relative paths so API calls work on any domain
+// For EdgeOne Pages deployment, use window.location.origin so API calls work on any domain
 // In development, we use localhost:3000 for the backend server
-export const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
+  return 'http://localhost:3000';
+};
+export const API_BASE_URL = getBaseUrl();
 
 export const useAuth = () => useContext(AuthContext);
 
