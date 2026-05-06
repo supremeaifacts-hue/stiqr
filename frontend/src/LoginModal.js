@@ -54,25 +54,21 @@ const LoginModal = ({ onClose, onSignUpClick }) => {
       });
       
       const data = await response.json();
+      console.log('Login response:', data);
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (data.success) {
+        // Store user info in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        // Close modal
+        onClose();
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      } else {
+        setError(data.error || 'Invalid credentials');
       }
-      
-      // Store token in localStorage
-      if (data.token) {
-        localStorage.setItem('jwtToken', data.token);
-      }
-      
-      // Close modal on success
-      onClose();
-      
-      // Refresh page to update auth state
-      window.location.reload();
-      
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message || 'Login failed. Please try again.');
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,21 @@
 // /edge-functions/auth/login.js
+import { MongoClient } from 'mongodb';
+
+let cachedClient = null;
+
+async function getDb() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error('MONGODB_URI not set');
+  
+  if (!cachedClient) {
+    cachedClient = new MongoClient(uri);
+    await cachedClient.connect();
+  }
+  return cachedClient.db('stiqr');
+}
+
 export async function onRequest(context) {
-  // Only allow POST requests
+  // Only allow POST
   if (context.request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
@@ -12,9 +27,6 @@ export async function onRequest(context) {
     const body = await context.request.json();
     const { email, password } = body;
     
-    console.log('Login attempt for:', email);
-    
-    // Validate input
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password required' }), {
         status: 400,
@@ -22,17 +34,25 @@ export async function onRequest(context) {
       });
     }
     
-    // TODO: Add database check here later
-    // For now, mock response - accept any email/password
+    // Check against MongoDB
+    const db = await getDb();
+    const usersCollection = db.collection('users');
+    const user = await usersCollection.findOne({ email, password });
     
-    // Mock success response
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Invalid email or password' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Return user info (excluding password)
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Login successful',
       user: {
-        email: email,
-        name: email.split('@')[0],
-        subscriptionStatus: 'free'
+        email: user.email,
+        name: user.name,
+        subscriptionStatus: user.subscriptionStatus || 'free'
       }
     }), {
       status: 200,
