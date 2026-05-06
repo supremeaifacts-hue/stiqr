@@ -1,6 +1,6 @@
-// /functions/[[default]].js
+// /edge-functions/[[default]].js
 // This file catches ALL requests to www.stiqr.top
-// Auth routes (/auth/*) are handled by /functions/auth/[[default]].js
+// Auth routes (/auth/*) are handled by /edge-functions/auth/[[default]].js
 
 // Helper function to send JSON responses with CORS headers
 function jsonResponse(data, status = 200) {

@@ -1,4 +1,4 @@
-// /functions/auth/[[default]].js
+// /edge-functions/auth/[[default]].js
 // This handles ALL requests to /auth/*
 
 // Helper for JSON responses with CORS headers
