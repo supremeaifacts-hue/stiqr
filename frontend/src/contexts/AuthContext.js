@@ -2,9 +2,9 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext({});
 
-// For EdgeOne Pages deployment, we use the full production URL
-// In development, we can still use localhost:3000
-export const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://www.stiqr.top' : 'http://localhost:3000';
+// For EdgeOne Pages deployment, use relative paths so API calls work on any domain
+// In development, we use localhost:3000 for the backend server
+export const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
 
 export const useAuth = () => useContext(AuthContext);
 

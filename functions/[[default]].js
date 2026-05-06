@@ -2,11 +2,16 @@
 // This file catches ALL requests to www.stiqr.top
 // Auth routes (/auth/*) are handled by /functions/auth/[[default]].js
 
-// Helper function to send JSON responses
+// Helper function to send JSON responses with CORS headers
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
   });
 }
 

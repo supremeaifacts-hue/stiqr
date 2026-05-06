@@ -1,11 +1,16 @@
 // /functions/auth/[[default]].js
 // This handles ALL requests to /auth/*
 
-// Helper for JSON responses
+// Helper for JSON responses with CORS headers
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
   });
 }
 
@@ -22,7 +27,7 @@ export async function onRequestPost(context) {
       const { email, password } = body;
 
       // Fetch the backend API with 'manual' redirect to capture Set-Cookie headers
-      const backendResponse = await fetch('https://www.stiqr.top/auth/login', {
+      const backendResponse = await fetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -51,7 +56,7 @@ export async function onRequestPost(context) {
       const { email, password, displayName } = body;
 
       // Fetch the backend API with 'manual' redirect to capture Set-Cookie headers
-      const backendResponse = await fetch('https://www.stiqr.top/auth/signup', {
+      const backendResponse = await fetch('/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, displayName }),
@@ -84,4 +89,16 @@ export async function onRequestPost(context) {
 // Handle GET /auth/status
 export async function onRequestGet(context) {
   return jsonResponse({ authenticated: false });
+}
+
+// Handle OPTIONS requests (for CORS preflight)
+export async function onRequestOptions(context) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  });
 }

@@ -48,9 +48,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // For local development, use localhost (for testing on same machine)
       backendUrl = 'http://localhost:3000';
     } else {
-      // For production (EdgeOne), use the custom domain with HTTPS
-      // No port needed — EdgeOne handles HTTPS on port 443
-      backendUrl = 'https://www.stiqr.top';
+      // For production (EdgeOne), use relative path so it works on any domain
+      backendUrl = '';
     }
     
     return `${backendUrl}/track/${qrCodeId}`;
@@ -561,7 +560,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       
       // Send the data to your backend
       try {
-        const response = await fetch('https://www.stiqr.top/qrcodes', {
+        const response = await fetch('/qrcodes', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -2197,10 +2196,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // This is what the EdgeOne function queries for /track/:id
                 // ============================================================
                 console.log('📡 STEP 1: Saving to standalone qrcodes collection...');
-                console.log('   POST https://www.stiqr.top/qrcodes');
+                console.log('   POST /qrcodes');
                 console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrData }));
                 
-                const qrcodesResponse = await fetch('https://www.stiqr.top/qrcodes', {
+                const qrcodesResponse = await fetch('/qrcodes', {
                   method: 'PUT',
                   headers: {
                     'Content-Type': 'application/json',
