@@ -84,11 +84,13 @@ const SignUpModal = ({ onClose, onLoginClick }) => {
       console.log('Signup response:', data);
       
       if (data.success) {
-        // Show success message
-        alert('Account created successfully! Please log in.');
-        // Close modal and redirect to login
+        // Store token and user info
+        localStorage.setItem('jwtToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        // Close modal
         onClose();
-        if (onLoginClick) onLoginClick();
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
       } else {
         setError(data.error || 'Signup failed');
       }

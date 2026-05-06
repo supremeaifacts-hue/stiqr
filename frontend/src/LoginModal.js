@@ -57,7 +57,8 @@ const LoginModal = ({ onClose, onSignUpClick }) => {
       console.log('Login response:', data);
       
       if (data.success) {
-        // Store user info in localStorage
+        // Store token and user info
+        localStorage.setItem('jwtToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         // Close modal
         onClose();
