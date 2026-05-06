@@ -1,20 +1,11 @@
-// /edge-functions/auth/signup.js
-export async function onRequest(context) {
-  // Only allow POST requests
-  if (context.request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-  
+// ✅ CORRECT - Use onRequestPost for POST requests
+export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
     const { email, password, name } = body;
     
-    console.log('Signup attempt for:', email);
+    console.log('Signup attempt:', email);
     
-    // Validate input
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password required' }), {
         status: 400,
@@ -22,13 +13,12 @@ export async function onRequest(context) {
       });
     }
     
-    // TODO: Add MongoDB logic here later
-    
-    // Mock success response (bypass database for now)
+    // Mock response (bypass database for now)
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'User created successfully',
-      email: email
+      email: email,
+      name: name || email.split('@')[0]
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
@@ -40,4 +30,12 @@ export async function onRequest(context) {
       headers: { 'Content-Type': 'application/json' }
     });
   }
+}
+
+// Handle GET requests to this endpoint (return 405)
+export async function onRequestGet() {
+  return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    status: 405,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
