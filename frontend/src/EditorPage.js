@@ -560,7 +560,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       
       // Send the data to your backend
       try {
-        const response = await fetch('/qrcodes', {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const response = await fetch(`${baseUrl}/qrcodes`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -2199,7 +2200,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 console.log('   POST /qrcodes');
                 console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrData }));
                 
-                const qrcodesResponse = await fetch('/qrcodes', {
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
                   method: 'PUT',
                   headers: {
                     'Content-Type': 'application/json',
