@@ -1,6 +1,8 @@
-// /edge-functions/auth/status.js
-export async function onRequestGet() {
-  return new Response(JSON.stringify({ authenticated: false }), {
+export function onRequest(context) {
+  return new Response(JSON.stringify({ 
+    authenticated: false,
+    message: 'Auth function working'
+  }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });
