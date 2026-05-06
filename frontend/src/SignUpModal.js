@@ -66,6 +66,8 @@ const SignUpModal = ({ onClose, onLoginClick }) => {
     setLoading(true);
     
     try {
+      console.log('Sending signup request...');
+      
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: {
@@ -74,30 +76,25 @@ const SignUpModal = ({ onClose, onLoginClick }) => {
         body: JSON.stringify({
           email,
           password,
-          displayName: displayName || email.split('@')[0]
+          name: displayName || email.split('@')[0]
         }),
       });
       
       const data = await response.json();
+      console.log('Signup response:', data);
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Signup failed');
+      if (data.success) {
+        // Show success message
+        alert('Account created successfully! Please log in.');
+        // Close modal and redirect to login
+        onClose();
+        if (onLoginClick) onLoginClick();
+      } else {
+        setError(data.error || 'Signup failed');
       }
-      
-      // Store token in localStorage
-      if (data.token) {
-        localStorage.setItem('jwtToken', data.token);
-      }
-      
-      // Close modal on success
-      onClose();
-      
-      // Refresh page to update auth state
-      window.location.reload();
-      
     } catch (error) {
       console.error('Signup error:', error);
-      setError(error.message || 'Signup failed. Please try again.');
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
