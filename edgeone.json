@@ -1,16 +1,22 @@
 {
-  "functions": [
-    {
-      "path": "/auth/*",
-      "runtime": "edge"
-    },
-    {
-      "path": "/test",
-      "runtime": "edge"
-    },
-    {
-      "path": "/qrcodes",
-      "runtime": "edge"
-    }
-  ]
+  "functions": {
+    "routes": [
+      {
+        "path": "/test",
+        "functionPath": "/test"
+      },
+      {
+        "path": "/status",
+        "functionPath": "/status"
+      },
+      {
+        "path": "/signup",
+        "functionPath": "/signup"
+      },
+      {
+        "path": "/login",
+        "functionPath": "/login"
+      }
+    ]
+  }
 }

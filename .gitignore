@@ -8,3 +8,9 @@ frontend/dist/
 # Env files
 *.env
 node_modules
+
+# Tencent Cloud EdgeOne
+.env
+.edgeone/*
+.tef_dist/*
+  
