@@ -1,6 +1,16 @@
 {
-  "build": {
-    "command": "cd frontend && npm install && npm run build",
-    "outputDirectory": "frontend/dist"
-  }
+  "functions": [
+    {
+      "path": "/auth/*",
+      "runtime": "edge"
+    },
+    {
+      "path": "/test",
+      "runtime": "edge"
+    },
+    {
+      "path": "/qrcodes",
+      "runtime": "edge"
+    }
+  ]
 }
