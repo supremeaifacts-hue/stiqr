@@ -1,9 +1,7 @@
 {
   "functions": {
     "routes": [
-      { "path": "/auth/status", "functionPath": "/auth" },
-      { "path": "/auth/signup", "functionPath": "/auth" },
-      { "path": "/auth/login", "functionPath": "/auth" },
+      { "path": "/auth/*", "functionPath": "/auth" },
       { "path": "/test", "functionPath": "/test" }
     ]
   }

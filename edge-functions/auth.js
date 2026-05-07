@@ -6,18 +6,34 @@ function jsonResponse(data, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
     }
   });
 }
 
-// Handle POST /auth/signup
-export async function onRequestPost(context) {
+export async function onRequest(context) {
   const url = new URL(context.request.url);
   const pathname = url.pathname;
+  const method = context.request.method;
 
-  // Signup
-  if (pathname === '/auth/signup') {
+  if (method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    });
+  }
+
+  if (pathname === '/auth/status' && method === 'GET') {
+    return jsonResponse({ authenticated: false, message: 'Auth function working' });
+  }
+
+  if (pathname === '/auth/signup' && method === 'POST') {
     try {
       const body = await context.request.json();
       const { email, password, name } = body;
@@ -54,8 +70,7 @@ export async function onRequestPost(context) {
     }
   }
 
-  // Login
-  if (pathname === '/auth/login') {
+  if (pathname === '/auth/login' && method === 'POST') {
     try {
       const body = await context.request.json();
       const { email, password } = body;
@@ -83,17 +98,6 @@ export async function onRequestPost(context) {
     } catch (error) {
       return jsonResponse({ error: error.message }, 500);
     }
-  }
-
-  return jsonResponse({ error: 'Not found' }, 404);
-}
-
-// Handle GET /auth/status
-export async function onRequestGet(context) {
-  const url = new URL(context.request.url);
-
-  if (url.pathname === '/auth/status') {
-    return jsonResponse({ authenticated: false, message: 'Auth function working' });
   }
 
   return jsonResponse({ error: 'Not found' }, 404);
