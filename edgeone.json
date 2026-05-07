@@ -1,22 +1,10 @@
 {
   "functions": {
     "routes": [
-      {
-        "path": "/test",
-        "functionPath": "/test"
-      },
-      {
-        "path": "/status",
-        "functionPath": "/status"
-      },
-      {
-        "path": "/signup",
-        "functionPath": "/signup"
-      },
-      {
-        "path": "/login",
-        "functionPath": "/login"
-      }
+      { "path": "/auth/status", "functionPath": "/auth" },
+      { "path": "/auth/signup", "functionPath": "/auth" },
+      { "path": "/auth/login", "functionPath": "/auth" },
+      { "path": "/test", "functionPath": "/test" }
     ]
   }
 }

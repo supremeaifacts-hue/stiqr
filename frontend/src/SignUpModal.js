@@ -68,7 +68,7 @@ const SignUpModal = ({ onClose, onLoginClick }) => {
     try {
       console.log('Sending signup request...');
       
-      const response = await fetch(`${API_BASE_URL}/signup`, {
+      const response = await fetch('/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
