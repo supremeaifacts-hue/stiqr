@@ -2,18 +2,11 @@ const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
-const dotenv = require('dotenv');
 const passport = require('./config/passport');
 const { connectDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const assetsRoutes = require('./routes/assets');
 const stripeRoutes = require('./routes/stripe');
-
-// Load environment variables from .env file in backend directory (development only)
-// In production (Render), environment variables are provided directly via process.env
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config({ path: path.join(__dirname, '.env') });
-}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
