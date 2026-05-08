@@ -1,6 +1,7 @@
-import { getDb } from './mongodb.js';
+// Edge auth proxy handling all /auth/* requests and forwarding them to a backend API.
 
-// Helper function for JSON responses
+const BACKEND_URL = process.env.BACKEND_URL;
+
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -13,7 +14,15 @@ function jsonResponse(data, status = 200) {
   });
 }
 
+function errorResponse(message, status = 500) {
+  return jsonResponse({ error: message }, status);
+}
+
 export async function onRequest(context) {
+  if (!BACKEND_URL) {
+    return errorResponse('BACKEND_URL environment variable not configured', 500);
+  }
+
   const url = new URL(context.request.url);
   const pathname = url.pathname;
   const method = context.request.method;
@@ -29,76 +38,33 @@ export async function onRequest(context) {
     });
   }
 
-  if (pathname === '/auth/status' && method === 'GET') {
-    return jsonResponse({ authenticated: false, message: 'Auth function working' });
-  }
+  const backendUrl = new URL(pathname, BACKEND_URL).toString();
 
-  if (pathname === '/auth/signup' && method === 'POST') {
-    try {
-      const body = await context.request.json();
-      const { email, password, name } = body;
-
-      if (!email || !password) {
-        return jsonResponse({ error: 'Email and password required' }, 400);
+  try {
+    const requestInit = {
+      method,
+      headers: {
+        'Content-Type': context.request.headers.get('Content-Type') || 'application/json'
       }
+    };
 
-      const db = await getDb();
-      const usersCollection = db.collection('users');
-
-      const existingUser = await usersCollection.findOne({ email });
-      if (existingUser) {
-        return jsonResponse({ error: 'User already exists' }, 400);
-      }
-
-      const newUser = {
-        email,
-        password,
-        name: name || email.split('@')[0],
-        createdAt: new Date(),
-        subscriptionStatus: 'free'
-      };
-
-      await usersCollection.insertOne(newUser);
-
-      return jsonResponse({
-        success: true,
-        message: 'User created successfully',
-        user: { email, name: newUser.name }
-      }, 201);
-    } catch (error) {
-      return jsonResponse({ error: error.message }, 500);
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+      requestInit.body = await context.request.text();
     }
+
+    const backendResponse = await fetch(backendUrl, requestInit);
+    const responseText = await backendResponse.text();
+
+    const headers = new Headers(backendResponse.headers);
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    return new Response(responseText, {
+      status: backendResponse.status,
+      headers
+    });
+  } catch (error) {
+    return errorResponse(error.message, 502);
   }
-
-  if (pathname === '/auth/login' && method === 'POST') {
-    try {
-      const body = await context.request.json();
-      const { email, password } = body;
-
-      if (!email || !password) {
-        return jsonResponse({ error: 'Email and password required' }, 400);
-      }
-
-      const db = await getDb();
-      const usersCollection = db.collection('users');
-      const user = await usersCollection.findOne({ email, password });
-
-      if (!user) {
-        return jsonResponse({ error: 'Invalid email or password' }, 401);
-      }
-
-      return jsonResponse({
-        success: true,
-        user: {
-          email: user.email,
-          name: user.name,
-          subscriptionStatus: user.subscriptionStatus
-        }
-      }, 200);
-    } catch (error) {
-      return jsonResponse({ error: error.message }, 500);
-    }
-  }
-
-  return jsonResponse({ error: 'Not found' }, 404);
 }
