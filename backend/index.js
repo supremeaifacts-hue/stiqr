@@ -1,122 +1,95 @@
-// backend/index.js
-const express = require('express');
-const cors = require('cors');
-const { MongoClient } = require('mongodb');
+// backend/index.js - Zero dependencies version
+const http = require('http');
 
-const app = express();
+// In-memory storage
+const users = [];
 
-// CORS configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'https://www.stiqr.top',
-  'https://stiqr-frontend.pages.dev'
-];
-
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS not allowed'), false);
-  },
-  credentials: true
-}));
-
-app.use(express.json());
-
-// MongoDB connection
-let db;
-let usersCollection;
-
-async function connectDB() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    console.error('MONGODB_URI not set');
-    return;
-  }
-  const client = new MongoClient(uri);
-  await client.connect();
-  db = client.db('stiqr');
-  usersCollection = db.collection('users');
-  console.log('✅ MongoDB connected');
+// Helper to send JSON responses
+function sendJson(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
 }
 
-// ========== AUTH ROUTES ==========
-
-// POST /auth/signup
-app.post('/auth/signup', async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    
-    console.log('Signup attempt:', email);
-    
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-    
-    // Check if user exists
-    const existingUser = await usersCollection.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-    
-    // Create new user
-    const newUser = {
-      email,
-      password, // TODO: hash this in production
-      name: name || email.split('@')[0],
-      createdAt: new Date(),
-      subscriptionStatus: 'free'
-    };
-    
-    await usersCollection.insertOne(newUser);
-    
-    res.json({ success: true, message: 'User created successfully', email });
-  } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Server error during signup' });
+// Create HTTP server
+const server = http.createServer(async (req, res) => {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
   }
-});
-
-// POST /auth/login
-app.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-    
-    const user = await usersCollection.findOne({ email, password });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-    
-    res.json({
-      success: true,
-      user: {
-        email: user.email,
-        name: user.name,
-        subscriptionStatus: user.subscriptionStatus
+  
+  const url = req.url;
+  
+  // GET /auth/status
+  if (url === '/auth/status' && req.method === 'GET') {
+    sendJson(res, 200, { authenticated: false });
+    return;
+  }
+  
+  // POST /auth/signup
+  if (url === '/auth/signup' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { email, password, name } = JSON.parse(body);
+        
+        console.log('Signup attempt:', email);
+        
+        if (!email || !password) {
+          sendJson(res, 400, { error: 'Email and password required' });
+          return;
+        }
+        
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+          sendJson(res, 400, { error: 'User already exists' });
+          return;
+        }
+        
+        const newUser = { email, password, name: name || email.split('@')[0] };
+        users.push(newUser);
+        
+        sendJson(res, 201, { success: true, message: 'User created successfully', email });
+      } catch (error) {
+        sendJson(res, 500, { error: 'Invalid request' });
       }
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error during login' });
+    return;
   }
+  
+  // POST /auth/login
+  if (url === '/auth/login' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { email, password } = JSON.parse(body);
+        
+        const user = users.find(u => u.email === email && u.password === password);
+        if (!user) {
+          sendJson(res, 401, { error: 'Invalid email or password' });
+          return;
+        }
+        
+        sendJson(res, 200, { success: true, user: { email: user.email, name: user.name } });
+      } catch (error) {
+        sendJson(res, 500, { error: 'Invalid request' });
+      }
+    });
+    return;
+  }
+  
+  // 404 for anything else
+  sendJson(res, 404, { error: 'Not found' });
 });
 
-// GET /auth/status
-app.get('/auth/status', (req, res) => {
-  res.json({ authenticated: false });
-});
-
-// Start server
-connectDB().then(() => {
-  const port = process.env.PORT || 3000;
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-  });
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
