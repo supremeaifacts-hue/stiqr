@@ -84,13 +84,27 @@ const SignUpModal = ({ onClose, onLoginClick }) => {
       console.log('Signup response:', data);
       
       if (data.success) {
-        // Store token and user info
-        localStorage.setItem('jwtToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        // Close modal
-        onClose();
-        // Redirect to dashboard
-        window.location.href = '/dashboard';
+        // ✅ AUTO-LOGIN after signup
+        const loginResponse = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const loginData = await loginResponse.json();
+        
+        if (loginData.success) {
+          // Store user data
+          localStorage.setItem('user', JSON.stringify(loginData.user));
+          // Close modal
+          onClose();
+          // Redirect to dashboard
+          window.location.href = '/dashboard';
+        } else {
+          // Signup succeeded but auto-login failed
+          onClose();
+          window.location.href = '/dashboard';
+        }
       } else {
         setError(data.error || 'Signup failed');
       }
