@@ -4,6 +4,7 @@
   "exclude": [
     "/auth/*",
     "/api/*",
-    "/track/*"
+    "/track/*",
+    "/assets/*"
   ]
 }
