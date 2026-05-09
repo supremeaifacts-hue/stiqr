@@ -3,7 +3,7 @@ import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 import SignUpModal from './SignUpModal';
 import LoginModal from './LoginModal';
 
-const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLanding }) => {
+const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLanding, onLoginSuccess }) => {
   const { user, logout } = useAuth();
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -217,12 +217,14 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
         <SignUpModal 
           onClose={handleModalClose}
           onLoginClick={handleLoginFromModal}
+          onLoginSuccess={onLoginSuccess}
         />
       )}
       {showLoginModal && (
         <LoginModal 
           onClose={handleModalClose}
           onSignUpClick={handleSignUpFromModal}
+          onLoginSuccess={onLoginSuccess}
         />
       )}
     </>

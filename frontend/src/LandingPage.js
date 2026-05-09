@@ -1,8 +1,10 @@
 import React from 'react';
 import EditorPage from './EditorPage';
 import TopBar from './TopBar';
+import { useAuth } from './contexts/AuthContext';
 
 const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCodeToEdit }) => {
+  const { setUser } = useAuth();
 
   const handlePricingClick = () => {
     if (onViewPricing) {
@@ -18,6 +20,11 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
 
   const handleLoginClick = () => {
     console.log('Login clicked');
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   return (
@@ -36,6 +43,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
         onSignUp={handleSignUpClick}
         onLogin={handleLoginClick}
         onGoToLanding={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* Hero Section */}

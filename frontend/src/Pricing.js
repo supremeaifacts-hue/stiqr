@@ -3,7 +3,7 @@ import TopBar from './TopBar';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 
 const Pricing = ({ onViewDashboard, onBack }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -119,6 +119,10 @@ const Pricing = ({ onViewDashboard, onBack }) => {
         onSignUp={handleSignUpClick}
         onLogin={handleLoginClick}
         onGoToLanding={onBack}
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+        }}
       />
 
       <div style={{

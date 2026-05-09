@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 
-const SignUpModal = ({ onClose, onLoginClick }) => {
+const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
   const { loginWithGoogle, demoLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -94,17 +94,15 @@ const SignUpModal = ({ onClose, onLoginClick }) => {
         const loginData = await loginResponse.json();
         
         if (loginData.success) {
-          // Store user data
+          // Store user data (for persistence on page refresh)
           localStorage.setItem('user', JSON.stringify(loginData.user));
-          // Close modal
-          onClose();
-          // Redirect to dashboard
-          window.location.href = '/dashboard';
-        } else {
-          // Signup succeeded but auto-login failed
-          onClose();
-          window.location.href = '/dashboard';
+          // Update app's global auth state
+          if (onLoginSuccess) {
+            onLoginSuccess(loginData.user);
+          }
         }
+        // Close modal - stay on current page
+        onClose();
       } else {
         setError(data.error || 'Signup failed');
       }

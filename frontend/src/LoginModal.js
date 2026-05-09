@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 
-const LoginModal = ({ onClose, onSignUpClick }) => {
+const LoginModal = ({ onClose, onSignUpClick, onLoginSuccess }) => {
   const { loginWithGoogle, demoLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,13 +57,14 @@ const LoginModal = ({ onClose, onSignUpClick }) => {
       console.log('Login response:', data);
       
       if (data.success) {
-        // Store token and user info
-        localStorage.setItem('jwtToken', data.token);
+        // Store user data (for persistence on page refresh)
         localStorage.setItem('user', JSON.stringify(data.user));
-        // Close modal
+        // Update app's global auth state
+        if (onLoginSuccess) {
+          onLoginSuccess(data.user);
+        }
+        // Close modal - stay on current page
         onClose();
-        // Redirect to dashboard
-        window.location.href = '/dashboard';
       } else {
         setError(data.error || 'Invalid credentials');
       }

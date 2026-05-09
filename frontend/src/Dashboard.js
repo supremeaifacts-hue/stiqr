@@ -358,6 +358,10 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
         onSignUp={handleSignUpClick}
         onLogin={handleLoginClick}
         onGoToLanding={onBack}
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+        }}
       />
       
       <div style={{ flex: 1, padding: '40px 60px' }}>
