@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/status`, {
+      const response = await fetch(`${API_BASE_URL}/auth/status`, {
         credentials: 'include', // Important for cookies/sessions
       });
       
@@ -68,12 +68,12 @@ export const AuthProvider = ({ children }) => {
   const loginWithGoogle = () => {
     // Redirect to Google OAuth endpoint
     const currentUrl = window.location.href;
-    window.location.href = `${API_BASE_URL}/google?redirect=${encodeURIComponent(currentUrl)}`;
+    window.location.href = `${API_BASE_URL}/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
   };
 
   const logout = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/logout`, {
+      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
 
   const getCurrentUser = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/user`, {
+      const response = await fetch(`${API_BASE_URL}/auth/user`, {
         credentials: 'include',
       });
       
