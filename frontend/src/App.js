@@ -1,54 +1,49 @@
 import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import LandingPage from './LandingPage';
 import EditorPage from './EditorPage';
 import Dashboard from './Dashboard';
 import Pricing from './Pricing';
 
-function App() {
-  const [page, setPage] = useState('landing'); // 'landing', 'editor', 'dashboard', or 'pricing'
-  const [qrCodeToEdit, setQrCodeToEdit] = useState(null); // Store QR code data for editing
+function AppContent() {
+  const navigate = useNavigate();
+  const [qrCodeToEdit, setQrCodeToEdit] = useState(null);
 
-  if (page === 'landing') {
-    return (
-      <AuthProvider>
+  return (
+    <Routes>
+      <Route path="/" element={
         <LandingPage 
-          onViewDashboard={() => setPage('dashboard')}
-          onViewPricing={() => setPage('pricing')}
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewPricing={() => navigate('/pricing')}
           qrCodeToEdit={qrCodeToEdit}
           onClearQrCodeToEdit={() => setQrCodeToEdit(null)}
         />
-      </AuthProvider>
-    );
-  }
-
-  if (page === 'dashboard') {
-    return (
-      <AuthProvider>
+      } />
+      <Route path="/dashboard" element={
         <Dashboard 
-          onCreate={() => setPage('landing')}
-          onViewPricing={() => setPage('pricing')}
-          onBack={() => setPage('landing')}
+          onCreate={() => navigate('/')}
+          onViewPricing={() => navigate('/pricing')}
+          onBack={() => navigate('/')}
           onEditQrCode={(qrCode) => {
             setQrCodeToEdit(qrCode);
-            setPage('landing');
+            navigate('/');
           }}
         />
-      </AuthProvider>
-    );
-  }
+      } />
+      <Route path="/pricing" element={
+        <Pricing onViewDashboard={() => navigate('/dashboard')} onBack={() => navigate('/')} />
+      } />
+    </Routes>
+  );
+}
 
-  if (page === 'pricing') {
-    return (
-      <AuthProvider>
-        <Pricing onViewDashboard={() => setPage('dashboard')} onBack={() => setPage('landing')} />
-      </AuthProvider>
-    );
-  }
-
+function App() {
   return (
     <AuthProvider>
-      <EditorPage onBack={() => setPage('landing')} onGoToDashboard={() => setPage('dashboard')} onGoToProfile={() => console.log('Profile clicked')} />
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
     </AuthProvider>
   );
 }
