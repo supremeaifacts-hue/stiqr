@@ -130,6 +130,49 @@ app.post('/api/qrcodes', async (req, res) => {
   }
 });
 
+// POST /api/assets/qrcodes - Save QR code to user's assets
+app.post('/api/assets/qrcodes', async (req, res) => {
+  try {
+    const { qrCodeId, qrData, qrImageData, design } = req.body;
+    console.log(`Saving QR code to user assets: ${qrCodeId}`);
+    
+    const qrCodesCollection = db.collection('qrcodes');
+    
+    await qrCodesCollection.updateOne(
+      { id: qrCodeId },
+      { 
+        $set: { 
+          id: qrCodeId,
+          destination: qrData,
+          qrImageData: qrImageData,
+          design: design,
+          userId: req.headers['x-user-email'] || 'anonymous',
+          createdAt: new Date(),
+          scan_count: 0 
+        } 
+      },
+      { upsert: true }
+    );
+    
+    res.json({ success: true, id: qrCodeId });
+  } catch (error) {
+    console.error('Save to assets error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/assets/qrcodes - Get user's QR codes
+app.get('/api/assets/qrcodes', async (req, res) => {
+  try {
+    const qrCodesCollection = db.collection('qrcodes');
+    const qrCodes = await qrCodesCollection.find({}).toArray();
+    res.json({ qrCodes });
+  } catch (error) {
+    console.error('Get QR codes error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
