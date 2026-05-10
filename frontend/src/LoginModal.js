@@ -59,10 +59,12 @@ const LoginModal = ({ onClose, onSignUpClick, onLoginSuccess }) => {
       if (data.success) {
         // Store user data (for persistence on page refresh)
         localStorage.setItem('user', JSON.stringify(data.user));
-        // Update app's global auth state
-        if (onLoginSuccess) {
-          onLoginSuccess(data.user);
-        }
+        
+        // Dispatch a custom event that any component can listen to
+        window.dispatchEvent(new CustomEvent('userLoggedIn', { 
+          detail: data.user 
+        }));
+        
         // Close modal - stay on current page
         onClose();
       } else {

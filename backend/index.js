@@ -77,7 +77,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         
-        sendJson(res, 200, { success: true, user: { email: user.email, name: user.name } });
+        sendJson(res, 200, { success: true, user: { email: user.email, displayName: user.name, name: user.name } });
       } catch (error) {
         sendJson(res, 500, { error: 'Invalid request' });
       }

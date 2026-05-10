@@ -27,7 +27,20 @@ export const AuthProvider = ({ children }) => {
   // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
-      // First try session-based authentication
+      // First, check localStorage for saved user data (from signup/login)
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          setLoading(false);
+          return; // Don't override with backend check if we have saved data
+        } catch (error) {
+          console.error('Error parsing saved user:', error);
+        }
+      }
+      
+      // Then try session-based authentication
       await checkAuthStatus();
       
       // If session auth failed, try JWT token
