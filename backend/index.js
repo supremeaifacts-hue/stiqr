@@ -85,6 +85,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
+  // GET /api/user/subscription
+  if (url === '/api/user/subscription' && req.method === 'GET') {
+    sendJson(res, 200, { subscriptionStatus: 'free', planType: 'free' });
+    return;
+  }
+  
+  // GET /api/assets
+  if (url === '/api/assets' && req.method === 'GET') {
+    sendJson(res, 200, { stickers: [], logos: [] });
+    return;
+  }
+  
+  // GET /api/user/logos
+  if (url === '/api/user/logos' && req.method === 'GET') {
+    sendJson(res, 200, []);
+    return;
+  }
+  
   // 404 for anything else
   sendJson(res, 404, { error: 'Not found' });
 });
