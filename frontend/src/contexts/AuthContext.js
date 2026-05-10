@@ -174,6 +174,27 @@ export const AuthProvider = ({ children }) => {
     window.location.reload();
   };
 
+  // Listen for the custom 'userLoggedIn' event (dispatched by SignUpModal)
+  useEffect(() => {
+    const handleUserLogin = (event) => {
+      setUser(event.detail);
+    };
+    
+    window.addEventListener('userLoggedIn', handleUserLogin);
+    
+    // Also check localStorage on initial load
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+      }
+    }
+    
+    return () => window.removeEventListener('userLoggedIn', handleUserLogin);
+  }, []);
+
   // Check for demo user in localStorage on mount
   useEffect(() => {
     const demoUser = localStorage.getItem('demoUser');
