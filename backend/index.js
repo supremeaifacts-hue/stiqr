@@ -71,6 +71,65 @@ app.get('/api/assets', (req, res) => {
   res.json({ stickers: [], logos: [] });
 });
 
+// GET /track/:id - Redirect to the original destination URL
+app.get('/track/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`Tracking request for QR code: ${id}`);
+    
+    // Look up the QR code in your database
+    const qrCodesCollection = db.collection('qrcodes');
+    const qrCode = await qrCodesCollection.findOne({ id });
+    
+    if (!qrCode) {
+      console.log(`QR code not found: ${id}`);
+      // For testing, redirect to a default URL if not found
+      return res.redirect('https://www.youtube.com');
+    }
+    
+    // Increment scan count
+    await qrCodesCollection.updateOne(
+      { id },
+      { $inc: { scan_count: 1 } }
+    );
+    
+    console.log(`Redirecting to: ${qrCode.destination}`);
+    return res.redirect(qrCode.destination);
+  } catch (error) {
+    console.error('Tracking error:', error);
+    return res.redirect('https://www.youtube.com');
+  }
+});
+
+// POST /api/qrcodes - Save a new QR code
+app.post('/api/qrcodes', async (req, res) => {
+  try {
+    const { id, destination, qrCodeData } = req.body;
+    console.log(`Saving QR code: ${id} -> ${destination}`);
+    
+    const qrCodesCollection = db.collection('qrcodes');
+    
+    await qrCodesCollection.updateOne(
+      { id },
+      { 
+        $set: { 
+          id, 
+          destination, 
+          qrCodeData,
+          createdAt: new Date(),
+          scan_count: 0 
+        } 
+      },
+      { upsert: true }
+    );
+    
+    res.json({ success: true, id });
+  } catch (error) {
+    console.error('Save QR code error:', error);
+    res.status(500).json({ error: 'Failed to save QR code' });
+  }
+});
+
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
