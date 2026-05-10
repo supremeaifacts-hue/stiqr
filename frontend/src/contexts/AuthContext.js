@@ -527,9 +527,28 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: Received assets data:', data);
       console.log('AuthContext: Stickers count:', data.stickers?.length || 0);
       console.log('AuthContext: Logos count:', data.logos?.length || 0);
-      console.log('AuthContext: QR Codes count:', data.qrCodes?.length || 0);
       
-      return data;
+      // Also fetch QR codes from the dedicated endpoint
+      let qrCodes = [];
+      try {
+        const qrResponse = await fetch(`${API_BASE_URL}/api/assets/qrcodes`, {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+        });
+        if (qrResponse.ok) {
+          const qrData = await qrResponse.json();
+          qrCodes = qrData.qrCodes || [];
+          console.log('AuthContext: QR Codes fetched:', qrCodes.length);
+        }
+      } catch (qrError) {
+        console.error('AuthContext: Error fetching QR codes:', qrError);
+      }
+      
+      return {
+        ...data,
+        qrCodes: data.qrCodes || qrCodes
+      };
     } catch (error) {
       console.error('AuthContext: Error fetching user assets:', error);
       throw error;
