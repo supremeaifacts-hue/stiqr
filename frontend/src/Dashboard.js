@@ -84,7 +84,11 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
           console.log('Dashboard: Stickers count:', assets.stickers?.length || 0);
           console.log('Dashboard: Logos count:', assets.logos?.length || 0);
           console.log('Dashboard: QR Codes count:', assets.qrCodes?.length || 0);
-          setUserAssets(assets);
+          setUserAssets({
+            stickers: assets?.stickers || [],
+            logos: assets?.logos || [],
+            qrCodes: assets?.qrCodes || []
+          });
         } catch (error) {
           console.error('Dashboard: Failed to fetch user assets:', error);
           console.error('Dashboard: Error details:', error.message);
@@ -328,7 +332,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
       await deleteQrCode(qrCode.id);
       
       // Also remove from local state
-      const updatedQrCodes = userAssets.qrCodes.filter(qr => qr.id !== qrCode.id);
+      const updatedQrCodes = (userAssets?.qrCodes || []).filter(qr => qr.id !== qrCode.id);
       setUserAssets({
         ...userAssets,
         qrCodes: updatedQrCodes
@@ -378,7 +382,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             <div style={{ fontSize: '24px', marginBottom: '10px' }}>🔲</div>
             <div style={{ fontSize: '14px', color: '#888' }}>Total QR Codes</div>
             <div style={{ fontSize: '20px', fontWeight: '700' }}>
-              {isAuthenticated ? userAssets.qrCodes.length : '0'}
+              {isAuthenticated ? (userAssets?.qrCodes?.length || 0) : '0'}
             </div>
           </div>
           <div style={{
@@ -390,7 +394,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             <div style={{ fontSize: '24px', marginBottom: '10px' }}>👁️</div>
             <div style={{ fontSize: '14px', color: '#888' }}>Total Scans</div>
             <div style={{ fontSize: '20px', fontWeight: '700' }}>
-              {isAuthenticated ? userAssets.qrCodes.reduce((total, qr) => total + (qr.scans || 0), 0) : '0'}
+              {isAuthenticated ? (userAssets?.qrCodes?.reduce((total, qr) => total + (qr.scans || 0), 0) || 0) : '0'}
             </div>
           </div>
           <div style={{
@@ -402,8 +406,8 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             <div style={{ fontSize: '24px', marginBottom: '10px' }}>📈</div>
             <div style={{ fontSize: '14px', color: '#888' }}>Avg. Scans</div>
             <div style={{ fontSize: '20px', fontWeight: '700' }}>
-              {isAuthenticated && userAssets.qrCodes.length > 0 
-                ? Math.round(userAssets.qrCodes.reduce((total, qr) => total + (qr.scans || 0), 0) / userAssets.qrCodes.length) 
+              {isAuthenticated && (userAssets?.qrCodes?.length || 0) > 0 
+                ? Math.round((userAssets?.qrCodes?.reduce((total, qr) => total + (qr.scans || 0), 0) || 0) / (userAssets?.qrCodes?.length || 1)) 
                 : '0'}
             </div>
           </div>
@@ -517,7 +521,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
               <div style={{ fontSize: '48px', marginBottom: '20px' }}>⏳</div>
               <div style={{ marginBottom: '30px' }}>Loading your QR codes...</div>
             </div>
-          ) : userAssets.qrCodes.length > 0 ? (
+          ) : (userAssets?.qrCodes?.length || 0) > 0 ? (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -934,7 +938,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             <div style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ fontSize: '16px', fontWeight: '600', color: '#fff' }}>
-                  Stickers ({isAuthenticated ? userAssets.stickers.length : '0'})
+                  Stickers ({isAuthenticated ? (userAssets?.stickers?.length || 0) : '0'})
                 </div>
                 <div>
                   <input
@@ -974,8 +978,8 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                     }}>
                       Loading stickers...
                     </div>
-                  ) : userAssets.stickers.length > 0 ? (
-                    userAssets.stickers.map((sticker, index) => (
+                  ) : (userAssets?.stickers?.length || 0) > 0 ? (
+                    (userAssets?.stickers || []).map((sticker, index) => (
                       <div
                         key={sticker.id || index}
                         style={{
@@ -1064,7 +1068,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <div style={{ fontSize: '16px', fontWeight: '600', color: '#fff' }}>
-                  Logos ({isAuthenticated ? userAssets.logos.length : '0'})
+                  Logos ({isAuthenticated ? (userAssets?.logos?.length || 0) : '0'})
                 </div>
                 <div>
                   <input
@@ -1104,8 +1108,8 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                     }}>
                       Loading logos...
                     </div>
-                  ) : userAssets.logos.length > 0 ? (
-                    userAssets.logos.map((logo, index) => (
+                  ) : (userAssets?.logos?.length || 0) > 0 ? (
+                    (userAssets?.logos || []).map((logo, index) => (
                       <div
                         key={logo.id || index}
                         style={{
