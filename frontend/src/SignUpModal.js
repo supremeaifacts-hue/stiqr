@@ -84,25 +84,13 @@ const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
       console.log('Signup response:', data);
       
       if (data.success) {
-        // ✅ AUTO-LOGIN after signup
-        const loginResponse = await fetch('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        
-        const loginData = await loginResponse.json();
-        
-        if (loginData.success) {
-          // Store user data (for persistence on page refresh)
-          localStorage.setItem('user', JSON.stringify(loginData.user));
-          // Update app's global auth state
-          if (onLoginSuccess) {
-            onLoginSuccess(loginData.user);
-          }
-        }
-        // Close modal - stay on current page
+        // After successful signup, instead of auto-login
+        alert('Account created! Please log in.');
         onClose();
+        // Open login modal instead
+        if (onLoginClick) {
+          onLoginClick();
+        }
       } else {
         setError(data.error || 'Signup failed');
       }
