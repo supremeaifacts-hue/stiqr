@@ -85,26 +85,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        setUser(null);
-        // Clear JWT token from localStorage
-        localStorage.removeItem('jwtToken');
-        // Refresh the page to clear any state
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Error logging out:', error);
-      // Even if logout fails on backend, clear local state
-      setUser(null);
-      localStorage.removeItem('jwtToken');
-      window.location.reload();
-    }
+    // Clear client-side storage
+    localStorage.removeItem('user');
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('token');
+    
+    // Redirect to home page
+    window.location.href = '/';
   };
 
   const getCurrentUser = async () => {
