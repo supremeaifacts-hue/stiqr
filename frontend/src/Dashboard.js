@@ -799,6 +799,13 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                           alt={qrCode.name} 
                           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                         />
+                      ) : qrCode.data ? (
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode.data)}`}
+                          alt={qrCode.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          crossOrigin="anonymous"
+                        />
                       ) : (
                         <div style={{ fontSize: '32px' }}>🔲</div>
                       )}
@@ -829,15 +836,37 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                     <button
                       onClick={() => {
                         console.log('Download clicked for:', qrCode.name);
-                        if (qrCode.imageData && qrCode.imageData.startsWith('data:')) {
-                          const link = document.createElement('a');
-                          link.href = qrCode.imageData;
-                          link.download = `${qrCode.name || 'qr_code'}.png`;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
+                        const qrImageUrl = qrCode.imageData && qrCode.imageData.startsWith('data:')
+                          ? qrCode.imageData
+                          : qrCode.data
+                            ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode.data)}`
+                            : null;
+                        
+                        if (qrImageUrl) {
+                          // Fetch the image and create a downloadable blob
+                          fetch(qrImageUrl)
+                            .then(res => res.blob())
+                            .then(blob => {
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `${qrCode.name || 'qr_code'}.png`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(url);
+                            })
+                            .catch(() => {
+                              // Fallback: try direct download
+                              const link = document.createElement('a');
+                              link.href = qrImageUrl;
+                              link.download = `${qrCode.name || 'qr_code'}.png`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            });
                         } else {
-                          alert('QR code image not available for download');
+                          alert('QR code data not available for download');
                         }
                       }}
                       style={{
