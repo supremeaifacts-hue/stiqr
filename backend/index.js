@@ -93,8 +93,10 @@ app.get('/track/:id', async (req, res) => {
       { $inc: { scan_count: 1 } }
     );
     
-    console.log(`Redirecting to: ${qrCode.destination}`);
-    return res.redirect(qrCode.destination);
+    // Determine the destination URL - handle both 'destination' and 'data' field names
+    const destination = qrCode.destination || qrCode.data;
+    console.log(`Redirecting to: ${destination}`);
+    return res.redirect(destination);
   } catch (error) {
     console.error('Tracking error:', error);
     return res.redirect('https://www.youtube.com');
