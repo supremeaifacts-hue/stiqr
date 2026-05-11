@@ -587,47 +587,45 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       
       if (isAuthenticated) {
         try {
-          // Generate QR code image with tracking URL for saving to dashboard
-          const trackingCanvas = document.createElement('canvas');
-          trackingCanvas.width = 270;
-          trackingCanvas.height = 300;
-          
-          await new Promise((resolve, reject) => {
-            // Use tracking URL for saved QR codes
-            const qrContent = trackingUrl;
+          // Use the preview canvas (canvasRef.current) which already has
+          // the frame, sticker, and logo rendered on it.
+          let imageData;
+          if (canvasRef.current) {
+            imageData = canvasRef.current.toDataURL('image/png');
+            console.log('📸 Using preview canvas with frame/sticker/logo for saved image');
+          } else {
+            // Fallback: generate a plain QR code if canvas is not available
+            console.warn('⚠️ Preview canvas not available, generating plain QR code');
+            const fallbackCanvas = document.createElement('canvas');
+            fallbackCanvas.width = 270;
+            fallbackCanvas.height = 300;
             
-            QRCode.toCanvas(
-              trackingCanvas,
-              qrContent,
-              {
-                width: 240,
-                margin: includeMargin ? 2 : 0,
-                color: {
-                  dark: qrColor,
-                  light: bgColor,
+            await new Promise((resolve, reject) => {
+              QRCode.toCanvas(
+                fallbackCanvas,
+                trackingUrl,
+                {
+                  width: 240,
+                  margin: includeMargin ? 2 : 0,
+                  color: {
+                    dark: qrColor,
+                    light: bgColor,
+                  },
+                  errorCorrectionLevel: errorCorrectionLevel,
                 },
-                errorCorrectionLevel: errorCorrectionLevel,
-              },
-              (error) => {
-                if (error) {
-                  console.error('QR Code generation error for saving:', error);
-                  reject(error);
-                } else {
-                  resolve();
+                (error) => {
+                  if (error) reject(error);
+                  else resolve();
                 }
-              }
-            );
-          });
-          
-          // Convert to data URL
-          const imageData = trackingCanvas.toDataURL('image/png');
+              );
+            });
+            
+            imageData = fallbackCanvas.toDataURL('image/png');
+          }
           
           // Save QR code to backend with tracking URL
           savedQrCode = await saveQrCode(qrData, imageData, `QR Code ${new Date().toLocaleDateString()}`, qrCodeId);
           console.log('QR code saved to user account:', savedQrCode);
-          
-          // Note: The backend should use the same qrCodeId we generated
-          // We need to update the saveQrCode function to send the qrCodeId
         } catch (error) {
           console.error('Failed to save QR code:', error);
           // Continue with tracking URL anyway
@@ -2136,41 +2134,47 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               }
               
               try {
-                // Generate QR code image with tracking URL for saving to dashboard
-                const trackingCanvas = document.createElement('canvas');
-                trackingCanvas.width = 270;
-                trackingCanvas.height = 300;
+                // ============================================================
+                // Use the preview canvas (canvasRef.current) which already has
+                // the frame, sticker, and logo rendered on it.
+                // This ensures the saved image matches what the user sees.
+                // ============================================================
+                let imageData;
                 
-                await new Promise((resolve, reject) => {
-                  // Use tracking URL for saved QR codes
-                  const trackingUrl = getTrackingUrl();
-                  const qrContent = trackingUrl;
+                if (canvasRef.current) {
+                  // Use the existing preview canvas that has all design elements rendered
+                  imageData = canvasRef.current.toDataURL('image/png');
+                  console.log('📸 Using preview canvas with frame/sticker/logo for saved image');
+                } else {
+                  // Fallback: generate a plain QR code if canvas is not available
+                  console.warn('⚠️ Preview canvas not available, generating plain QR code');
+                  const fallbackCanvas = document.createElement('canvas');
+                  fallbackCanvas.width = 270;
+                  fallbackCanvas.height = 300;
                   
-                  QRCode.toCanvas(
-                    trackingCanvas,
-                    qrContent,
-                    {
-                      width: 240,
-                      margin: includeMargin ? 2 : 0,
-                      color: {
-                        dark: qrColor,
-                        light: bgColor,
+                  await new Promise((resolve, reject) => {
+                    const trackingUrl = getTrackingUrl();
+                    QRCode.toCanvas(
+                      fallbackCanvas,
+                      trackingUrl,
+                      {
+                        width: 240,
+                        margin: includeMargin ? 2 : 0,
+                        color: {
+                          dark: qrColor,
+                          light: bgColor,
+                        },
+                        errorCorrectionLevel: errorCorrectionLevel,
                       },
-                      errorCorrectionLevel: errorCorrectionLevel,
-                    },
-                    (error) => {
-                      if (error) {
-                        console.error('QR Code generation error for saving:', error);
-                        reject(error);
-                      } else {
-                        resolve();
+                      (error) => {
+                        if (error) reject(error);
+                        else resolve();
                       }
-                    }
-                  );
-                });
-                
-                // Convert to data URL
-                const imageData = trackingCanvas.toDataURL('image/png');
+                    );
+                  });
+                  
+                  imageData = fallbackCanvas.toDataURL('image/png');
+                }
                 
                 // Create design characteristics object
                 const designCharacteristics = {
