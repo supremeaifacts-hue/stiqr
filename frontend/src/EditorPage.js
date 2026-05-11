@@ -38,21 +38,18 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // Generate tracking URL
   const getTrackingUrl = () => {
     // Determine the environment based on the current hostname.
-    // This is the most reliable way to know if we're in development or production.
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     
-    let backendUrl;
-    
     if (isLocalhost) {
-      // For local development, use localhost (for testing on same machine)
-      backendUrl = 'http://localhost:3000';
+      // For local development, use localhost backend
+      return `http://localhost:3000/track/${qrCodeId}`;
     } else {
-      // For production (EdgeOne), use relative path so it works on any domain
-      backendUrl = '';
+      // For production, use the full domain URL so QR code scanners
+      // (which don't know the domain) can resolve the tracking link correctly
+      const protocol = window.location.protocol;
+      return `${protocol}//${hostname}/track/${qrCodeId}`;
     }
-    
-    return `${backendUrl}/track/${qrCodeId}`;
   };
   
   // Email-specific state
