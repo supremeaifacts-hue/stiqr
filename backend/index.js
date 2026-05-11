@@ -173,6 +173,48 @@ app.get('/api/assets/qrcodes', async (req, res) => {
   }
 });
 
+// DELETE /api/assets/qrcodes/:id - Delete a QR code
+app.delete('/api/assets/qrcodes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`Deleting QR code: ${id}`);
+    
+    const qrCodesCollection = db.collection('qrcodes');
+    
+    const result = await qrCodesCollection.deleteOne({ id });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'QR code not found' });
+    }
+    
+    res.json({ success: true, id });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /qrcodes/:id - Delete a QR code from standalone endpoint
+app.delete('/qrcodes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`Deleting QR code from standalone: ${id}`);
+    
+    const qrCodesCollection = db.collection('qrcodes');
+    
+    const result = await qrCodesCollection.deleteOne({ id });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'QR code not found' });
+    }
+    
+    res.json({ success: true, id });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
