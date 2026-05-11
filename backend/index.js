@@ -133,18 +133,28 @@ app.post('/api/qrcodes', async (req, res) => {
 // POST /api/assets/qrcodes - Save QR code to user's assets
 app.post('/api/assets/qrcodes', async (req, res) => {
   try {
-    const { qrCodeId, qrData, qrImageData, design } = req.body;
-    console.log(`Saving QR code to user assets: ${qrCodeId}`);
+    // Accept both naming conventions (frontend sends 'data'/'imageData', backend can use 'qrData'/'qrImageData')
+    const { qrCodeId, qrData, qrImageData, design, data, imageData, name } = req.body;
+    const finalId = qrCodeId || req.body.id;
+    const finalData = qrData || data || '';
+    const finalImageData = qrImageData || imageData || '';
+    const finalName = name || finalId || 'Untitled QR Code';
+    
+    console.log(`Saving QR code to user assets: ${finalId}`);
+    console.log(`Image data length: ${finalImageData?.length || 0}`);
+    console.log(`Image data starts with: ${finalImageData?.substring(0, 50)}`);
+    console.log(`Destination data: ${finalData?.substring(0, 50)}`);
     
     const qrCodesCollection = db.collection('qrcodes');
     
     await qrCodesCollection.updateOne(
-      { id: qrCodeId },
+      { id: finalId },
       { 
         $set: { 
-          id: qrCodeId,
-          destination: qrData,
-          qrImageData: qrImageData,
+          id: finalId,
+          name: finalName,
+          destination: finalData,
+          qrImageData: finalImageData,
           design: design,
           userId: req.headers['x-user-email'] || 'anonymous',
           createdAt: new Date(),
@@ -154,7 +164,7 @@ app.post('/api/assets/qrcodes', async (req, res) => {
       { upsert: true }
     );
     
-    res.json({ success: true, id: qrCodeId });
+    res.json({ success: true, id: finalId });
   } catch (error) {
     console.error('Save to assets error:', error);
     res.status(500).json({ error: error.message });
@@ -166,6 +176,14 @@ app.get('/api/assets/qrcodes', async (req, res) => {
   try {
     const qrCodesCollection = db.collection('qrcodes');
     const qrCodes = await qrCodesCollection.find({}).toArray();
+    
+    // Log what's being returned
+    console.log(`Returning ${qrCodes.length} QR codes`);
+    if (qrCodes.length > 0) {
+      console.log(`First QR code has image data: ${!!qrCodes[0].qrImageData}`);
+      console.log(`First QR code image data length: ${qrCodes[0].qrImageData?.length || 0}`);
+    }
+    
     res.json({ qrCodes });
   } catch (error) {
     console.error('Get QR codes error:', error);
