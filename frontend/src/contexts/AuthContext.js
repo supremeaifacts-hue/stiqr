@@ -538,8 +538,16 @@ export const AuthProvider = ({ children }) => {
         });
         if (qrResponse.ok) {
           const qrData = await qrResponse.json();
-          qrCodes = qrData.qrCodes || [];
-          console.log('AuthContext: QR Codes fetched:', qrCodes.length);
+          qrCodes = (qrData.qrCodes || []).map(qr => ({
+            id: qr.id,
+            data: qr.destination || qr.data || '',
+            imageData: qr.qrImageData || qr.imageData || '',
+            name: qr.name || qr.id || 'Untitled QR Code',
+            scans: qr.scan_count || qr.scans || 0,
+            destination: qr.destination || qr.data || '',
+            design: qr.design || null
+          }));
+          console.log('AuthContext: QR Codes fetched and normalized:', qrCodes.length);
         }
       } catch (qrError) {
         console.error('AuthContext: Error fetching QR codes:', qrError);

@@ -808,7 +808,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                         {qrCode.name}
                       </div>
                       <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '5px' }}>
-                        {qrCode.data.length > 30 ? qrCode.data.substring(0, 30) + '...' : qrCode.data}
+                        {(qrCode.data || '').length > 30 ? (qrCode.data || '').substring(0, 30) + '...' : qrCode.data || ''}
                       </div>
                       <div style={{ fontSize: '10px', color: trialExpired ? '#FF0000' : '#00D9FF' }}>
                         Scans: {qrCode.scans || 0}
