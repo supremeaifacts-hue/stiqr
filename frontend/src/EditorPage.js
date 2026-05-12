@@ -52,6 +52,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     }
   };
   
+  // ============================================================
+  // Regenerate QR code ID whenever the destination URL changes.
+  // This ensures each new destination gets a fresh tracking ID,
+  // keeping the preview, download, and database record in sync.
+  // ============================================================
+  useEffect(() => {
+    if (qrData && qrData.trim().length > 0) {
+      const newId = generateId();
+      setQrCodeId(newId);
+      console.log(`🆕 Generated new QR code ID for destination "${qrData.substring(0, 50)}": ${newId}`);
+    }
+  }, [qrData]);
+  
   // Email-specific state
   const [emailData, setEmailData] = useState({
     email: '',
