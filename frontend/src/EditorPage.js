@@ -583,53 +583,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       const trackingUrl = getTrackingUrl(newQrCodeId);
       let savedQrCode = null;
       
-      if (isAuthenticated) {
-        try {
-          // Use the preview canvas (canvasRef.current) which already has
-          // the frame, sticker, and logo rendered on it.
-          let imageData;
-          if (canvasRef.current) {
-            imageData = canvasRef.current.toDataURL('image/png');
-            console.log('📸 Using preview canvas with frame/sticker/logo for saved image');
-          } else {
-            // Fallback: generate a plain QR code if canvas is not available
-            console.warn('⚠️ Preview canvas not available, generating plain QR code');
-            const fallbackCanvas = document.createElement('canvas');
-            fallbackCanvas.width = 270;
-            fallbackCanvas.height = 300;
-            
-            await new Promise((resolve, reject) => {
-              QRCode.toCanvas(
-                fallbackCanvas,
-                trackingUrl,
-                {
-                  width: 240,
-                  margin: includeMargin ? 2 : 0,
-                  color: {
-                    dark: qrColor,
-                    light: bgColor,
-                  },
-                  errorCorrectionLevel: errorCorrectionLevel,
-                },
-                (error) => {
-                  if (error) reject(error);
-                  else resolve();
-                }
-              );
-            });
-            
-            imageData = fallbackCanvas.toDataURL('image/png');
-          }
-          
-          // Save QR code to backend with tracking URL
-          // IMPORTANT: Use newQrCodeId (not state qrCodeId) because state hasn't updated yet
-          savedQrCode = await saveQrCode(qrData, imageData, `QR Code ${new Date().toLocaleDateString()}`, newQrCodeId);
-          console.log('QR code saved to user account:', savedQrCode);
-        } catch (error) {
-          console.error('Failed to save QR code:', error);
-          // Continue with tracking URL anyway
-        }
-      }
+      // Note: We'll save the QR code AFTER the final canvas is complete
+      // (with tracking URL, frame, logo, and sticker all applied)
+      // This ensures the dashboard preview matches the downloaded QR code
+
       
       // Generate QR code with tracking URL
       const canvas = document.createElement('canvas');
@@ -991,17 +948,25 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       link.download = `qrcode_${Date.now()}.png`;
       link.click();
       
-      // If we saved the QR code but didn't get a scan URL (demo mode or error),
-      // we should update the saved QR code with the final image
-      if (isAuthenticated && savedQrCode && savedQrCode.qrCode && !savedQrCode.qrCode.scanUrl) {
+      // ============================================================
+      // Save the final QR code image to the user's dashboard
+      // This uses the COMPLETED canvas with tracking URL, frame,
+      // logo, and sticker all applied - matching exactly what was downloaded.
+      // ============================================================
+      if (isAuthenticated) {
         try {
-          // The QR code was saved but we need to update it with the final image
-          // (This would require an update endpoint, but for now we'll just log)
-          console.log('QR code saved without scan URL (demo mode?)');
+          savedQrCode = await saveQrCode(
+            qrData,
+            finalImageData,
+            `QR Code ${new Date().toLocaleDateString()}`,
+            newQrCodeId
+          );
+          console.log('✅ QR code saved to dashboard with final rendered image:', savedQrCode);
         } catch (error) {
-          console.error('Failed to update QR code image:', error);
+          console.error('Failed to save QR code to dashboard:', error);
         }
       }
+
     }
   };
 
@@ -2134,30 +2099,33 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               
               try {
                 // ============================================================
-                // Use the preview canvas (canvasRef.current) which already has
-                // the frame, sticker, and logo rendered on it.
-                // This ensures the saved image matches what the user sees.
+                // Generate a final rendered image with tracking URL, frame,
+                // logo, and sticker - matching exactly what would be downloaded.
+                // This ensures the dashboard preview matches the downloaded QR code.
                 // ============================================================
                 let imageData;
                 
-                if (canvasRef.current) {
-                  // Use the existing preview canvas that has all design elements rendered
-                  imageData = canvasRef.current.toDataURL('image/png');
-                  console.log('📸 Using preview canvas with frame/sticker/logo for saved image');
+                // Generate a fresh canvas with the tracking URL and all design elements
+                const finalCanvas = document.createElement('canvas');
+                const trackingUrl = getTrackingUrl();
+                
+                // Use same dimensions as preview: 270x300px for Frame #1 and Frame #2, otherwise original dimensions
+                if (selectedFrame === 'frame1' || selectedFrame === 'frame2') {
+                  finalCanvas.width = 270;
+                  finalCanvas.height = 300;
                 } else {
-                  // Fallback: generate a plain QR code if canvas is not available
-                  console.warn('⚠️ Preview canvas not available, generating plain QR code');
-                  const fallbackCanvas = document.createElement('canvas');
-                  fallbackCanvas.width = 270;
-                  fallbackCanvas.height = 300;
-                  
+                  finalCanvas.width = qrSize;
+                  finalCanvas.height = qrSize * 2 + 250;
+                }
+                
+                // Generate QR code with tracking URL (skip for Frame #1 and Frame #2)
+                if (selectedFrame !== 'frame1' && selectedFrame !== 'frame2') {
                   await new Promise((resolve, reject) => {
-                    const trackingUrl = getTrackingUrl();
                     QRCode.toCanvas(
-                      fallbackCanvas,
+                      finalCanvas,
                       trackingUrl,
                       {
-                        width: 240,
+                        width: qrSize - 60,
                         margin: includeMargin ? 2 : 0,
                         color: {
                           dark: qrColor,
@@ -2171,9 +2139,199 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       }
                     );
                   });
-                  
-                  imageData = fallbackCanvas.toDataURL('image/png');
                 }
+                
+                // Apply frame effects (same logic as handleDownload)
+                const ctx = finalCanvas.getContext('2d');
+                if (selectedFrame !== 'none') {
+                  if (selectedFrame === 'frame1') {
+                    const outerWidth = 270;
+                    const outerHeight = 300;
+                    const borderRadius = 14;
+                    
+                    ctx.fillStyle = frameColor;
+                    ctx.beginPath();
+                    ctx.roundRect(0, 0, outerWidth, outerHeight, borderRadius);
+                    ctx.fill();
+                    
+                    const labelY = 15 + 240 + 8 + 5 + 5 + 10;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `700 18px ${frameFont}, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'alphabetic';
+                    
+                    const labelText = framePhrase.toUpperCase();
+                    const labelX = outerWidth / 2;
+                    let currentX = labelX - (ctx.measureText(labelText).width / 2);
+                    for (let i = 0; i < labelText.length; i++) {
+                      ctx.fillText(labelText[i], currentX, labelY);
+                      currentX += ctx.measureText(labelText[i]).width + 2;
+                    }
+                    
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(15, 15, 240, 240);
+                    ctx.clip();
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 240;
+                    tempCanvas.height = 240;
+                    
+                    await new Promise((resolve, reject) => {
+                      QRCode.toCanvas(
+                        tempCanvas,
+                        trackingUrl,
+                        {
+                          width: 240,
+                          margin: includeMargin ? 2 : 0,
+                          color: { dark: qrColor, light: bgColor },
+                          errorCorrectionLevel: errorCorrectionLevel,
+                        },
+                        (error) => {
+                          if (error) reject(error);
+                          else resolve();
+                        }
+                      );
+                    });
+                    
+                    ctx.drawImage(tempCanvas, 15, 15);
+                    ctx.restore();
+                  } else if (selectedFrame === 'frame2') {
+                    const frameWidth = 10;
+                    const frameSize = 240;
+                    const frameX = 10;
+                    const frameY = 0;
+                    
+                    ctx.strokeStyle = frameColor;
+                    ctx.lineWidth = frameWidth;
+                    ctx.beginPath();
+                    ctx.roundRect(frameX + frameWidth/2, frameY + frameWidth/2, frameSize, frameSize, 6);
+                    ctx.stroke();
+                    
+                    const textRectX = 10;
+                    const textRectY = 260;
+                    const textRectWidth = 250;
+                    const textRectHeight = 40;
+                    
+                    ctx.fillStyle = frameColor;
+                    ctx.beginPath();
+                    ctx.roundRect(textRectX, textRectY, textRectWidth, textRectHeight, 16);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `700 18px ${frameFont}, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    const labelText = framePhrase.toUpperCase();
+                    const labelX = textRectX + textRectWidth / 2;
+                    const labelY = textRectY + textRectHeight / 2;
+                    
+                    let currentX = labelX - (ctx.measureText(labelText).width / 2);
+                    for (let i = 0; i < labelText.length; i++) {
+                      ctx.fillText(labelText[i], currentX, labelY);
+                      currentX += ctx.measureText(labelText[i]).width + 2;
+                    }
+                    
+                    ctx.clearRect(20, 10, 230, 230);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(20, 10, 230, 230);
+                    ctx.clip();
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 230;
+                    tempCanvas.height = 230;
+                    
+                    await new Promise((resolve, reject) => {
+                      QRCode.toCanvas(
+                        tempCanvas,
+                        trackingUrl,
+                        {
+                          width: 230,
+                          margin: includeMargin ? 2 : 0,
+                          color: { dark: qrColor, light: bgColor },
+                          errorCorrectionLevel: errorCorrectionLevel,
+                        },
+                        (error) => {
+                          if (error) reject(error);
+                          else resolve();
+                        }
+                      );
+                    });
+                    
+                    ctx.drawImage(tempCanvas, 20, 10);
+                    ctx.restore();
+                  }
+                }
+                
+                // Apply sticker if selected
+                if (selectedSticker) {
+                  const stickerSize = qrSize * 0.2;
+                  const offset = 25;
+                  const x = (qrSize - stickerSize) / 2 - offset;
+                  const y = (qrSize - stickerSize) / 2 - offset;
+                  const padding = 6;
+                  ctx.fillStyle = 'white';
+                  const radius = 8;
+                  ctx.beginPath();
+                  ctx.moveTo(x - padding + radius, y - padding);
+                  ctx.lineTo(x - padding + stickerSize + padding - radius, y - padding);
+                  ctx.quadraticCurveTo(x - padding + stickerSize + padding, y - padding, x - padding + stickerSize + padding, y - padding + radius);
+                  ctx.lineTo(x - padding + stickerSize + padding, y - padding + stickerSize + padding - radius);
+                  ctx.quadraticCurveTo(x - padding + stickerSize + padding, y - padding + stickerSize + padding, x - padding + stickerSize + padding - radius, y - padding + stickerSize + padding);
+                  ctx.lineTo(x - padding + radius, y - padding + stickerSize + padding);
+                  ctx.quadraticCurveTo(x - padding, y - padding + stickerSize + padding, x - padding, y - padding + stickerSize + padding - radius);
+                  ctx.lineTo(x - padding, y - padding + radius);
+                  ctx.quadraticCurveTo(x - padding, y - padding, x - padding + radius, y - padding);
+                  ctx.closePath();
+                  ctx.fill();
+                  
+                  if (selectedSticker.startsWith('data:')) {
+                    const img = new Image();
+                    await new Promise((resolve, reject) => {
+                      img.onload = () => {
+                        ctx.drawImage(img, x, y, stickerSize, stickerSize);
+                        resolve();
+                      };
+                      img.onerror = reject;
+                      img.src = selectedSticker;
+                    });
+                  } else {
+                    ctx.font = `${stickerSize * 0.8}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#000';
+                    ctx.fillText(selectedSticker, x + stickerSize/2, y + stickerSize/2);
+                  }
+                }
+                
+                // Apply logo if selected
+                if (selectedLogo) {
+                  const logoSize = 50;
+                  const offset = 25;
+                  const x = (qrSize - logoSize) / 2 - offset;
+                  const y = (qrSize - logoSize) / 2 - offset;
+                  
+                  const img = new Image();
+                  await new Promise((resolve, reject) => {
+                    img.onload = () => {
+                      ctx.fillStyle = 'white';
+                      ctx.beginPath();
+                      ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
+                      ctx.fill();
+                      ctx.drawImage(img, x, y, logoSize, logoSize);
+                      resolve();
+                    };
+                    img.onerror = reject;
+                    img.src = selectedLogo;
+                  });
+                }
+                
+                // Capture the final rendered image
+                imageData = finalCanvas.toDataURL('image/png');
+                console.log('📸 Generated final rendered image with tracking URL, frame, sticker, and logo');
+
                 
                 // Create design characteristics object
                 const designCharacteristics = {
