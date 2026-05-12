@@ -53,6 +53,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   };
   
   // ============================================================
+  // Use a ref to track the latest qrCodeId synchronously.
+  // This avoids timing issues with async setState in effects.
+  // ============================================================
+  const qrCodeIdRef = useRef(qrCodeId);
+  qrCodeIdRef.current = qrCodeId;
+  
+  // ============================================================
   // Regenerate QR code ID whenever the destination URL changes.
   // This ensures each new destination gets a fresh tracking ID,
   // keeping the preview, download, and database record in sync.
@@ -61,6 +68,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     if (qrData && qrData.trim().length > 0) {
       const newId = generateId();
       setQrCodeId(newId);
+      qrCodeIdRef.current = newId; // Update ref synchronously
       console.log(`🆕 Generated new QR code ID for destination "${qrData.substring(0, 50)}": ${newId}`);
     }
   }, [qrData]);
@@ -308,6 +316,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         tempCanvas.width = qrAreaSize;
         tempCanvas.height = qrAreaSize;
         
+        // ============================================================
+        // Use the ref to get the LATEST qrCodeId synchronously.
+        // This avoids timing issues with async setState in effects.
+        // ============================================================
+        const currentQrCodeId = qrCodeIdRef.current;
+        
         await new Promise((resolve, reject) => {
           // ============================================================
           // PREVIEW: Use tracking URL for ALL types so the preview
@@ -320,7 +334,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           // so the preview encodes the same tracking URL as the download.
           // The tracking URL will redirect to the actual destination.
           if (selectedType === 'url' || selectedType === 'text') {
-            qrContent = getTrackingUrl();
+            qrContent = getTrackingUrl(currentQrCodeId);
           } else if (selectedType === 'email') {
             // Format email as mailto: link
             const subject = emailData.subject ? `?subject=${encodeURIComponent(emailData.subject)}` : '';
@@ -581,7 +595,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       try {
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
         const response = await fetch(`${baseUrl}/qrcodes`, {
-          method: 'PUT',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -2128,7 +2142,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 
                 // Generate a fresh canvas with the tracking URL and all design elements
                 const finalCanvas = document.createElement('canvas');
-                const trackingUrl = getTrackingUrl();
+                const trackingUrl = getTrackingUrl(qrCodeIdRef.current);
                 
                 // Use same dimensions as preview: 270x300px for Frame #1 and Frame #2, otherwise original dimensions
                 if (selectedFrame === 'frame1' || selectedFrame === 'frame2') {
@@ -2384,7 +2398,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 
                 const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
                 const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
-                  method: 'PUT',
+                  method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
