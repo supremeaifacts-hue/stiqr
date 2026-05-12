@@ -296,12 +296,18 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         tempCanvas.height = qrAreaSize;
         
         await new Promise((resolve, reject) => {
-          // For preview, encode the actual content so user can see QR code update as they type
-          // The final downloaded QR code will use tracking URL for scan tracking
+          // ============================================================
+          // PREVIEW: Use tracking URL for ALL types so the preview
+          // matches exactly what will be downloaded and scanned.
+          // This ensures the same ID is used everywhere.
+          // ============================================================
           let qrContent;
           
+          // For dynamic QR codes (or when user has entered data), use tracking URL
+          // so the preview encodes the same tracking URL as the download.
+          // The tracking URL will redirect to the actual destination.
           if (selectedType === 'url' || selectedType === 'text') {
-            qrContent = qrData;
+            qrContent = getTrackingUrl();
           } else if (selectedType === 'email') {
             // Format email as mailto: link
             const subject = emailData.subject ? `?subject=${encodeURIComponent(emailData.subject)}` : '';
@@ -548,9 +554,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
   const handleDownload = async () => {
     if (canvasRef.current && qrData) {
-      // Generate a unique ID for this QR code
-      const newQrCodeId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      setQrCodeId(newQrCodeId);
+      // ============================================================
+      // Use the SAME ID that was generated when the component mounted
+      // (or when the user last clicked "Save to My QR codes").
+      // This ensures preview, download, and database all use the same ID.
+      // ============================================================
+      const effectiveQrCodeId = qrCodeId;
       
       // The destination URL the user entered
       const destinationUrl = qrData; // This variable holds what the user typed (e.g., "google.com")
@@ -564,7 +573,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: newQrCodeId,
+            id: effectiveQrCodeId,
             data: destinationUrl,
           }),
         });
@@ -579,8 +588,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       }
       
       // Use tracking URL for QR code generation
-      // IMPORTANT: Pass newQrCodeId explicitly because React state (qrCodeId) hasn't updated yet
-      const trackingUrl = getTrackingUrl(newQrCodeId);
+      const trackingUrl = getTrackingUrl(effectiveQrCodeId);
       let savedQrCode = null;
       
       // Note: We'll save the QR code AFTER the final canvas is complete
@@ -959,7 +967,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             qrData,
             finalImageData,
             `QR Code ${new Date().toLocaleDateString()}`,
-            newQrCodeId
+            effectiveQrCodeId
           );
           console.log('✅ QR code saved to dashboard with final rendered image:', savedQrCode);
         } catch (error) {
