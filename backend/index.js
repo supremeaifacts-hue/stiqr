@@ -138,13 +138,107 @@ app.post('/api/scan/log', async (req, res) => {
   try {
     const scanData = req.body;
     const scansCollection = db.collection('scans');
+    
     await scansCollection.insertOne({
       ...scanData,
       processedAt: new Date()
     });
+    
+    console.log(`📊 Scan logged: ${scanData.qrCodeId} from ${scanData.country || 'unknown'}`);
     res.json({ success: true });
   } catch (error) {
     console.error('Analytics error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/analytics/:qrCodeId - Get analytics for a specific QR code
+app.get('/api/analytics/:qrCodeId', async (req, res) => {
+  try {
+    const { qrCodeId } = req.params;
+    const scansCollection = db.collection('scans');
+    
+    const scans = await scansCollection.find({ qrCodeId }).toArray();
+    
+    // Calculate summary statistics
+    const summary = {
+      totalScans: scans.length,
+      uniqueCountries: [...new Set(scans.map(s => s.country).filter(Boolean))],
+      devices: {
+        mobile: scans.filter(s => s.deviceType === 'mobile').length,
+        desktop: scans.filter(s => s.deviceType === 'desktop').length,
+        tablet: scans.filter(s => s.deviceType === 'tablet').length
+      },
+      browsers: {},
+      os: {},
+      scansByHour: {},
+      recentScans: scans.slice(-10).reverse()
+    };
+    
+    // Count browsers and OS
+    scans.forEach(scan => {
+      if (scan.browser) summary.browsers[scan.browser] = (summary.browsers[scan.browser] || 0) + 1;
+      if (scan.os) summary.os[scan.os] = (summary.os[scan.os] || 0) + 1;
+    });
+    
+    res.json({ summary, scans });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/analytics/:qrCodeId/timeline - Get scans over time
+app.get('/api/analytics/:qrCodeId/timeline', async (req, res) => {
+  try {
+    const { qrCodeId } = req.params;
+    const scansCollection = db.collection('scans');
+    
+    const scans = await scansCollection.find({ qrCodeId }).toArray();
+    
+    // Group scans by date
+    const timeline = {};
+    scans.forEach(scan => {
+      const date = new Date(scan.timestamp).toISOString().split('T')[0];
+      timeline[date] = (timeline[date] || 0) + 1;
+    });
+    
+    res.json({ timeline });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/analytics/:qrCodeId/summary - Get analytics summary for a QR code
+app.get('/api/analytics/:qrCodeId/summary', async (req, res) => {
+  try {
+    const { qrCodeId } = req.params;
+    const scansCollection = db.collection('scans');
+    
+    const scans = await scansCollection.find({ qrCodeId }).toArray();
+    
+    const summary = {
+      totalScans: scans.length,
+      byDevice: {},
+      byCountry: {},
+      byDate: {},
+      recentScans: scans.slice(-20).reverse()
+    };
+    
+    scans.forEach(scan => {
+      const device = scan.deviceType || 'unknown';
+      summary.byDevice[device] = (summary.byDevice[device] || 0) + 1;
+      
+      const country = scan.country || 'unknown';
+      summary.byCountry[country] = (summary.byCountry[country] || 0) + 1;
+      
+      const date = new Date(scan.timestamp).toISOString().split('T')[0];
+      summary.byDate[date] = (summary.byDate[date] || 0) + 1;
+    });
+    
+    res.json(summary);
+  } catch (error) {
+    console.error('Analytics summary error:', error);
     res.status(500).json({ error: error.message });
   }
 });

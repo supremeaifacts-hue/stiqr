@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 
 const StatisticsModal = ({ qrCode, onClose }) => {
@@ -8,69 +8,67 @@ const StatisticsModal = ({ qrCode, onClose }) => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [step, setStep] = useState('day'); // 'day', 'week', 'month'
-
-  // --- DEMO / PLACEHOLDER DATA ---
-  // This data will be replaced with real scan data once the scan counter,
-  // location recognition, and OS detection are implemented.
-  // For now, it shows the complete UI layout with sample data.
+  
+  // Real scan data from API
+  const [allScanData, setAllScanData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const qrCodeInfo = useMemo(() => ({
     id: qrCode?.id || 'demo-id',
-    name: qrCode?.name || 'Demo QR Code',
-    createdAt: qrCode?.createdAt || new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
+    name: qrCode?.name || 'QR Code',
+    createdAt: qrCode?.createdAt || new Date().toISOString(),
     scans: qrCode?.scans || 0,
   }), [qrCode]);
 
-  // Generate demo scan data
-  const allScanData = useMemo(() => {
-    const demoScans = [];
-    const cities = [
-      { city: 'New York', country: 'United States', countryCode: 'US' },
-      { city: 'London', country: 'United Kingdom', countryCode: 'GB' },
-      { city: 'Tokyo', country: 'Japan', countryCode: 'JP' },
-      { city: 'Paris', country: 'France', countryCode: 'FR' },
-      { city: 'Berlin', country: 'Germany', countryCode: 'DE' },
-      { city: 'Sydney', country: 'Australia', countryCode: 'AU' },
-      { city: 'Toronto', country: 'Canada', countryCode: 'CA' },
-      { city: 'Mumbai', country: 'India', countryCode: 'IN' },
-      { city: 'São Paulo', country: 'Brazil', countryCode: 'BR' },
-      { city: 'Seoul', country: 'South Korea', countryCode: 'KR' },
-      { city: 'Moscow', country: 'Russia', countryCode: 'RU' },
-      { city: 'Dubai', country: 'UAE', countryCode: 'AE' },
-      { city: 'Singapore', country: 'Singapore', countryCode: 'SG' },
-      { city: 'Hong Kong', country: 'China', countryCode: 'CN' },
-      { city: 'Amsterdam', country: 'Netherlands', countryCode: 'NL' },
-    ];
-    const osList = ['iOS', 'Android', 'Windows', 'macOS', 'Linux', 'ChromeOS'];
-    const deviceTypes = ['phone', 'tablet', 'desktop', 'other'];
-
-    // Generate 50 demo scans spread over the last 30 days
-    for (let i = 0; i < 50; i++) {
-      const daysAgo = Math.floor(Math.random() * 30);
-      const hoursAgo = Math.floor(Math.random() * 24);
-      const minsAgo = Math.floor(Math.random() * 60);
-      const timestamp = new Date(Date.now() - (daysAgo * 24 * 60 * 60 * 1000) - (hoursAgo * 60 * 60 * 1000) - (minsAgo * 60 * 1000));
+  // Fetch real scan data from the API
+  useEffect(() => {
+    const fetchScanData = async () => {
+      if (!qrCodeInfo.id) {
+        setLoading(false);
+        return;
+      }
       
-      const location = cities[Math.floor(Math.random() * cities.length)];
-      const os = osList[Math.floor(Math.random() * osList.length)];
-      const deviceType = deviceTypes[Math.floor(Math.random() * deviceTypes.length)];
-
-      demoScans.push({
-        id: i + 1,
-        timestamp: timestamp.toISOString(),
-        city: location.city,
-        country: location.country,
-        countryCode: location.countryCode,
-        os: os,
-        deviceType: deviceType,
-        browser: ['Chrome', 'Safari', 'Firefox', 'Edge'][Math.floor(Math.random() * 4)],
-      });
-    }
-
-    // Sort by timestamp descending
-    demoScans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    return demoScans;
-  }, []);
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const response = await fetch(`${baseUrl}/api/analytics/${qrCodeInfo.id}`);
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Transform the API response into the format expected by the UI
+        const scans = (data.scans || []).map((scan, index) => ({
+          id: index + 1,
+          timestamp: scan.timestamp || scan.processedAt || new Date().toISOString(),
+          city: scan.city || 'Unknown',
+          country: scan.country || 'Unknown',
+          countryCode: scan.countryCode || '',
+          os: scan.os || 'Unknown',
+          deviceType: scan.deviceType || 'unknown',
+          browser: scan.browser || 'Unknown',
+        }));
+        
+        // Sort by timestamp descending
+        scans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        setAllScanData(scans);
+      } catch (err) {
+        console.error('Failed to fetch analytics:', err);
+        setError(err.message);
+        setAllScanData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchScanData();
+  }, [qrCodeInfo.id]);
 
   // Compute time since creation
   const timeSinceCreation = useMemo(() => {
