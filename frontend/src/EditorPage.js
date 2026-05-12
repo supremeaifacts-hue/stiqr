@@ -36,19 +36,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   };
   
   // Generate tracking URL
-  const getTrackingUrl = () => {
-    // Determine the environment based on the current hostname.
+  // Accepts an optional id parameter. If not provided, uses the state qrCodeId.
+  // IMPORTANT: Always pass the id explicitly when you've just generated a new one,
+  // because React state updates are async and the state may still have the old value.
+  const getTrackingUrl = (id) => {
+    const effectiveId = id || qrCodeId;
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     
     if (isLocalhost) {
-      // For local development, use localhost backend
-      return `http://localhost:3000/track/${qrCodeId}`;
+      return `http://localhost:3000/track/${effectiveId}`;
     } else {
-      // For production, use the full domain URL so QR code scanners
-      // (which don't know the domain) can resolve the tracking link correctly
       const protocol = window.location.protocol;
-      return `${protocol}//${hostname}/track/${qrCodeId}`;
+      return `${protocol}//${hostname}/track/${effectiveId}`;
     }
   };
   
@@ -549,8 +549,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const handleDownload = async () => {
     if (canvasRef.current && qrData) {
       // Generate a unique ID for this QR code
-      const qrCodeId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      setQrCodeId(qrCodeId);
+      const newQrCodeId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+      setQrCodeId(newQrCodeId);
       
       // The destination URL the user entered
       const destinationUrl = qrData; // This variable holds what the user typed (e.g., "google.com")
@@ -564,7 +564,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: qrCodeId,
+            id: newQrCodeId,
             data: destinationUrl,
           }),
         });
@@ -579,7 +579,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       }
       
       // Use tracking URL for QR code generation
-      const trackingUrl = getTrackingUrl();
+      // IMPORTANT: Pass newQrCodeId explicitly because React state (qrCodeId) hasn't updated yet
+      const trackingUrl = getTrackingUrl(newQrCodeId);
       let savedQrCode = null;
       
       if (isAuthenticated) {
@@ -621,7 +622,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           }
           
           // Save QR code to backend with tracking URL
-          savedQrCode = await saveQrCode(qrData, imageData, `QR Code ${new Date().toLocaleDateString()}`, qrCodeId);
+          // IMPORTANT: Use newQrCodeId (not state qrCodeId) because state hasn't updated yet
+          savedQrCode = await saveQrCode(qrData, imageData, `QR Code ${new Date().toLocaleDateString()}`, newQrCodeId);
           console.log('QR code saved to user account:', savedQrCode);
         } catch (error) {
           console.error('Failed to save QR code:', error);

@@ -1,0 +1,7 @@
+name = "stiqr"
+main = "worker.js"
+compatibility_date = "2024-12-18"
+
+[[kv_namespaces]]
+binding = "QR_DESTINATIONS"
+id = "04228f58e9bf4d8ca18bc6da8eccb9c5"

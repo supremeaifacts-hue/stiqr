@@ -103,6 +103,52 @@ app.get('/track/:id', async (req, res) => {
   }
 });
 
+// GET /api/qrcodes/:id - Get QR code destination
+app.get('/api/qrcodes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const qrCodesCollection = db.collection('qrcodes');
+    const qrCode = await qrCodesCollection.findOne({ id });
+    if (!qrCode) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.json({ destination: qrCode.destination || qrCode.data });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/qrcodes/:id/increment - Increment scan count
+app.post('/api/qrcodes/:id/increment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const qrCodesCollection = db.collection('qrcodes');
+    await qrCodesCollection.updateOne(
+      { id },
+      { $inc: { scan_count: 1 } }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/scan/log - Log scan analytics
+app.post('/api/scan/log', async (req, res) => {
+  try {
+    const scanData = req.body;
+    const scansCollection = db.collection('scans');
+    await scansCollection.insertOne({
+      ...scanData,
+      processedAt: new Date()
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/qrcodes - Save a new QR code
 app.post('/api/qrcodes', async (req, res) => {
   try {
