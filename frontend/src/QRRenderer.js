@@ -219,22 +219,25 @@ export const useQRRenderer = ({
         const totalBackgroundSize = stickerSize + 2 * padding; // Include padding in centering calculation
         const x = qrOffsetX + (qrRenderSize - totalBackgroundSize) / 2;
         const y = qrOffsetY + (qrRenderSize - totalBackgroundSize) / 2;
+        // White square moved 3px right and 3px down
+        const whiteSquareX = x + 3;
+        const whiteSquareY = y + 3;
         ctx.fillStyle = 'white';
         const radius = 8;
         ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + totalBackgroundSize - radius, y);
-        ctx.quadraticCurveTo(x + totalBackgroundSize, y, x + totalBackgroundSize, y + radius);
-        ctx.lineTo(x + totalBackgroundSize, y + totalBackgroundSize - radius);
-        ctx.quadraticCurveTo(x + totalBackgroundSize, y + totalBackgroundSize, x + totalBackgroundSize - radius, y + totalBackgroundSize);
-        ctx.lineTo(x + radius, y + totalBackgroundSize);
-        ctx.quadraticCurveTo(x, y + totalBackgroundSize, x, y + totalBackgroundSize - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.moveTo(whiteSquareX + radius, whiteSquareY);
+        ctx.lineTo(whiteSquareX + totalBackgroundSize - radius, whiteSquareY);
+        ctx.quadraticCurveTo(whiteSquareX + totalBackgroundSize, whiteSquareY, whiteSquareX + totalBackgroundSize, whiteSquareY + radius);
+        ctx.lineTo(whiteSquareX + totalBackgroundSize, whiteSquareY + totalBackgroundSize - radius);
+        ctx.quadraticCurveTo(whiteSquareX + totalBackgroundSize, whiteSquareY + totalBackgroundSize, whiteSquareX + totalBackgroundSize - radius, whiteSquareY + totalBackgroundSize);
+        ctx.lineTo(whiteSquareX + radius, whiteSquareY + totalBackgroundSize);
+        ctx.quadraticCurveTo(whiteSquareX, whiteSquareY + totalBackgroundSize, whiteSquareX, whiteSquareY + totalBackgroundSize - radius);
+        ctx.lineTo(whiteSquareX, whiteSquareY + radius);
+        ctx.quadraticCurveTo(whiteSquareX, whiteSquareY, whiteSquareX + radius, whiteSquareY);
         ctx.closePath();
         ctx.fill();
 
-        // Position sticker in center of background
+        // Position sticker in center of background (moved 3px down)
         const stickerX = x + padding;
         const stickerY = y + padding + 3;
 
@@ -261,11 +264,13 @@ export const useQRRenderer = ({
 
         const img = new Image();
         img.onload = () => {
+          // Draw white background for logo (moved 3px right and 3px down)
           ctx.fillStyle = 'white';
           ctx.beginPath();
-          ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
+          ctx.roundRect(x - 2 + 3, y - 2 + 3, logoSize + 4, logoSize + 4, 4);
           ctx.fill();
-          ctx.drawImage(img, x, y, logoSize, logoSize);
+          // Draw the logo (moved 3px down)
+          ctx.drawImage(img, x, y + 3, logoSize, logoSize);
         };
         img.src = selectedLogo;
       }

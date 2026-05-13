@@ -231,26 +231,33 @@ export const useEditorPageHandlers = ({
         const x = (qrSize - stickerSize) / 2 - offset;
         const y = (qrSize - stickerSize) / 2 - offset;
         const padding = 6;
+        // White square moved 3px right and 3px down
+        const whiteSquareX = x - padding + 3;
+        const whiteSquareY = y - padding + 3;
         ctx.fillStyle = 'white';
         const radius = 8;
         ctx.beginPath();
-        ctx.moveTo(x - padding + radius, y - padding);
-        ctx.lineTo(x - padding + stickerSize + padding - radius, y - padding);
-        ctx.quadraticCurveTo(x - padding + stickerSize + padding, y - padding, x - padding + stickerSize + padding, y - padding + radius);
-        ctx.lineTo(x - padding + stickerSize + padding, y - padding + stickerSize + padding - radius);
-        ctx.quadraticCurveTo(x - padding + stickerSize + padding, y - padding + stickerSize + padding, x - padding + stickerSize + padding - radius, y - padding + stickerSize + padding);
-        ctx.lineTo(x - padding + radius, y - padding + stickerSize + padding);
-        ctx.quadraticCurveTo(x - padding, y - padding + stickerSize + padding, x - padding, y - padding + stickerSize + padding - radius);
-        ctx.lineTo(x - padding, y - padding + radius);
-        ctx.quadraticCurveTo(x - padding, y - padding, x - padding + radius, y - padding);
+        ctx.moveTo(whiteSquareX + radius, whiteSquareY);
+        ctx.lineTo(whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY);
+        ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY, whiteSquareX + stickerSize + padding * 2, whiteSquareY + radius);
+        ctx.lineTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2 - radius);
+        ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2, whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY + stickerSize + padding * 2);
+        ctx.lineTo(whiteSquareX + radius, whiteSquareY + stickerSize + padding * 2);
+        ctx.quadraticCurveTo(whiteSquareX, whiteSquareY + stickerSize + padding * 2, whiteSquareX, whiteSquareY + stickerSize + padding * 2 - radius);
+        ctx.lineTo(whiteSquareX, whiteSquareY + radius);
+        ctx.quadraticCurveTo(whiteSquareX, whiteSquareY, whiteSquareX + radius, whiteSquareY);
         ctx.closePath();
         ctx.fill();
+
+        // Sticker moved 3px down
+        const stickerX = x;
+        const stickerY = y + 3;
 
         if (selectedSticker.startsWith('data:')) {
           const img = new Image();
           await new Promise((resolve, reject) => {
             img.onload = () => {
-              ctx.drawImage(img, x, y, stickerSize, stickerSize);
+              ctx.drawImage(img, stickerX, stickerY, stickerSize, stickerSize);
               resolve();
             };
             img.onerror = reject;
@@ -261,7 +268,7 @@ export const useEditorPageHandlers = ({
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = '#000';
-          ctx.fillText(selectedSticker, x + stickerSize/2, y + stickerSize/2);
+          ctx.fillText(selectedSticker, stickerX + stickerSize/2, stickerY + stickerSize/2);
         }
       }
       
@@ -275,14 +282,14 @@ export const useEditorPageHandlers = ({
         const img = new Image();
         await new Promise((resolve, reject) => {
           img.onload = () => {
-            // Draw white background for logo
+            // Draw white background for logo (moved 3px right and 3px down)
             ctx.fillStyle = 'white';
             ctx.beginPath();
-            ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
+            ctx.roundRect(x - 2 + 3, y - 2 + 3, logoSize + 4, logoSize + 4, 4);
             ctx.fill();
             
-            // Draw the logo
-            ctx.drawImage(img, x, y, logoSize, logoSize);
+            // Draw the logo (moved 3px down)
+            ctx.drawImage(img, x, y + 3, logoSize, logoSize);
             resolve();
           };
           img.onerror = reject;
