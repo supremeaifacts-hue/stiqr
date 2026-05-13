@@ -67,8 +67,119 @@ app.get('/api/user/subscription', (req, res) => {
   res.json({ subscriptionStatus: 'free', planType: 'free' });
 });
 
-app.get('/api/assets', (req, res) => {
-  res.json({ stickers: [], logos: [] });
+// GET /api/assets - Get all user assets (stickers, logos)
+app.get('/api/assets', async (req, res) => {
+  try {
+    const stickersCollection = db.collection('stickers');
+    const logosCollection = db.collection('logos');
+    
+    const stickers = await stickersCollection.find({}).toArray();
+    const logos = await logosCollection.find({}).toArray();
+    
+    console.log(`GET /api/assets: returning ${stickers.length} stickers, ${logos.length} logos`);
+    
+    res.json({ stickers, logos });
+  } catch (error) {
+    console.error('GET /api/assets error:', error);
+    res.json({ stickers: [], logos: [] });
+  }
+});
+
+// POST /api/assets/stickers - Save a sticker
+app.post('/api/assets/stickers', async (req, res) => {
+  try {
+    const { data, name, category } = req.body;
+    const stickersCollection = db.collection('stickers');
+    
+    const sticker = {
+      data,
+      name: name || 'Untitled Sticker',
+      category: category || 'custom',
+      userId: req.headers['x-user-email'] || 'anonymous',
+      createdAt: new Date()
+    };
+    
+    const result = await stickersCollection.insertOne(sticker);
+    
+    console.log(`Sticker saved: ${sticker.name} (ID: ${result.insertedId})`);
+    
+    res.json({ 
+      success: true, 
+      sticker: { ...sticker, _id: result.insertedId } 
+    });
+  } catch (error) {
+    console.error('Save sticker error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/assets/stickers/:id - Delete a sticker
+app.delete('/api/assets/stickers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ObjectId } = require('mongodb');
+    const stickersCollection = db.collection('stickers');
+    
+    const result = await stickersCollection.deleteOne({ _id: new ObjectId(id) });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Sticker not found' });
+    }
+    
+    console.log(`Sticker deleted: ${id}`);
+    res.json({ success: true, id });
+  } catch (error) {
+    console.error('Delete sticker error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/assets/logos - Save a logo
+app.post('/api/assets/logos', async (req, res) => {
+  try {
+    const { data, name } = req.body;
+    const logosCollection = db.collection('logos');
+    
+    const logo = {
+      data,
+      name: name || 'Untitled Logo',
+      userId: req.headers['x-user-email'] || 'anonymous',
+      createdAt: new Date()
+    };
+    
+    const result = await logosCollection.insertOne(logo);
+    
+    console.log(`Logo saved: ${logo.name} (ID: ${result.insertedId})`);
+    
+    res.json({ 
+      success: true, 
+      logo: { ...logo, _id: result.insertedId } 
+    });
+  } catch (error) {
+    console.error('Save logo error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/assets/logos/:id - Delete a logo
+app.delete('/api/assets/logos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ObjectId } = require('mongodb');
+    const logosCollection = db.collection('logos');
+    
+    const result = await logosCollection.deleteOne({ _id: new ObjectId(id) });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Logo not found' });
+    }
+    
+    console.log(`Logo deleted: ${id}`);
+    res.json({ success: true, id });
+  } catch (error) {
+    console.error('Delete logo error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // GET /track/:id - Redirect to the original destination URL

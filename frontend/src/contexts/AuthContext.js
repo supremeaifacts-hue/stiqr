@@ -528,6 +528,16 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: Stickers count:', data.stickers?.length || 0);
       console.log('AuthContext: Logos count:', data.logos?.length || 0);
       
+      // Normalize stickers and logos to include 'id' field from MongoDB '_id'
+      const normalizedStickers = (data.stickers || []).map(sticker => ({
+        ...sticker,
+        id: sticker.id || sticker._id?.toString() || sticker._id
+      }));
+      const normalizedLogos = (data.logos || []).map(logo => ({
+        ...logo,
+        id: logo.id || logo._id?.toString() || logo._id
+      }));
+      
       // Also fetch QR codes from the dedicated endpoint
       let qrCodes = [];
       try {
@@ -554,7 +564,8 @@ export const AuthProvider = ({ children }) => {
       }
       
       return {
-        ...data,
+        stickers: normalizedStickers,
+        logos: normalizedLogos,
         qrCodes: data.qrCodes || qrCodes
       };
     } catch (error) {
