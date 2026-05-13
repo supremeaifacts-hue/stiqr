@@ -493,9 +493,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
           const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
           const padding = 6;
-          // White square moved 10px right and 10px down
-          const whiteSquareX = x - padding + 10;
-          const whiteSquareY = y - padding + 10;
+          // White square moved 5px right and 10px down
+          const whiteSquareX = x - padding + 5;
+          const whiteSquareY = y - padding + 5;
           ctx.fillStyle = 'white';
           const radius = 8;
           ctx.beginPath();
@@ -511,9 +511,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           ctx.closePath();
           ctx.fill();
 
-          // Sticker moved 10px down
+          // Sticker moved 5px down
           const stickerX = x;
-          const stickerY = y + 10;
+          const stickerY = y + 5;
 
           if (selectedSticker.startsWith('data:')) {
             const img = new Image();
@@ -924,9 +924,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const x = (qrSize - stickerSize) / 2 - offset;
         const y = (qrSize - stickerSize) / 2 - offset;
         const padding = 6;
-        // White square moved 10px right and 10px down
-        const whiteSquareX = x - padding + 10;
-        const whiteSquareY = y - padding + 10;
+        // White square moved 5px right and 5px down
+        const whiteSquareX = x - padding + 5;
+        const whiteSquareY = y - padding + 5;
         ctx.fillStyle = 'white';
         const radius = 8;
         ctx.beginPath();
@@ -942,9 +942,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         ctx.closePath();
         ctx.fill();
 
-        // Sticker moved 10px down
+        // Sticker moved 5px down
         const stickerX = x;
-        const stickerY = y + 10;
+        const stickerY = y + 5;
 
         if (selectedSticker.startsWith('data:')) {
           const img = new Image();
@@ -2321,9 +2321,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const x = (qrSize - stickerSize) / 2 - offset;
                   const y = (qrSize - stickerSize) / 2 - offset;
                   const padding = 6;
-                  // White square moved 10px right and 10px down
-                  const whiteSquareX = x - padding + 10;
-                  const whiteSquareY = y - padding + 10;
+                  // White square moved 5px right and 5px down
+                  const whiteSquareX = x - padding + 5;
+                  const whiteSquareY = y - padding + 5;
                   ctx.fillStyle = 'white';
                   const radius = 8;
                   ctx.beginPath();
@@ -2339,9 +2339,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   ctx.closePath();
                   ctx.fill();
 
-                  // Sticker moved 10px down
+                  // Sticker moved 5px down
                   const stickerX = x;
-                  const stickerY = y + 10;
+                  const stickerY = y + 5;
                   
                   if (selectedSticker.startsWith('data:')) {
                     const img = new Image();
