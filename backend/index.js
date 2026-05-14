@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
+const { connectDB: connectMongoose } = require('./config/database');
+const stripeRoutes = require('./routes/stripe');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +15,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Mount Stripe routes
+app.use('/api/stripe', stripeRoutes);
 
 let db;
 let usersCollection;
@@ -487,6 +493,11 @@ app.delete('/qrcodes/:id', async (req, res) => {
   }
 });
 
-connectDB().then(() => {
+// Connect both MongoDB drivers
+async function startServer() {
+  await connectDB();
+  await connectMongoose();
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-});
+}
+
+startServer();
