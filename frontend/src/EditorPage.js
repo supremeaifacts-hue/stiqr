@@ -493,9 +493,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
           const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
           const padding = 6;
-          // White square centered (no offset)
-          const whiteSquareX = x - padding;
-          const whiteSquareY = y - padding;
+          // White square moved 1px down and 1px right
+          const whiteSquareX = x - padding + 1;
+          const whiteSquareY = y - padding + 1;
           ctx.fillStyle = 'white';
           const radius = 8;
           ctx.beginPath();
@@ -542,11 +542,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             // Draw white background for logo (moved 3px right and 3px down)
             ctx.fillStyle = 'white';
             ctx.beginPath();
-            ctx.roundRect(x - 2 + 3, y - 2 + 3, logoSize + 4, logoSize + 4, 4);
+            ctx.roundRect(x - 2 + 1, y - 2 + 1, logoSize + 4, logoSize + 4, 4);
             ctx.fill();
             
-            // Draw the logo (moved 3px down)
-            ctx.drawImage(img, x, y + 3, logoSize, logoSize);
+            // Draw the logo (moved 1px down)
+            ctx.drawImage(img, x, y + 1, logoSize, logoSize);
           };
           img.src = selectedLogo;
         }
@@ -924,9 +924,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const x = (qrSize - stickerSize) / 2 - offset;
         const y = (qrSize - stickerSize) / 2 - offset;
         const padding = 6;
-          // White square centered (no offset)
-          const whiteSquareX = x - padding;
-          const whiteSquareY = y - padding;
+          // White square moved 1px down and 1px right
+          const whiteSquareX = x - padding + 1;
+          const whiteSquareY = y - padding + 1;
         ctx.fillStyle = 'white';
         const radius = 8;
         ctx.beginPath();
@@ -975,14 +975,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const img = new Image();
         await new Promise((resolve, reject) => {
           img.onload = () => {
-            // Draw white background for logo (moved 3px right and 3px down)
+            // Draw white background for logo (moved 1px right and 1px down)
             ctx.fillStyle = 'white';
             ctx.beginPath();
-            ctx.roundRect(x - 2 + 3, y - 2 + 3, logoSize + 4, logoSize + 4, 4);
+            ctx.roundRect(x - 2 + 1, y - 2 + 1, logoSize + 4, logoSize + 4, 4);
             ctx.fill();
             
-            // Draw the logo (moved 3px down)
-            ctx.drawImage(img, x, y + 3, logoSize, logoSize);
+            // Draw the logo (moved 1px down)
+            ctx.drawImage(img, x, y + 1, logoSize, logoSize);
             resolve();
           };
           img.onerror = reject;
@@ -2321,9 +2321,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const x = (qrSize - stickerSize) / 2 - offset;
                   const y = (qrSize - stickerSize) / 2 - offset;
                   const padding = 6;
-                  // White square centered (no offset)
-                  const whiteSquareX = x - padding;
-                  const whiteSquareY = y - padding;
+                  // White square moved 1px down and 1px right
+                  const whiteSquareX = x - padding + 1;
+                  const whiteSquareY = y - padding + 1;
                   ctx.fillStyle = 'white';
                   const radius = 8;
                   ctx.beginPath();
@@ -2372,13 +2372,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const img = new Image();
                   await new Promise((resolve, reject) => {
                     img.onload = () => {
-                      // Draw white background for logo (moved 3px right and 3px down)
+                      // Draw white background for logo (moved 1px right and 1px down)
                       ctx.fillStyle = 'white';
                       ctx.beginPath();
-                      ctx.roundRect(x - 2 + 3, y - 2 + 3, logoSize + 4, logoSize + 4, 4);
+                      ctx.roundRect(x - 2 + 1, y - 2 + 1, logoSize + 4, logoSize + 4, 4);
                       ctx.fill();
-                      // Draw the logo (moved 3px down)
-                      ctx.drawImage(img, x, y + 3, logoSize, logoSize);
+                      // Draw the logo (moved 1px down)
+                      ctx.drawImage(img, x, y + 1, logoSize, logoSize);
                       resolve();
                     };
                     img.onerror = reject;
