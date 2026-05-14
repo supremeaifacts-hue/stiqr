@@ -489,13 +489,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         // Apply sticker if selected
         if (selectedSticker) {
           const stickerSize = 48; // 20% of 240px QR area
-          // Remove offset to center the sticker
+          // Center the sticker perfectly in the QR code area
           const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
           const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
           const padding = 6;
-          // White square moved 1px down and 1px right
-          const whiteSquareX = x - padding + 1;
-          const whiteSquareY = y - padding + 1;
+          // White square perfectly centered (no offset)
+          const whiteSquareX = x - padding;
+          const whiteSquareY = y - padding;
           ctx.fillStyle = 'white';
           const radius = 8;
           ctx.beginPath();
@@ -511,9 +511,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           ctx.closePath();
           ctx.fill();
 
-          // Sticker moved 3px down and 1px right
-          const stickerX = x + 1;
-          const stickerY = y + 3;
+          // Sticker perfectly centered (no offset)
+          const stickerX = x;
+          const stickerY = y;
 
           if (selectedSticker.startsWith('data:')) {
             const img = new Image();
@@ -533,23 +533,31 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         // Apply logo if selected
         if (selectedLogo) {
           const logoSize = 50;
-          // Remove offset to center the logo
+          // Center the logo perfectly in the QR code area
           const x = qrAreaX + (qrAreaSize - logoSize) / 2;
           const y = qrAreaY + (qrAreaSize - logoSize) / 2;
           
           const img = new Image();
           img.onload = () => {
-            // Draw white background for logo (moved 3px right and 3px down)
+            // Draw white background for logo perfectly centered (no offset)
             ctx.fillStyle = 'white';
             ctx.beginPath();
-            ctx.roundRect(x - 2 + 1, y - 2 + 1, logoSize + 4, logoSize + 4, 4);
+            ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
             ctx.fill();
             
-            // Draw the logo (moved 1px down)
-            ctx.drawImage(img, x, y + 1, logoSize, logoSize);
+            // Draw the logo perfectly centered (no offset)
+            ctx.drawImage(img, x, y, logoSize, logoSize);
           };
           img.src = selectedLogo;
         }
+        
+        // Draw red dot at center of QR code for alignment debugging
+        const centerX = qrAreaX + qrAreaSize / 2;
+        const centerY = qrAreaY + qrAreaSize / 2;
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+        ctx.fill();
       }
     };
     
@@ -924,9 +932,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const x = (qrSize - stickerSize) / 2 - offset;
         const y = (qrSize - stickerSize) / 2 - offset;
         const padding = 6;
-          // White square moved 1px down and 1px right
-          const whiteSquareX = x - padding + 1;
-          const whiteSquareY = y - padding + 1;
+        // White square perfectly centered (no offset)
+        const whiteSquareX = x - padding;
+        const whiteSquareY = y - padding;
         ctx.fillStyle = 'white';
         const radius = 8;
         ctx.beginPath();
@@ -942,9 +950,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         ctx.closePath();
         ctx.fill();
 
-        // Sticker moved 3px down and 1px right
-        const stickerX = x + 1;
-        const stickerY = y + 3;
+        // Sticker perfectly centered (no offset)
+        const stickerX = x;
+        const stickerY = y;
 
         if (selectedSticker.startsWith('data:')) {
           const img = new Image();
@@ -975,14 +983,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const img = new Image();
         await new Promise((resolve, reject) => {
           img.onload = () => {
-            // Draw white background for logo (moved 1px right and 1px down)
+            // Draw white background for logo perfectly centered (no offset)
             ctx.fillStyle = 'white';
             ctx.beginPath();
-            ctx.roundRect(x - 2 + 1, y - 2 + 1, logoSize + 4, logoSize + 4, 4);
+            ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
             ctx.fill();
             
-            // Draw the logo (moved 1px down)
-            ctx.drawImage(img, x, y + 1, logoSize, logoSize);
+            // Draw the logo perfectly centered (no offset)
+            ctx.drawImage(img, x, y, logoSize, logoSize);
             resolve();
           };
           img.onerror = reject;
@@ -2321,9 +2329,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const x = (qrSize - stickerSize) / 2 - offset;
                   const y = (qrSize - stickerSize) / 2 - offset;
                   const padding = 6;
-                  // White square moved 1px down and 1px right
-                  const whiteSquareX = x - padding + 1;
-                  const whiteSquareY = y - padding + 1;
+                  // White square perfectly centered (no offset)
+                  const whiteSquareX = x - padding;
+                  const whiteSquareY = y - padding;
                   ctx.fillStyle = 'white';
                   const radius = 8;
                   ctx.beginPath();
@@ -2339,9 +2347,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   ctx.closePath();
                   ctx.fill();
 
-                  // Sticker moved 3px down and 1px right
-                  const stickerX = x + 1;
-                  const stickerY = y + 3;
+                  // Sticker perfectly centered (no offset)
+                  const stickerX = x;
+                  const stickerY = y;
                   
                   if (selectedSticker.startsWith('data:')) {
                     const img = new Image();
@@ -2372,13 +2380,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const img = new Image();
                   await new Promise((resolve, reject) => {
                     img.onload = () => {
-                      // Draw white background for logo (moved 1px right and 1px down)
+                      // Draw white background for logo perfectly centered (no offset)
                       ctx.fillStyle = 'white';
                       ctx.beginPath();
-                      ctx.roundRect(x - 2 + 1, y - 2 + 1, logoSize + 4, logoSize + 4, 4);
+                      ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
                       ctx.fill();
-                      // Draw the logo (moved 1px down)
-                      ctx.drawImage(img, x, y + 1, logoSize, logoSize);
+                      // Draw the logo perfectly centered (no offset)
+                      ctx.drawImage(img, x, y, logoSize, logoSize);
                       resolve();
                     };
                     img.onerror = reject;
