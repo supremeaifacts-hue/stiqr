@@ -3,7 +3,7 @@ const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const mongoose = require('mongoose');
 const { connectDB: connectMongoose } = require('./config/database');
-const stripeRoutes = require('./routes/stripe');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,8 +16,48 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Mount Stripe routes
-app.use('/api/stripe', stripeRoutes);
+// Stripe checkout session endpoint
+app.post('/api/create-checkout-session', async (req, res) => {
+  try {
+    const { priceId, userId, userEmail } = req.body;
+    
+    console.log('=== /api/create-checkout-session called ===');
+    console.log('priceId:', priceId);
+    console.log('userId:', userId);
+    console.log('userEmail:', userEmail);
+    
+    if (!priceId) {
+      return res.status(400).json({ error: 'priceId is required' });
+    }
+    
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: 'subscription',
+      success_url: 'https://www.stiqr.top/dashboard?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'https://www.stiqr.top/pricing',
+      client_reference_id: userId,
+      customer_email: userEmail,
+      metadata: {
+        userId: userId || '',
+        plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
+      },
+      subscription_data: {
+        metadata: {
+          userId: userId || '',
+          plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
+        }
+      }
+    });
+    
+    console.log('✅ Checkout session created:', session.id);
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Stripe error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 let db;
 let usersCollection;

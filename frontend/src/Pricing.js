@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import TopBar from './TopBar';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 
+// Stripe Price IDs - Replace these with your actual Stripe Price IDs
+const PRICE_IDS = {
+  pro: 'price_1TH0zDRM0rqezn1zJXDz5jQh',
+  ultra: 'price_1TH0zsRM0rqezn1z2dhWgXH6'
+};
+
 const Pricing = ({ onViewDashboard, onBack }) => {
   const { isAuthenticated, user, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -20,7 +26,7 @@ const Pricing = ({ onViewDashboard, onBack }) => {
     console.log('Login clicked');
   };
 
-  const handleSubscribe = async (plan) => {
+  const handleSubscribe = async (planType) => {
     if (!isAuthenticated) {
       alert('Please login to subscribe');
       return;
@@ -30,14 +36,21 @@ const Pricing = ({ onViewDashboard, onBack }) => {
     setError('');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/stripe/create-checkout-session`, {
+      const priceId = PRICE_IDS[planType];
+      if (!priceId) {
+        throw new Error(`No price ID configured for plan: ${planType}`);
+      }
+      
+      const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
         },
-        credentials: 'include',
-        body: JSON.stringify({ plan })
+        body: JSON.stringify({
+          priceId,
+          userId: user?.id || user?._id || '',
+          userEmail: user?.email || ''
+        })
       });
       
       if (!response.ok) {
@@ -48,7 +61,9 @@ const Pricing = ({ onViewDashboard, onBack }) => {
       const data = await response.json();
       
       // Redirect to Stripe checkout
-      window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      }
       
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -58,6 +73,7 @@ const Pricing = ({ onViewDashboard, onBack }) => {
       setLoading(false);
     }
   };
+
 
   const pricingPlans = [
     {
