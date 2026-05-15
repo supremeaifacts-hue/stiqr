@@ -1,543 +1,483 @@
-const express = require('express');
-const cors = require('cors');
-const { MongoClient } = require('mongodb');
-const mongoose = require('mongoose');
-const { connectDB: connectMongoose } = require('./config/database');
+const http = require('http');
+const { randomUUID } = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration
-app.use(cors({
-  origin: ['http://localhost:5173', 'https://www.stiqr.top', 'https://stiqr-frontend.pages.dev'],
-  credentials: true
-}));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// ─── In-Memory Data Stores ────────────────────────────────────────────────────
+const users = {};           // email -> { email, password, name, createdAt }
+const qrCodes = {};         // id -> { id, destination, qrCodeData, qrImageData, design, name, userId, scan_count, createdAt }
+const stickers = {};        // id -> { id, data, name, category, userId, createdAt }
+const logos = {};           // id -> { id, data, name, userId, createdAt }
+const scans = [];           // array of scan objects
+let stickerIdCounter = 1;
+let logoIdCounter = 1;
 
-// Stripe checkout session endpoint
-app.post('/api/create-checkout-session', async (req, res) => {
+// ─── Utility Functions ────────────────────────────────────────────────────────
+
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (e) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+function sendJSON(res, statusCode, data) {
+  const json = JSON.stringify(data);
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-user-email',
+  });
+  res.end(json);
+}
+
+function sendRedirect(res, location) {
+  res.writeHead(302, { Location: location });
+  res.end();
+}
+
+function parseURL(req) {
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  return url;
+}
+
+function matchPath(pattern, pathname) {
+  // Convert pattern like /api/assets/stickers/:id to regex
+  const regexStr = pattern.replace(/:([^/]+)/g, '([^/]+)');
+  const regex = new RegExp(`^${regexStr}$`);
+  const match = pathname.match(regex);
+  if (match) {
+    const params = {};
+    const paramNames = [...pattern.matchAll(/:([^/]+)/g)].map(m => m[1]);
+    paramNames.forEach((name, i) => {
+      params[name] = match[i + 1];
+    });
+    return params;
+  }
+  return null;
+}
+
+// ─── Route Handler ────────────────────────────────────────────────────────────
+
+async function handleRequest(req, res) {
+  const url = parseURL(req);
+  const pathname = url.pathname;
+  const method = req.method.toUpperCase();
+
+  // CORS preflight
+  if (method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-user-email',
+      'Access-Control-Max-Age': '86400',
+    });
+    return res.end();
+  }
+
+  console.log(`${method} ${pathname}`);
+
   try {
-    const { priceId, userId, userEmail } = req.body;
-    
-    console.log('=== /api/create-checkout-session called ===');
-    console.log('priceId:', priceId);
-    console.log('userId:', userId);
-    console.log('userEmail:', userEmail);
-    
-    if (!priceId) {
-      return res.status(400).json({ error: 'priceId is required' });
-    }
-    
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: 'subscription',
-      success_url: 'https://www.stiqr.top/dashboard?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'https://www.stiqr.top/pricing',
-      client_reference_id: userId,
-      customer_email: userEmail,
-      metadata: {
-        userId: userId || '',
-        plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
-      },
-      subscription_data: {
+    // ── Stripe Checkout Session ──────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/create-checkout-session') {
+      const body = await parseBody(req);
+      const { priceId, userId, userEmail } = body;
+
+      if (!priceId) {
+        return sendJSON(res, 400, { error: 'priceId is required' });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        success_url: 'https://www.stiqr.top/dashboard?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url: 'https://www.stiqr.top/pricing',
+        client_reference_id: userId,
+        customer_email: userEmail,
         metadata: {
           userId: userId || '',
           plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
+        },
+        subscription_data: {
+          metadata: {
+            userId: userId || '',
+            plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
+          }
         }
+      });
+
+      console.log('✅ Checkout session created:', session.id);
+      return sendJSON(res, 200, { url: session.url });
+    }
+
+    // ── Auth: Signup ─────────────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/auth/signup') {
+      const body = await parseBody(req);
+      const { email, password, name } = body;
+
+      if (!email || !password) {
+        return sendJSON(res, 400, { error: 'Email and password are required' });
       }
-    });
-    
-    console.log('✅ Checkout session created:', session.id);
-    res.json({ url: session.url });
+
+      if (users[email]) {
+        return sendJSON(res, 400, { error: 'User already exists' });
+      }
+
+      users[email] = {
+        email,
+        password,
+        name: name || email.split('@')[0],
+        createdAt: new Date().toISOString()
+      };
+
+      console.log(`✅ User created: ${email}`);
+      return sendJSON(res, 200, { success: true, message: 'User created', email });
+    }
+
+    // ── Auth: Login ──────────────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/auth/login') {
+      const body = await parseBody(req);
+      const { email, password } = body;
+
+      const user = users[email];
+      if (!user || user.password !== password) {
+        return sendJSON(res, 401, { error: 'Invalid credentials' });
+      }
+
+      return sendJSON(res, 200, {
+        success: true,
+        user: { email: user.email, name: user.name }
+      });
+    }
+
+    // ── Auth: Status ─────────────────────────────────────────────────────────
+    if (method === 'GET' && pathname === '/auth/status') {
+      return sendJSON(res, 200, { authenticated: false });
+    }
+
+    // ── Auth: User info ──────────────────────────────────────────────────────
+    if (method === 'GET' && pathname === '/auth/user') {
+      return sendJSON(res, 200, { user: null });
+    }
+
+    // ── Me ───────────────────────────────────────────────────────────────────
+    if (method === 'GET' && pathname === '/me') {
+      return sendJSON(res, 200, { user: null });
+    }
+
+    // ── User Subscription ────────────────────────────────────────────────────
+    if (method === 'GET' && pathname === '/api/user/subscription') {
+      return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
+    }
+
+    // ── QR Codes: Save standalone ────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/qrcodes') {
+      const body = await parseBody(req);
+      const { id, destination, qrCodeData } = body;
+
+      if (!id) {
+        return sendJSON(res, 400, { error: 'id is required' });
+      }
+
+      qrCodes[id] = {
+        id,
+        destination: destination || '',
+        qrCodeData: qrCodeData || '',
+        createdAt: new Date().toISOString(),
+        scan_count: 0
+      };
+
+      console.log(`✅ QR code saved: ${id} -> ${destination}`);
+      return sendJSON(res, 200, { success: true, id });
+    }
+
+    // ── QR Codes: Save to user assets ────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/assets/qrcodes') {
+      const body = await parseBody(req);
+      const { qrCodeId, qrData, qrImageData, design, data, imageData, name } = body;
+      const finalId = qrCodeId || body.id;
+      const finalData = qrData || data || '';
+      const finalImageData = qrImageData || imageData || '';
+      const finalName = name || finalId || 'Untitled QR Code';
+
+      console.log(`Saving QR code to user assets: ${finalId}`);
+
+      qrCodes[finalId] = {
+        id: finalId,
+        name: finalName,
+        destination: finalData,
+        qrImageData: finalImageData,
+        design: design || null,
+        userId: req.headers['x-user-email'] || 'anonymous',
+        createdAt: new Date().toISOString(),
+        scan_count: 0
+      };
+
+      return sendJSON(res, 200, { success: true, id: finalId });
+    }
+
+    // ── QR Codes: Get all user QR codes ─────────────────────────────────────
+    if (method === 'GET' && pathname === '/api/assets/qrcodes') {
+      const qrCodesList = Object.values(qrCodes);
+      console.log(`Returning ${qrCodesList.length} QR codes`);
+      return sendJSON(res, 200, { qrCodes: qrCodesList });
+    }
+
+    // ── QR Codes: Delete from assets ─────────────────────────────────────────
+    const deleteAssetsQrMatch = matchPath('/api/assets/qrcodes/:id', pathname);
+    if (method === 'DELETE' && deleteAssetsQrMatch) {
+      const { id } = deleteAssetsQrMatch;
+      console.log(`Deleting QR code: ${id}`);
+
+      if (!qrCodes[id]) {
+        return sendJSON(res, 404, { error: 'QR code not found' });
+      }
+
+      delete qrCodes[id];
+      return sendJSON(res, 200, { success: true, id });
+    }
+
+    // ── QR Codes: Delete standalone ──────────────────────────────────────────
+    const deleteQrMatch = matchPath('/qrcodes/:id', pathname);
+    if (method === 'DELETE' && deleteQrMatch) {
+      const { id } = deleteQrMatch;
+      console.log(`Deleting QR code from standalone: ${id}`);
+
+      if (!qrCodes[id]) {
+        return sendJSON(res, 404, { error: 'QR code not found' });
+      }
+
+      delete qrCodes[id];
+      return sendJSON(res, 200, { success: true, id });
+    }
+
+    // ── QR Codes: Get destination ────────────────────────────────────────────
+    const getQrMatch = matchPath('/api/qrcodes/:id', pathname);
+    if (method === 'GET' && getQrMatch) {
+      const { id } = getQrMatch;
+      const qrCode = qrCodes[id];
+
+      if (!qrCode) {
+        return sendJSON(res, 404, { error: 'Not found' });
+      }
+
+      return sendJSON(res, 200, { destination: qrCode.destination || qrCode.qrCodeData });
+    }
+
+    // ── QR Codes: Increment scan count ───────────────────────────────────────
+    const incrementMatch = matchPath('/api/qrcodes/:id/increment', pathname);
+    if (method === 'POST' && incrementMatch) {
+      const { id } = incrementMatch;
+
+      if (qrCodes[id]) {
+        qrCodes[id].scan_count = (qrCodes[id].scan_count || 0) + 1;
+      }
+
+      return sendJSON(res, 200, { success: true });
+    }
+
+    // ── Track: Redirect ──────────────────────────────────────────────────────
+    const trackMatch = matchPath('/track/:id', pathname);
+    if (method === 'GET' && trackMatch) {
+      const { id } = trackMatch;
+      console.log(`Tracking request for QR code: ${id}`);
+
+      const qrCode = qrCodes[id];
+
+      if (!qrCode) {
+        console.log(`QR code not found: ${id}`);
+        return sendRedirect(res, 'https://www.youtube.com');
+      }
+
+      // Increment scan count
+      qrCode.scan_count = (qrCode.scan_count || 0) + 1;
+
+      const destination = qrCode.destination || qrCode.qrCodeData;
+      console.log(`Redirecting to: ${destination}`);
+      return sendRedirect(res, destination);
+    }
+
+    // ── Assets: Get all assets ───────────────────────────────────────────────
+    if (method === 'GET' && pathname === '/api/assets') {
+      const stickersList = Object.values(stickers);
+      const logosList = Object.values(logos);
+      console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos`);
+      return sendJSON(res, 200, { stickers: stickersList, logos: logosList });
+    }
+
+    // ── Stickers: Save ───────────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/assets/stickers') {
+      const body = await parseBody(req);
+      const { data, name, category } = body;
+      const id = String(stickerIdCounter++);
+
+      stickers[id] = {
+        id,
+        data: data || '',
+        name: name || 'Untitled Sticker',
+        category: category || 'custom',
+        userId: req.headers['x-user-email'] || 'anonymous',
+        createdAt: new Date().toISOString()
+      };
+
+      console.log(`Sticker saved: ${stickers[id].name} (ID: ${id})`);
+      return sendJSON(res, 200, { success: true, sticker: stickers[id] });
+    }
+
+    // ── Stickers: Delete ─────────────────────────────────────────────────────
+    const deleteStickerMatch = matchPath('/api/assets/stickers/:id', pathname);
+    if (method === 'DELETE' && deleteStickerMatch) {
+      const { id } = deleteStickerMatch;
+
+      if (!stickers[id]) {
+        return sendJSON(res, 404, { error: 'Sticker not found' });
+      }
+
+      delete stickers[id];
+      console.log(`Sticker deleted: ${id}`);
+      return sendJSON(res, 200, { success: true, id });
+    }
+
+    // ── Logos: Save ──────────────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/assets/logos') {
+      const body = await parseBody(req);
+      const { data, name } = body;
+      const id = String(logoIdCounter++);
+
+      logos[id] = {
+        id,
+        data: data || '',
+        name: name || 'Untitled Logo',
+        userId: req.headers['x-user-email'] || 'anonymous',
+        createdAt: new Date().toISOString()
+      };
+
+      console.log(`Logo saved: ${logos[id].name} (ID: ${id})`);
+      return sendJSON(res, 200, { success: true, logo: logos[id] });
+    }
+
+    // ── Logos: Delete ────────────────────────────────────────────────────────
+    const deleteLogoMatch = matchPath('/api/assets/logos/:id', pathname);
+    if (method === 'DELETE' && deleteLogoMatch) {
+      const { id } = deleteLogoMatch;
+
+      if (!logos[id]) {
+        return sendJSON(res, 404, { error: 'Logo not found' });
+      }
+
+      delete logos[id];
+      console.log(`Logo deleted: ${id}`);
+      return sendJSON(res, 200, { success: true, id });
+    }
+
+    // ── Scan: Log analytics ──────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/scan/log') {
+      const body = await parseBody(req);
+      scans.push({
+        ...body,
+        processedAt: new Date().toISOString()
+      });
+
+      console.log(`📊 Scan logged: ${body.qrCodeId} from ${body.country || 'unknown'}`);
+      return sendJSON(res, 200, { success: true });
+    }
+
+    // ── Analytics: Get all ───────────────────────────────────────────────────
+    const analyticsMatch = matchPath('/api/analytics/:qrCodeId', pathname);
+    if (method === 'GET' && analyticsMatch && !pathname.endsWith('/timeline') && !pathname.endsWith('/summary')) {
+      const { qrCodeId } = analyticsMatch;
+      const qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+
+      const summary = {
+        totalScans: qrScans.length,
+        uniqueCountries: [...new Set(qrScans.map(s => s.country).filter(Boolean))],
+        devices: {
+          mobile: qrScans.filter(s => s.deviceType === 'mobile').length,
+          desktop: qrScans.filter(s => s.deviceType === 'desktop').length,
+          tablet: qrScans.filter(s => s.deviceType === 'tablet').length
+        },
+        browsers: {},
+        os: {},
+        scansByHour: {},
+        recentScans: qrScans.slice(-10).reverse()
+      };
+
+      qrScans.forEach(scan => {
+        if (scan.browser) summary.browsers[scan.browser] = (summary.browsers[scan.browser] || 0) + 1;
+        if (scan.os) summary.os[scan.os] = (summary.os[scan.os] || 0) + 1;
+      });
+
+      return sendJSON(res, 200, { summary, scans: qrScans });
+    }
+
+    // ── Analytics: Timeline ──────────────────────────────────────────────────
+    const timelineMatch = matchPath('/api/analytics/:qrCodeId/timeline', pathname);
+    if (method === 'GET' && timelineMatch) {
+      const { qrCodeId } = timelineMatch;
+      const qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+
+      const timeline = {};
+      qrScans.forEach(scan => {
+        const date = new Date(scan.timestamp).toISOString().split('T')[0];
+        timeline[date] = (timeline[date] || 0) + 1;
+      });
+
+      return sendJSON(res, 200, { timeline });
+    }
+
+    // ── Analytics: Summary ───────────────────────────────────────────────────
+    const summaryMatch = matchPath('/api/analytics/:qrCodeId/summary', pathname);
+    if (method === 'GET' && summaryMatch) {
+      const { qrCodeId } = summaryMatch;
+      const qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+
+      const summary = {
+        totalScans: qrScans.length,
+        byDevice: {},
+        byCountry: {},
+        byDate: {},
+        recentScans: qrScans.slice(-20).reverse()
+      };
+
+      qrScans.forEach(scan => {
+        const device = scan.deviceType || 'unknown';
+        summary.byDevice[device] = (summary.byDevice[device] || 0) + 1;
+
+        const country = scan.country || 'unknown';
+        summary.byCountry[country] = (summary.byCountry[country] || 0) + 1;
+
+        const date = new Date(scan.timestamp).toISOString().split('T')[0];
+        summary.byDate[date] = (summary.byDate[date] || 0) + 1;
+      });
+
+      return sendJSON(res, 200, summary);
+    }
+
+    // ── 404 ──────────────────────────────────────────────────────────────────
+    sendJSON(res, 404, { error: 'Not found' });
+
   } catch (error) {
-    console.error('Stripe error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error:', error);
+    sendJSON(res, 500, { error: error.message || 'Internal server error' });
   }
-});
-
-
-let db;
-let usersCollection;
-
-// Connect to MongoDB
-async function connectDB() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    console.error('MONGODB_URI not set');
-    return;
-  }
-  const client = new MongoClient(uri);
-  await client.connect();
-  db = client.db('stiqr');
-  usersCollection = db.collection('users');
-  console.log('✅ MongoDB connected to stiqr database');
 }
 
-// Routes
-app.post('/auth/signup', async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    const existingUser = await usersCollection.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-    const newUser = { email, password, name: name || email.split('@')[0], createdAt: new Date() };
-    await usersCollection.insertOne(newUser);
-    res.json({ success: true, message: 'User created', email });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
+// ─── Start Server ─────────────────────────────────────────────────────────────
+
+const server = http.createServer(handleRequest);
+
+server.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`   (Zero-dependency mode - only Stripe SDK required)`);
 });
-
-app.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await usersCollection.findOne({ email, password });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    res.json({ success: true, user: { email: user.email, name: user.name } });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.get('/auth/status', (req, res) => {
-  res.json({ authenticated: false });
-});
-
-// Mock endpoints for frontend
-app.get('/api/user/subscription', (req, res) => {
-  res.json({ subscriptionStatus: 'free', planType: 'free' });
-});
-
-// GET /api/assets - Get all user assets (stickers, logos)
-app.get('/api/assets', async (req, res) => {
-  try {
-    const stickersCollection = db.collection('stickers');
-    const logosCollection = db.collection('logos');
-    
-    const stickers = await stickersCollection.find({}).toArray();
-    const logos = await logosCollection.find({}).toArray();
-    
-    console.log(`GET /api/assets: returning ${stickers.length} stickers, ${logos.length} logos`);
-    
-    res.json({ stickers, logos });
-  } catch (error) {
-    console.error('GET /api/assets error:', error);
-    res.json({ stickers: [], logos: [] });
-  }
-});
-
-// POST /api/assets/stickers - Save a sticker
-app.post('/api/assets/stickers', async (req, res) => {
-  try {
-    const { data, name, category } = req.body;
-    const stickersCollection = db.collection('stickers');
-    
-    const sticker = {
-      data,
-      name: name || 'Untitled Sticker',
-      category: category || 'custom',
-      userId: req.headers['x-user-email'] || 'anonymous',
-      createdAt: new Date()
-    };
-    
-    const result = await stickersCollection.insertOne(sticker);
-    
-    console.log(`Sticker saved: ${sticker.name} (ID: ${result.insertedId})`);
-    
-    res.json({ 
-      success: true, 
-      sticker: { ...sticker, _id: result.insertedId } 
-    });
-  } catch (error) {
-    console.error('Save sticker error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DELETE /api/assets/stickers/:id - Delete a sticker
-app.delete('/api/assets/stickers/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { ObjectId } = require('mongodb');
-    const stickersCollection = db.collection('stickers');
-    
-    const result = await stickersCollection.deleteOne({ _id: new ObjectId(id) });
-    
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Sticker not found' });
-    }
-    
-    console.log(`Sticker deleted: ${id}`);
-    res.json({ success: true, id });
-  } catch (error) {
-    console.error('Delete sticker error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /api/assets/logos - Save a logo
-app.post('/api/assets/logos', async (req, res) => {
-  try {
-    const { data, name } = req.body;
-    const logosCollection = db.collection('logos');
-    
-    const logo = {
-      data,
-      name: name || 'Untitled Logo',
-      userId: req.headers['x-user-email'] || 'anonymous',
-      createdAt: new Date()
-    };
-    
-    const result = await logosCollection.insertOne(logo);
-    
-    console.log(`Logo saved: ${logo.name} (ID: ${result.insertedId})`);
-    
-    res.json({ 
-      success: true, 
-      logo: { ...logo, _id: result.insertedId } 
-    });
-  } catch (error) {
-    console.error('Save logo error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DELETE /api/assets/logos/:id - Delete a logo
-app.delete('/api/assets/logos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { ObjectId } = require('mongodb');
-    const logosCollection = db.collection('logos');
-    
-    const result = await logosCollection.deleteOne({ _id: new ObjectId(id) });
-    
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Logo not found' });
-    }
-    
-    console.log(`Logo deleted: ${id}`);
-    res.json({ success: true, id });
-  } catch (error) {
-    console.error('Delete logo error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /track/:id - Redirect to the original destination URL
-app.get('/track/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    console.log(`Tracking request for QR code: ${id}`);
-    
-    // Look up the QR code in your database
-    const qrCodesCollection = db.collection('qrcodes');
-    const qrCode = await qrCodesCollection.findOne({ id });
-    
-    if (!qrCode) {
-      console.log(`QR code not found: ${id}`);
-      // For testing, redirect to a default URL if not found
-      return res.redirect('https://www.youtube.com');
-    }
-    
-    // Increment scan count
-    await qrCodesCollection.updateOne(
-      { id },
-      { $inc: { scan_count: 1 } }
-    );
-    
-    // Determine the destination URL - handle both 'destination' and 'data' field names
-    const destination = qrCode.destination || qrCode.data;
-    console.log(`Redirecting to: ${destination}`);
-    return res.redirect(destination);
-  } catch (error) {
-    console.error('Tracking error:', error);
-    return res.redirect('https://www.youtube.com');
-  }
-});
-
-// GET /api/qrcodes/:id - Get QR code destination
-app.get('/api/qrcodes/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const qrCodesCollection = db.collection('qrcodes');
-    const qrCode = await qrCodesCollection.findOne({ id });
-    if (!qrCode) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-    res.json({ destination: qrCode.destination || qrCode.data });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /api/qrcodes/:id/increment - Increment scan count
-app.post('/api/qrcodes/:id/increment', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const qrCodesCollection = db.collection('qrcodes');
-    await qrCodesCollection.updateOne(
-      { id },
-      { $inc: { scan_count: 1 } }
-    );
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /api/scan/log - Log scan analytics
-app.post('/api/scan/log', async (req, res) => {
-  try {
-    const scanData = req.body;
-    const scansCollection = db.collection('scans');
-    
-    await scansCollection.insertOne({
-      ...scanData,
-      processedAt: new Date()
-    });
-    
-    console.log(`📊 Scan logged: ${scanData.qrCodeId} from ${scanData.country || 'unknown'}`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/analytics/:qrCodeId - Get analytics for a specific QR code
-app.get('/api/analytics/:qrCodeId', async (req, res) => {
-  try {
-    const { qrCodeId } = req.params;
-    const scansCollection = db.collection('scans');
-    
-    const scans = await scansCollection.find({ qrCodeId }).toArray();
-    
-    // Calculate summary statistics
-    const summary = {
-      totalScans: scans.length,
-      uniqueCountries: [...new Set(scans.map(s => s.country).filter(Boolean))],
-      devices: {
-        mobile: scans.filter(s => s.deviceType === 'mobile').length,
-        desktop: scans.filter(s => s.deviceType === 'desktop').length,
-        tablet: scans.filter(s => s.deviceType === 'tablet').length
-      },
-      browsers: {},
-      os: {},
-      scansByHour: {},
-      recentScans: scans.slice(-10).reverse()
-    };
-    
-    // Count browsers and OS
-    scans.forEach(scan => {
-      if (scan.browser) summary.browsers[scan.browser] = (summary.browsers[scan.browser] || 0) + 1;
-      if (scan.os) summary.os[scan.os] = (summary.os[scan.os] || 0) + 1;
-    });
-    
-    res.json({ summary, scans });
-  } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/analytics/:qrCodeId/timeline - Get scans over time
-app.get('/api/analytics/:qrCodeId/timeline', async (req, res) => {
-  try {
-    const { qrCodeId } = req.params;
-    const scansCollection = db.collection('scans');
-    
-    const scans = await scansCollection.find({ qrCodeId }).toArray();
-    
-    // Group scans by date
-    const timeline = {};
-    scans.forEach(scan => {
-      const date = new Date(scan.timestamp).toISOString().split('T')[0];
-      timeline[date] = (timeline[date] || 0) + 1;
-    });
-    
-    res.json({ timeline });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/analytics/:qrCodeId/summary - Get analytics summary for a QR code
-app.get('/api/analytics/:qrCodeId/summary', async (req, res) => {
-  try {
-    const { qrCodeId } = req.params;
-    const scansCollection = db.collection('scans');
-    
-    const scans = await scansCollection.find({ qrCodeId }).toArray();
-    
-    const summary = {
-      totalScans: scans.length,
-      byDevice: {},
-      byCountry: {},
-      byDate: {},
-      recentScans: scans.slice(-20).reverse()
-    };
-    
-    scans.forEach(scan => {
-      const device = scan.deviceType || 'unknown';
-      summary.byDevice[device] = (summary.byDevice[device] || 0) + 1;
-      
-      const country = scan.country || 'unknown';
-      summary.byCountry[country] = (summary.byCountry[country] || 0) + 1;
-      
-      const date = new Date(scan.timestamp).toISOString().split('T')[0];
-      summary.byDate[date] = (summary.byDate[date] || 0) + 1;
-    });
-    
-    res.json(summary);
-  } catch (error) {
-    console.error('Analytics summary error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /api/qrcodes - Save a new QR code
-app.post('/api/qrcodes', async (req, res) => {
-  try {
-    const { id, destination, qrCodeData } = req.body;
-    console.log(`Saving QR code: ${id} -> ${destination}`);
-    
-    const qrCodesCollection = db.collection('qrcodes');
-    
-    await qrCodesCollection.updateOne(
-      { id },
-      { 
-        $set: { 
-          id, 
-          destination, 
-          qrCodeData,
-          createdAt: new Date(),
-          scan_count: 0 
-        } 
-      },
-      { upsert: true }
-    );
-    
-    res.json({ success: true, id });
-  } catch (error) {
-    console.error('Save QR code error:', error);
-    res.status(500).json({ error: 'Failed to save QR code' });
-  }
-});
-
-// POST /api/assets/qrcodes - Save QR code to user's assets
-app.post('/api/assets/qrcodes', async (req, res) => {
-  try {
-    // Accept both naming conventions (frontend sends 'data'/'imageData', backend can use 'qrData'/'qrImageData')
-    const { qrCodeId, qrData, qrImageData, design, data, imageData, name } = req.body;
-    const finalId = qrCodeId || req.body.id;
-    const finalData = qrData || data || '';
-    const finalImageData = qrImageData || imageData || '';
-    const finalName = name || finalId || 'Untitled QR Code';
-    
-    console.log(`Saving QR code to user assets: ${finalId}`);
-    console.log(`Image data length: ${finalImageData?.length || 0}`);
-    console.log(`Image data starts with: ${finalImageData?.substring(0, 50)}`);
-    console.log(`Destination data: ${finalData?.substring(0, 50)}`);
-    
-    const qrCodesCollection = db.collection('qrcodes');
-    
-    await qrCodesCollection.updateOne(
-      { id: finalId },
-      { 
-        $set: { 
-          id: finalId,
-          name: finalName,
-          destination: finalData,
-          qrImageData: finalImageData,
-          design: design,
-          userId: req.headers['x-user-email'] || 'anonymous',
-          createdAt: new Date(),
-          scan_count: 0 
-        } 
-      },
-      { upsert: true }
-    );
-    
-    res.json({ success: true, id: finalId });
-  } catch (error) {
-    console.error('Save to assets error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/assets/qrcodes - Get user's QR codes
-app.get('/api/assets/qrcodes', async (req, res) => {
-  try {
-    const qrCodesCollection = db.collection('qrcodes');
-    const qrCodes = await qrCodesCollection.find({}).toArray();
-    
-    // Log what's being returned
-    console.log(`Returning ${qrCodes.length} QR codes`);
-    if (qrCodes.length > 0) {
-      console.log(`First QR code has image data: ${!!qrCodes[0].qrImageData}`);
-      console.log(`First QR code image data length: ${qrCodes[0].qrImageData?.length || 0}`);
-    }
-    
-    res.json({ qrCodes });
-  } catch (error) {
-    console.error('Get QR codes error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DELETE /api/assets/qrcodes/:id - Delete a QR code
-app.delete('/api/assets/qrcodes/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    console.log(`Deleting QR code: ${id}`);
-    
-    const qrCodesCollection = db.collection('qrcodes');
-    
-    const result = await qrCodesCollection.deleteOne({ id });
-    
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'QR code not found' });
-    }
-    
-    res.json({ success: true, id });
-  } catch (error) {
-    console.error('Delete error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DELETE /qrcodes/:id - Delete a QR code from standalone endpoint
-app.delete('/qrcodes/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    console.log(`Deleting QR code from standalone: ${id}`);
-    
-    const qrCodesCollection = db.collection('qrcodes');
-    
-    const result = await qrCodesCollection.deleteOne({ id });
-    
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'QR code not found' });
-    }
-    
-    res.json({ success: true, id });
-  } catch (error) {
-    console.error('Delete error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Connect both MongoDB drivers
-async function startServer() {
-  await connectDB();
-  await connectMongoose();
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}
-
-startServer();
