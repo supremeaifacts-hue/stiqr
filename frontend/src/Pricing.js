@@ -48,7 +48,7 @@ const Pricing = ({ onViewDashboard, onBack }) => {
         },
         body: JSON.stringify({
           priceId,
-          userId: user?.id || user?._id || '',
+          userId: user?._id || user?.id || user?.email || '',
           userEmail: user?.email || ''
         })
       });

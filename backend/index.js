@@ -97,24 +97,21 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'priceId is required' });
       }
 
+      // Use email as fallback if userId is empty
+      const clientReferenceId = userId && userId !== '' ? userId : userEmail;
+
+      if (!clientReferenceId) {
+        return sendJSON(res, 400, { error: 'User identification required' });
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: 'subscription',
         success_url: 'https://www.stiqr.top/dashboard?session_id={CHECKOUT_SESSION_ID}',
         cancel_url: 'https://www.stiqr.top/pricing',
-        client_reference_id: userId,
+        client_reference_id: clientReferenceId,
         customer_email: userEmail,
-        metadata: {
-          userId: userId || '',
-          plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
-        },
-        subscription_data: {
-          metadata: {
-            userId: userId || '',
-            plan: priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'ultra'
-          }
-        }
       });
 
       console.log('✅ Checkout session created:', session.id);
