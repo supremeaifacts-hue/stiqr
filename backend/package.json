@@ -8,6 +8,7 @@
     "node": "20.x"
   },
   "dependencies": {
-    "stripe": "^14.0.0"
+    "stripe": "^14.0.0",
+    "jsonwebtoken": "^9.0.0"
   }
 }

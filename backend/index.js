@@ -1,11 +1,13 @@
 const http = require('http');
 const { randomUUID } = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const jwt = require('jsonwebtoken');
 
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'stiqr-jwt-secret-dev';
 
 // ─── In-Memory Data Stores ────────────────────────────────────────────────────
-const users = {};           // email -> { email, password, name, createdAt }
+const users = {};           // email -> { email, password, name, createdAt, subscription }
 const qrCodes = {};         // id -> { id, destination, qrCodeData, qrImageData, design, name, userId, scan_count, createdAt }
 const stickers = {};        // id -> { id, data, name, category, userId, createdAt }
 const logos = {};           // id -> { id, data, name, userId, createdAt }
@@ -52,7 +54,6 @@ function parseURL(req) {
 }
 
 function matchPath(pattern, pathname) {
-  // Convert pattern like /api/assets/stickers/:id to regex
   const regexStr = pattern.replace(/:([^/]+)/g, '([^/]+)');
   const regex = new RegExp(`^${regexStr}$`);
   const match = pathname.match(regex);
@@ -67,6 +68,20 @@ function matchPath(pattern, pathname) {
   return null;
 }
 
+function getUserFromAuthHeader(req) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  const token = authHeader.slice(7);
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (e) {
+    return null;
+  }
+}
+
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 async function handleRequest(req, res) {
@@ -79,7 +94,7 @@ async function handleRequest(req, res) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-user-email',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-user-email, Stripe-Signature',
       'Access-Control-Max-Age': '86400',
     });
     return res.end();
@@ -88,6 +103,116 @@ async function handleRequest(req, res) {
   console.log(`${method} ${pathname}`);
 
   try {
+    // ── Stripe Webhook ───────────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/webhook') {
+      // Read raw body for Stripe signature verification
+      const rawBody = await new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => resolve(body));
+        req.on('error', reject);
+      });
+
+      const sig = req.headers['stripe-signature'];
+      let event;
+
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      } catch (err) {
+        console.error('❌ Webhook signature verification failed:', err.message);
+        return sendJSON(res, 400, { error: `Webhook Error: ${err.message}` });
+      }
+
+      console.log(`✅ Webhook received: ${event.type}`);
+
+      // Handle the checkout.session.completed event
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const clientReferenceId = session.client_reference_id;
+        const customerEmail = session.customer_email || clientReferenceId;
+
+        // Determine plan type from the subscription
+        let planType = 'pro';
+        if (session.metadata && session.metadata.plan) {
+          planType = session.metadata.plan;
+        } else {
+          // Try to determine from price
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+          if (lineItems.data.length > 0) {
+            const priceId = lineItems.data[0].price.id;
+            if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) {
+              planType = 'ultra';
+            }
+          }
+        }
+
+        // Find the user by email or client_reference_id
+        const userEmail = customerEmail || clientReferenceId;
+        let user = users[userEmail];
+
+        // If user not found by email, try to find by client_reference_id
+        if (!user && clientReferenceId && clientReferenceId !== userEmail) {
+          user = users[clientReferenceId];
+        }
+
+        if (user) {
+          user.subscription = {
+            planType: planType,
+            subscriptionStatus: 'active',
+            stripeSubscriptionId: session.subscription,
+            stripeSessionId: session.id,
+            subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          console.log(`✅ Subscription activated for ${user.email}: ${planType}`);
+        } else {
+          // Create a user record if they don't exist yet (e.g., they signed up via Stripe)
+          const email = customerEmail || clientReferenceId;
+          if (email) {
+            users[email] = {
+              email,
+              name: email.split('@')[0],
+              password: '',
+              createdAt: new Date().toISOString(),
+              subscription: {
+                planType: planType,
+                subscriptionStatus: 'active',
+                stripeSubscriptionId: session.subscription,
+                stripeSessionId: session.id,
+                subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                updatedAt: new Date().toISOString()
+              }
+            };
+            console.log(`✅ New user created via webhook: ${email} with ${planType} plan`);
+          }
+        }
+      }
+
+      // Handle subscription updates
+      if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object;
+        const isDeleted = event.type === 'customer.subscription.deleted';
+
+        // Find the user by stripe subscription ID
+        for (const email of Object.keys(users)) {
+          if (users[email].subscription?.stripeSubscriptionId === subscription.id) {
+            if (isDeleted) {
+              users[email].subscription.subscriptionStatus = 'canceled';
+              users[email].subscription.planType = 'free';
+              console.log(`❌ Subscription canceled for ${email}`);
+            } else {
+              users[email].subscription.subscriptionStatus = subscription.status === 'active' ? 'active' : 'incomplete';
+              users[email].subscription.subscriptionEndDate = new Date(subscription.current_period_end * 1000).toISOString();
+              console.log(`🔄 Subscription updated for ${email}: ${subscription.status}`);
+            }
+            break;
+          }
+        }
+      }
+
+      return sendJSON(res, 200, { received: true });
+    }
+
     // ── Stripe Checkout Session ──────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/create-checkout-session') {
       const body = await parseBody(req);
@@ -104,6 +229,12 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'User identification required' });
       }
 
+      // Determine plan type from price ID
+      let planType = 'pro';
+      if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) {
+        planType = 'ultra';
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
@@ -112,6 +243,9 @@ async function handleRequest(req, res) {
         cancel_url: 'https://www.stiqr.top/pricing',
         client_reference_id: clientReferenceId,
         customer_email: userEmail,
+        metadata: {
+          plan: planType
+        }
       });
 
       console.log('✅ Checkout session created:', session.id);
@@ -175,7 +309,31 @@ async function handleRequest(req, res) {
 
     // ── User Subscription ────────────────────────────────────────────────────
     if (method === 'GET' && pathname === '/api/user/subscription') {
-      return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
+      // Try to get user from JWT token
+      const decoded = getUserFromAuthHeader(req);
+      let userEmail = decoded?.email || null;
+
+      // Fallback to x-user-email header
+      if (!userEmail) {
+        userEmail = req.headers['x-user-email'] || null;
+      }
+
+      if (!userEmail) {
+        return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
+      }
+
+      const user = users[userEmail];
+
+      if (!user || !user.subscription) {
+        return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
+      }
+
+      return sendJSON(res, 200, {
+        subscriptionStatus: user.subscription.subscriptionStatus || 'free',
+        planType: user.subscription.planType || 'free',
+        subscriptionEndDate: user.subscription.subscriptionEndDate || null,
+        updatedAt: user.subscription.updatedAt || null
+      });
     }
 
     // ── QR Codes: Save standalone ────────────────────────────────────────────
@@ -476,5 +634,5 @@ const server = http.createServer(handleRequest);
 
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`   (Zero-dependency mode - only Stripe SDK required)`);
+  console.log(`   (Stripe webhook + subscription handling enabled)`);
 });
