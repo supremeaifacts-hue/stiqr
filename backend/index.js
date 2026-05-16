@@ -125,11 +125,23 @@ async function handleRequest(req, res) {
 
       console.log(`✅ Webhook received: ${event.type}`);
 
+      // Helper: find user by email (case-insensitive)
+      function findUserByEmail(email) {
+        if (!email) return null;
+        const lowerEmail = email.toLowerCase();
+        for (const key of Object.keys(users)) {
+          if (key.toLowerCase() === lowerEmail) {
+            return users[key];
+          }
+        }
+        return null;
+      }
+
       // Handle the checkout.session.completed event
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const clientReferenceId = session.client_reference_id;
-        const customerEmail = session.customer_email || clientReferenceId;
+        const customerEmail = session.customer_email;
 
         // Determine plan type from the subscription
         let planType = 'pro';
@@ -137,41 +149,42 @@ async function handleRequest(req, res) {
           planType = session.metadata.plan;
         } else {
           // Try to determine from price
-          const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-          if (lineItems.data.length > 0) {
-            const priceId = lineItems.data[0].price.id;
-            if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) {
-              planType = 'ultra';
+          try {
+            const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+            if (lineItems.data.length > 0) {
+              const priceId = lineItems.data[0].price.id;
+              if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) {
+                planType = 'ultra';
+              }
             }
+          } catch (e) {
+            console.log('⚠️ Could not fetch line items:', e.message);
           }
         }
 
-        // Find the user by email or client_reference_id
+        // Find the user by email (case-insensitive) first
         const userEmail = customerEmail || clientReferenceId;
-        let user = users[userEmail];
-
-        // If user not found by email, try to find by client_reference_id
-        if (!user && clientReferenceId && clientReferenceId !== userEmail) {
-          user = users[clientReferenceId];
-        }
+        let user = findUserByEmail(userEmail);
 
         if (user) {
+          // Update existing user - DON'T create new one
           user.subscription = {
             planType: planType,
             subscriptionStatus: 'active',
             stripeSubscriptionId: session.subscription,
             stripeSessionId: session.id,
+            stripeCustomerId: session.customer,
             subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             updatedAt: new Date().toISOString()
           };
-          console.log(`✅ Subscription activated for ${user.email}: ${planType}`);
+          console.log(`✅ Updated existing user: ${user.email} -> ${planType}`);
         } else {
-          // Create a user record if they don't exist yet (e.g., they signed up via Stripe)
-          const email = customerEmail || clientReferenceId;
-          if (email) {
-            users[email] = {
-              email,
-              name: email.split('@')[0],
+          // Only create new user if absolutely necessary
+          console.log(`⚠️ User not found: ${userEmail}, creating new user`);
+          if (userEmail) {
+            users[userEmail] = {
+              email: userEmail,
+              name: userEmail.split('@')[0],
               password: '',
               createdAt: new Date().toISOString(),
               subscription: {
@@ -179,11 +192,12 @@ async function handleRequest(req, res) {
                 subscriptionStatus: 'active',
                 stripeSubscriptionId: session.subscription,
                 stripeSessionId: session.id,
+                stripeCustomerId: session.customer,
                 subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 updatedAt: new Date().toISOString()
               }
             };
-            console.log(`✅ New user created via webhook: ${email} with ${planType} plan`);
+            console.log(`✅ New user created via webhook: ${userEmail} with ${planType} plan`);
           }
         }
       }
@@ -202,7 +216,11 @@ async function handleRequest(req, res) {
               console.log(`❌ Subscription canceled for ${email}`);
             } else {
               users[email].subscription.subscriptionStatus = subscription.status === 'active' ? 'active' : 'incomplete';
-              users[email].subscription.subscriptionEndDate = new Date(subscription.current_period_end * 1000).toISOString();
+              // Fix: validate current_period_end before using it
+              const endDate = subscription.current_period_end
+                ? new Date(subscription.current_period_end * 1000).toISOString()
+                : null;
+              users[email].subscription.subscriptionEndDate = endDate;
               console.log(`🔄 Subscription updated for ${email}: ${subscription.status}`);
             }
             break;
