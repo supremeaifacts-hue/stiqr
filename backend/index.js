@@ -2,12 +2,34 @@ const http = require('http');
 const { randomUUID } = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const jwt = require('jsonwebtoken');
+const { MongoClient } = require('mongodb');
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'stiqr-jwt-secret-dev';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/stiqr';
 
-// ─── In-Memory Data Stores ────────────────────────────────────────────────────
-const users = {};           // email -> { email, password, name, createdAt, subscription }
+// ─── MongoDB Connection ───────────────────────────────────────────────────────
+let db = null;
+let usersCollection = null;
+
+async function connectToMongoDB() {
+  try {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    // ⚠️ IMPORTANT: Explicitly use the 'stiqr' database
+    db = client.db('stiqr');
+    usersCollection = db.collection('users');
+    console.log('✅ Connected to MongoDB database: stiqr');
+    return client;
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    console.warn('⚠️ Running with in-memory fallback (data will not persist)');
+    return null;
+  }
+}
+
+// ─── In-Memory Data Stores (fallback) ─────────────────────────────────────────
+const memUsers = {};        // email -> { email, password, name, createdAt, subscription }
 const qrCodes = {};         // id -> { id, destination, qrCodeData, qrImageData, design, name, userId, scan_count, createdAt }
 const stickers = {};        // id -> { id, data, name, category, userId, createdAt }
 const logos = {};           // id -> { id, data, name, userId, createdAt }
@@ -125,79 +147,63 @@ async function handleRequest(req, res) {
 
       console.log(`✅ Webhook received: ${event.type}`);
 
-      // Helper: find user by email (case-insensitive)
-      function findUserByEmail(email) {
-        if (!email) return null;
-        const lowerEmail = email.toLowerCase();
-        for (const key of Object.keys(users)) {
-          if (key.toLowerCase() === lowerEmail) {
-            return users[key];
-          }
-        }
-        return null;
-      }
-
       // Handle the checkout.session.completed event
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const clientReferenceId = session.client_reference_id;
         const customerEmail = session.customer_email;
 
-        // Determine plan type from the subscription
+        // Determine plan type from metadata
         let planType = 'pro';
         if (session.metadata && session.metadata.plan) {
           planType = session.metadata.plan;
-        } else {
-          // Try to determine from price
-          try {
-            const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-            if (lineItems.data.length > 0) {
-              const priceId = lineItems.data[0].price.id;
-              if (priceId === process.env.STRIPE_ULTRA_PRICE_ID) {
-                planType = 'ultra';
-              }
-            }
-          } catch (e) {
-            console.log('⚠️ Could not fetch line items:', e.message);
-          }
         }
 
-        // Find the user by email (case-insensitive) first
         const userEmail = customerEmail || clientReferenceId;
-        let user = findUserByEmail(userEmail);
 
-        if (user) {
-          // Update existing user - DON'T create new one
-          user.subscription = {
-            planType: planType,
-            subscriptionStatus: 'active',
-            stripeSubscriptionId: session.subscription,
-            stripeSessionId: session.id,
-            stripeCustomerId: session.customer,
-            subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          console.log(`✅ Updated existing user: ${user.email} -> ${planType}`);
-        } else {
-          // Only create new user if absolutely necessary
-          console.log(`⚠️ User not found: ${userEmail}, creating new user`);
-          if (userEmail) {
-            users[userEmail] = {
-              email: userEmail,
-              name: userEmail.split('@')[0],
-              password: '',
-              createdAt: new Date().toISOString(),
-              subscription: {
-                planType: planType,
+        if (userEmail && usersCollection) {
+          // Find user by email (case-insensitive) in the stiqr database
+          const user = await usersCollection.findOne({
+            email: { $regex: new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+          });
+
+          if (user) {
+            // Update existing user in MongoDB
+            await usersCollection.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  subscriptionStatus: 'active',
+                  planType: planType,
+                  stripeSubscriptionId: session.subscription,
+                  stripeSessionId: session.id,
+                  stripeCustomerId: session.customer,
+                  subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  updatedAt: new Date().toISOString()
+                }
+              }
+            );
+            console.log(`✅ Updated existing user in stiqr.users: ${user.email} -> ${planType}`);
+          } else {
+            console.log(`⚠️ User not found in stiqr.users: ${userEmail}`);
+          }
+        } else if (userEmail) {
+          // Fallback: update in-memory store
+          const lowerEmail = userEmail.toLowerCase();
+          for (const key of Object.keys(memUsers)) {
+            if (key.toLowerCase() === lowerEmail) {
+              memUsers[key].subscription = {
+                planType,
                 subscriptionStatus: 'active',
                 stripeSubscriptionId: session.subscription,
                 stripeSessionId: session.id,
                 stripeCustomerId: session.customer,
                 subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 updatedAt: new Date().toISOString()
-              }
-            };
-            console.log(`✅ New user created via webhook: ${userEmail} with ${planType} plan`);
+              };
+              console.log(`✅ Updated in-memory user: ${key} -> ${planType}`);
+              break;
+            }
           }
         }
       }
@@ -207,23 +213,58 @@ async function handleRequest(req, res) {
         const subscription = event.data.object;
         const isDeleted = event.type === 'customer.subscription.deleted';
 
-        // Find the user by stripe subscription ID
-        for (const email of Object.keys(users)) {
-          if (users[email].subscription?.stripeSubscriptionId === subscription.id) {
+        if (usersCollection) {
+          // Find user by stripe subscription ID in MongoDB
+          const user = await usersCollection.findOne({
+            stripeSubscriptionId: subscription.id
+          });
+
+          if (user) {
             if (isDeleted) {
-              users[email].subscription.subscriptionStatus = 'canceled';
-              users[email].subscription.planType = 'free';
-              console.log(`❌ Subscription canceled for ${email}`);
+              await usersCollection.updateOne(
+                { _id: user._id },
+                {
+                  $set: {
+                    subscriptionStatus: 'canceled',
+                    planType: 'free',
+                    updatedAt: new Date().toISOString()
+                  }
+                }
+              );
+              console.log(`❌ Subscription canceled for ${user.email}`);
             } else {
-              users[email].subscription.subscriptionStatus = subscription.status === 'active' ? 'active' : 'incomplete';
-              // Fix: validate current_period_end before using it
               const endDate = subscription.current_period_end
                 ? new Date(subscription.current_period_end * 1000).toISOString()
                 : null;
-              users[email].subscription.subscriptionEndDate = endDate;
-              console.log(`🔄 Subscription updated for ${email}: ${subscription.status}`);
+              await usersCollection.updateOne(
+                { _id: user._id },
+                {
+                  $set: {
+                    subscriptionStatus: subscription.status === 'active' ? 'active' : 'incomplete',
+                    subscriptionEndDate: endDate,
+                    updatedAt: new Date().toISOString()
+                  }
+                }
+              );
+              console.log(`🔄 Subscription updated for ${user.email}: ${subscription.status}`);
             }
-            break;
+          }
+        } else {
+          // Fallback: update in-memory store
+          for (const email of Object.keys(memUsers)) {
+            if (memUsers[email].subscription?.stripeSubscriptionId === subscription.id) {
+              if (isDeleted) {
+                memUsers[email].subscription.subscriptionStatus = 'canceled';
+                memUsers[email].subscription.planType = 'free';
+              } else {
+                memUsers[email].subscription.subscriptionStatus = subscription.status === 'active' ? 'active' : 'incomplete';
+                const endDate = subscription.current_period_end
+                  ? new Date(subscription.current_period_end * 1000).toISOString()
+                  : null;
+                memUsers[email].subscription.subscriptionEndDate = endDate;
+              }
+              break;
+            }
           }
         }
       }
@@ -279,16 +320,31 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Email and password are required' });
       }
 
-      if (users[email]) {
-        return sendJSON(res, 400, { error: 'User already exists' });
+      if (usersCollection) {
+        // Check if user exists in MongoDB
+        const existing = await usersCollection.findOne({ email: email.toLowerCase() });
+        if (existing) {
+          return sendJSON(res, 400, { error: 'User already exists' });
+        }
+        // Store in MongoDB
+        await usersCollection.insertOne({
+          email: email.toLowerCase(),
+          password,
+          name: name || email.split('@')[0],
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        // Fallback to in-memory
+        if (memUsers[email]) {
+          return sendJSON(res, 400, { error: 'User already exists' });
+        }
+        memUsers[email] = {
+          email,
+          password,
+          name: name || email.split('@')[0],
+          createdAt: new Date().toISOString()
+        };
       }
-
-      users[email] = {
-        email,
-        password,
-        name: name || email.split('@')[0],
-        createdAt: new Date().toISOString()
-      };
 
       console.log(`✅ User created: ${email}`);
       return sendJSON(res, 200, { success: true, message: 'User created', email });
@@ -299,7 +355,14 @@ async function handleRequest(req, res) {
       const body = await parseBody(req);
       const { email, password } = body;
 
-      const user = users[email];
+      let user = null;
+
+      if (usersCollection) {
+        user = await usersCollection.findOne({ email: email.toLowerCase() });
+      } else {
+        user = memUsers[email];
+      }
+
       if (!user || user.password !== password) {
         return sendJSON(res, 401, { error: 'Invalid credentials' });
       }
@@ -340,18 +403,34 @@ async function handleRequest(req, res) {
         return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
       }
 
-      const user = users[userEmail];
+      let subscription = null;
 
-      if (!user || !user.subscription) {
+      if (usersCollection) {
+        const user = await usersCollection.findOne(
+          { email: { $regex: new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+          { projection: { subscriptionStatus: 1, planType: 1, subscriptionEndDate: 1, updatedAt: 1 } }
+        );
+        if (user) {
+          subscription = {
+            subscriptionStatus: user.subscriptionStatus || 'free',
+            planType: user.planType || 'free',
+            subscriptionEndDate: user.subscriptionEndDate || null,
+            updatedAt: user.updatedAt || null
+          };
+        }
+      } else {
+        // Fallback to in-memory
+        const user = memUsers[userEmail];
+        if (user && user.subscription) {
+          subscription = user.subscription;
+        }
+      }
+
+      if (!subscription) {
         return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
       }
 
-      return sendJSON(res, 200, {
-        subscriptionStatus: user.subscription.subscriptionStatus || 'free',
-        planType: user.subscription.planType || 'free',
-        subscriptionEndDate: user.subscription.subscriptionEndDate || null,
-        updatedAt: user.subscription.updatedAt || null
-      });
+      return sendJSON(res, 200, subscription);
     }
 
     // ── QR Codes: Save standalone ────────────────────────────────────────────
@@ -648,9 +727,15 @@ async function handleRequest(req, res) {
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 
-const server = http.createServer(handleRequest);
+async function startServer() {
+  await connectToMongoDB();
 
-server.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`   (Stripe webhook + subscription handling enabled)`);
-});
+  const server = http.createServer(handleRequest);
+
+  server.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`   (MongoDB + Stripe webhook + subscription handling enabled)`);
+  });
+}
+
+startServer();
