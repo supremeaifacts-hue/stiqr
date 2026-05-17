@@ -60,6 +60,12 @@ const LoginModal = ({ onClose, onSignUpClick, onLoginSuccess }) => {
         // Store user data (for persistence on page refresh)
         localStorage.setItem('user', JSON.stringify(data.user));
         
+        // Store JWT token if provided (used by Dashboard/TopBar for subscription checks)
+        if (data.token) {
+          localStorage.setItem('jwtToken', data.token);
+          console.log('✅ JWT token stored:', data.token.substring(0, 30) + '...');
+        }
+        
         // Dispatch a custom event that any component can listen to
         window.dispatchEvent(new CustomEvent('userLoggedIn', { 
           detail: data.user 

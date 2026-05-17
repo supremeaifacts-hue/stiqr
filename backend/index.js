@@ -367,9 +367,26 @@ async function handleRequest(req, res) {
         return sendJSON(res, 401, { error: 'Invalid credentials' });
       }
 
+      // Generate JWT token for the frontend to use
+      const token = jwt.sign(
+        {
+          id: user._id ? user._id.toString() : user.email,
+          email: user.email
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      console.log(`✅ Login successful for ${user.email}, token generated`);
+
       return sendJSON(res, 200, {
         success: true,
-        user: { email: user.email, name: user.name }
+        user: {
+          id: user._id ? user._id.toString() : null,
+          email: user.email,
+          name: user.name || user.email.split('@')[0]
+        },
+        token: token  // ← CRITICAL: frontend stores this as jwtToken
       });
     }
 
@@ -390,6 +407,11 @@ async function handleRequest(req, res) {
 
     // ── User Subscription ────────────────────────────────────────────────────
     if (method === 'GET' && pathname === '/api/user/subscription') {
+      // Debug: log all incoming headers
+      console.log('📨 Headers received:', JSON.stringify(req.headers));
+      console.log('🔑 Authorization header:', req.headers.authorization ? req.headers.authorization.substring(0, 50) + '...' : 'NOT SET');
+      console.log('📧 User email header:', req.headers['x-user-email'] || 'NOT SET');
+
       // Get user from JWT token
       const decoded = getUserFromAuthHeader(req);
       let userId = decoded?.id || decoded?.userId || null;
@@ -400,7 +422,7 @@ async function handleRequest(req, res) {
         userEmail = req.headers['x-user-email'] || null;
       }
 
-      console.log(`📊 Subscription check: userId=${userId}, email=${userEmail}`);
+      console.log(`📊 Subscription check: userId=${userId}, email=${userEmail}, decoded=${JSON.stringify(decoded)}`);
 
       let user = null;
 
