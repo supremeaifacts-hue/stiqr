@@ -2,7 +2,7 @@ const http = require('http');
 const { randomUUID } = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const jwt = require('jsonwebtoken');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'stiqr-jwt-secret-dev';
@@ -390,8 +390,9 @@ async function handleRequest(req, res) {
 
     // ── User Subscription ────────────────────────────────────────────────────
     if (method === 'GET' && pathname === '/api/user/subscription') {
-      // Try to get user from JWT token
+      // Get user from JWT token
       const decoded = getUserFromAuthHeader(req);
+      let userId = decoded?.id || decoded?.userId || null;
       let userEmail = decoded?.email || null;
 
       // Fallback to x-user-email header
@@ -399,38 +400,46 @@ async function handleRequest(req, res) {
         userEmail = req.headers['x-user-email'] || null;
       }
 
-      if (!userEmail) {
-        return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
-      }
+      console.log(`📊 Subscription check: userId=${userId}, email=${userEmail}`);
 
-      let subscription = null;
+      let user = null;
 
       if (usersCollection) {
-        const user = await usersCollection.findOne(
-          { email: { $regex: new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
-          { projection: { subscriptionStatus: 1, planType: 1, subscriptionEndDate: 1, updatedAt: 1 } }
-        );
+        // Try to find by MongoDB _id first (from JWT token)
+        if (userId) {
+          try {
+            user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+          } catch (e) {
+            console.log('⚠️ Invalid ObjectId format:', userId);
+          }
+        }
+
+        // Fallback to email lookup
+        if (!user && userEmail) {
+          user = await usersCollection.findOne(
+            { email: { $regex: new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
+          );
+        }
+
         if (user) {
-          subscription = {
+          console.log(`📊 Subscription for ${user.email}: status=${user.subscriptionStatus}, plan=${user.planType}`);
+          return sendJSON(res, 200, {
             subscriptionStatus: user.subscriptionStatus || 'free',
             planType: user.planType || 'free',
             subscriptionEndDate: user.subscriptionEndDate || null,
             updatedAt: user.updatedAt || null
-          };
+          });
         }
       } else {
         // Fallback to in-memory
         const user = memUsers[userEmail];
         if (user && user.subscription) {
-          subscription = user.subscription;
+          return sendJSON(res, 200, user.subscription);
         }
       }
 
-      if (!subscription) {
-        return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
-      }
-
-      return sendJSON(res, 200, subscription);
+      console.log(`⚠️ User not found for subscription check`);
+      return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
     }
 
     // ── QR Codes: Save standalone ────────────────────────────────────────────
