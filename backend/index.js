@@ -594,9 +594,16 @@ async function handleRequest(req, res) {
       // CRITICAL: Update KV cache for fast redirects
       // The worker checks KV first for redirects, so we must keep KV in sync.
       // This makes an internal request to the Worker's KV update endpoint.
+      // WORKER_URL env var should point to the worker base URL (e.g. https://stiqr.supreme-ai-facts.workers.dev)
+      // If WORKER_URL already includes /api/kv/update, use it directly.
       if (updates.destination) {
         const workerUrl = process.env.WORKER_URL || 'https://stiqr.your-subdomain.workers.dev';
-        fetch(`${workerUrl}/api/kv/update`, {
+        // Remove trailing slash if present
+        const baseUrl = workerUrl.replace(/\/+$/, '');
+        // If WORKER_URL already contains the full path, use it; otherwise append /api/kv/update
+        const kvUrl = baseUrl.includes('/api/kv/update') ? baseUrl : `${baseUrl}/api/kv/update`;
+        console.log(`🔄 Updating KV cache: POST ${kvUrl}`);
+        fetch(kvUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ key: id, value: updates.destination }),
