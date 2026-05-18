@@ -558,6 +558,41 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, { destination: qrCode.destination || qrCode.qrCodeData });
     }
 
+    // ── QR Codes: Update metadata (PUT) ─────────────────────────────────────
+    const updateQrMatch = matchPath('/api/qrcodes/:id', pathname);
+    if (method === 'PUT' && updateQrMatch) {
+      const { id } = updateQrMatch;
+      const body = await parseBody(req);
+
+      if (!qrCodes[id]) {
+        return sendJSON(res, 404, { error: 'QR code not found' });
+      }
+
+      // Update ONLY metadata fields - preserve design/appearance
+      const updates = {};
+      if (body.destination !== undefined) updates.destination = body.destination;
+      if (body.name !== undefined) updates.name = body.name;
+      if (body.category !== undefined) updates.category = body.category;
+      if (body.tags !== undefined) updates.tags = body.tags;
+      if (body.notes !== undefined) updates.notes = body.notes;
+      updates.updatedAt = new Date().toISOString();
+
+      // Merge updates into existing QR code (preserve design, qrImageData, etc.)
+      qrCodes[id] = {
+        ...qrCodes[id],
+        ...updates,
+        // Explicitly preserve these fields
+        qrImageData: qrCodes[id].qrImageData,
+        design: qrCodes[id].design,
+        qrCodeData: qrCodes[id].qrCodeData,
+        scan_count: qrCodes[id].scan_count,
+        createdAt: qrCodes[id].createdAt,
+      };
+
+      console.log(`✅ QR code metadata updated: ${id}`, updates);
+      return sendJSON(res, 200, { success: true, id, updates });
+    }
+
     // ── QR Codes: Increment scan count ───────────────────────────────────────
     const incrementMatch = matchPath('/api/qrcodes/:id/increment', pathname);
     if (method === 'POST' && incrementMatch) {

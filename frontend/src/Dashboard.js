@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 import TopBar from './TopBar';
 import StatisticsModal from './StatisticsModal';
+import EditMetadataModal from './EditMetadataModal';
 
 const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
   const { user, isAuthenticated, logout, demoLogin, getUserAssets, saveSticker, saveLogo, deleteSticker, deleteLogo, deleteQrCode, saveQrCode, canCreateDynamicQrCodes, getTrialDaysLeft, isProUser } = useAuth();
@@ -9,6 +10,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [selectedQrCodeForStats, setSelectedQrCodeForStats] = useState(null);
+  const [selectedQrCodeForEditMetadata, setSelectedQrCodeForEditMetadata] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(false);
   
@@ -748,6 +750,29 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                               <span>📊</span>
                               Statistics
                             </button>
+                            <button
+                              onClick={() => {
+                                console.log('Edit Metadata clicked for:', qrCode.name);
+                                setOpenDropdownId(null);
+                                setSelectedQrCodeForEditMetadata(qrCode);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '8px 16px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#FF00FF',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                              }}
+                            >
+                              <span>🔗</span>
+                              Edit Metadata (for Dynamic QR codes)
+                            </button>
                             <div style={{
                               height: '1px',
                               background: 'rgba(255, 255, 255, 0.1)',
@@ -1248,6 +1273,24 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
         <StatisticsModal
           qrCode={selectedQrCodeForStats}
           onClose={() => setSelectedQrCodeForStats(null)}
+        />
+      )}
+
+      {/* Edit Metadata Modal */}
+      {selectedQrCodeForEditMetadata && (
+        <EditMetadataModal
+          qrCode={selectedQrCodeForEditMetadata}
+          onClose={() => setSelectedQrCodeForEditMetadata(null)}
+          onSave={(updatedQrCode) => {
+            // Update the QR code in the local state
+            const updatedQrCodes = (userAssets?.qrCodes || []).map(qr => 
+              qr.id === updatedQrCode.id ? updatedQrCode : qr
+            );
+            setUserAssets({
+              ...userAssets,
+              qrCodes: updatedQrCodes
+            });
+          }}
         />
       )}
     </div>
