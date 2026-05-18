@@ -590,6 +590,27 @@ async function handleRequest(req, res) {
       };
 
       console.log(`✅ QR code metadata updated: ${id}`, updates);
+
+      // CRITICAL: Update KV cache for fast redirects
+      // The worker checks KV first for redirects, so we must keep KV in sync.
+      // This makes an internal request to the Worker's KV update endpoint.
+      if (updates.destination) {
+        const workerUrl = process.env.WORKER_URL || 'https://stiqr.your-subdomain.workers.dev';
+        fetch(`${workerUrl}/api/kv/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: id, value: updates.destination }),
+        }).then(kvRes => {
+          if (kvRes.ok) {
+            console.log(`✅ KV cache updated for ${id} -> ${updates.destination}`);
+          } else {
+            console.warn(`⚠️ KV cache update failed for ${id}: ${kvRes.status}`);
+          }
+        }).catch(kvErr => {
+          console.warn(`⚠️ KV cache update error for ${id}:`, kvErr.message);
+        });
+      }
+
       return sendJSON(res, 200, { success: true, id, updates });
     }
 
