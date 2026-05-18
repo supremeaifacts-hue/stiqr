@@ -581,8 +581,8 @@ export const AuthProvider = ({ children }) => {
     // Demo users can always create dynamic QR codes (for testing)
     if (user.isDemo) return true;
     
-    // Check if user has pro plan
-    if (user.subscription?.plan === 'pro' || user.subscription?.plan === 'enterprise') {
+    // Check if user has pro/ultra/enterprise plan
+    if (user.subscription?.plan === 'pro' || user.subscription?.plan === 'ultra' || user.subscription?.plan === 'enterprise') {
       return true;
     }
     
@@ -609,7 +609,7 @@ export const AuthProvider = ({ children }) => {
 
   const isProUser = () => {
     if (!user) return false;
-    return user.subscription?.plan === 'pro' || user.subscription?.plan === 'enterprise';
+    return user.subscription?.plan === 'pro' || user.subscription?.plan === 'ultra' || user.subscription?.plan === 'enterprise';
   };
 
   const value = {

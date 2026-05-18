@@ -1047,7 +1047,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           QR Editor
         </h1>
 
-        {/* Type selector */}
+        {/* Step 1: Choose the Type */}
         <div style={{
           background: 'rgba(255,255,255,0.1)',
           border: '1px solid rgba(0,217,255,0.2)',
@@ -1055,6 +1055,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           padding: '16px',
           marginBottom: '30px',
         }}>
+          <p style={{ margin: '0 0 14px 0', fontSize: '14px', color: '#fff', fontWeight: '700', textAlign: 'left' }}>
+            1. Choose the Type:
+          </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: '12px' }}>
             {qrTypes.map(type => (
               <button
@@ -1090,94 +1093,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
         </div>
 
-
-        <div style={{
-          background: 'rgba(0, 217, 255, 0.08)',
-          border: '1px solid rgba(0, 217, 255, 0.2)',
-          borderRadius: '14px',
-          padding: '18px',
-          marginBottom: '24px',
-        }}>
-          <p style={{ margin: 0, fontSize: '14px', color: '#fff', fontWeight: '700', textAlign: 'left' }}>
-            1. Choose the Kind of QR Code:
-          </p>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '14px' }}>
-            <button
-              onClick={() => setQrMode('static')}
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: qrMode === 'static' ? '#00D9FF' : 'rgba(0, 217, 255, 0.2)',
-                color: qrMode === 'static' ? '#000' : '#00D9FF',
-                border: 'none',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontWeight: '700',
-                fontSize: '14px',
-              }}
-            >
-              Static QR
-            </button>
-            <button
-              onClick={() => {
-                setQrMode('dynamic');
-                if (!isAuthenticated) {
-                  // Show login prompt or message
-                  console.log('User needs to login for dynamic QR codes');
-                }
-              }}
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: qrMode === 'dynamic' ? '#00D9FF' : 'rgba(0, 217, 255, 0.2)',
-                color: qrMode === 'dynamic' ? '#000' : '#00D9FF',
-                border: 'none',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontWeight: '700',
-                fontSize: '14px',
-              }}
-            >
-              Dynamic QR
-            </button>
-          </div>
-          {qrMode === 'dynamic' && !isAuthenticated && (
-            <div style={{
-              marginTop: '12px',
-              padding: '10px',
-              background: 'rgba(255, 0, 255, 0.1)',
-              border: '1px solid rgba(255, 0, 255, 0.3)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: '#FF00FF',
-              textAlign: 'center',
-            }}>
-              🔒 Login to create a Dynamic QR code
-            </div>
-          )}
-          {qrMode === 'dynamic' && isAuthenticated && (
-            <div style={{
-              marginTop: '12px',
-              padding: '10px',
-              background: 'rgba(0, 217, 255, 0.1)',
-              border: '1px solid rgba(0, 217, 255, 0.3)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: '#00D9FF',
-              textAlign: 'center',
-            }}>
-              {canCreateDynamicQrCodes() ? (
-                isProUser() ? (
-                  <span>✅ Pro Plan: Unlimited Dynamic QR codes</span>
-                ) : (
-                  <span>⭐ Trial: {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
-                )
-              ) : (
-                <span>⛔ Trial expired. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Subscribe to Pro plan</a></span>
-              )}
-            </div>
-          )}
-        </div>
 
         <div>
           <div style={{ marginBottom: '30px' }}>
@@ -1479,6 +1394,94 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             </div>
 
             <div style={{
+              background: 'rgba(0, 217, 255, 0.08)',
+              border: '1px solid rgba(0, 217, 255, 0.2)',
+              borderRadius: '14px',
+              padding: '18px',
+              marginBottom: '24px',
+            }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#fff', fontWeight: '700', textAlign: 'left' }}>
+                3. Choose the Kind of QR Code:
+              </p>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '14px' }}>
+                <button
+                  onClick={() => setQrMode('static')}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: qrMode === 'static' ? '#00D9FF' : 'rgba(0, 217, 255, 0.2)',
+                    color: qrMode === 'static' ? '#000' : '#00D9FF',
+                    border: 'none',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                  }}
+                >
+                  Static QR
+                </button>
+                <button
+                  onClick={() => {
+                    setQrMode('dynamic');
+                    if (!isAuthenticated) {
+                      // Show login prompt or message
+                      console.log('User needs to login for dynamic QR codes');
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: qrMode === 'dynamic' ? '#00D9FF' : 'rgba(0, 217, 255, 0.2)',
+                    color: qrMode === 'dynamic' ? '#000' : '#00D9FF',
+                    border: 'none',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                  }}
+                >
+                  Dynamic QR
+                </button>
+              </div>
+              {qrMode === 'dynamic' && !isAuthenticated && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '10px',
+                  background: 'rgba(255, 0, 255, 0.1)',
+                  border: '1px solid rgba(255, 0, 255, 0.3)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#FF00FF',
+                  textAlign: 'center',
+                }}>
+                  🔒 Login to create a Dynamic QR code
+                </div>
+              )}
+              {qrMode === 'dynamic' && isAuthenticated && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '10px',
+                  background: 'rgba(0, 217, 255, 0.1)',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#00D9FF',
+                  textAlign: 'center',
+                }}>
+                  {canCreateDynamicQrCodes() ? (
+                    isProUser() ? (
+                      <span>✅ Pro Plan: Unlimited Dynamic QR codes</span>
+                    ) : (
+                      <span>⭐ Trial: {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
+                    )
+                  ) : (
+                    <span>⛔ Trial expired. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Subscribe to Pro plan</a></span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{
               marginBottom: '30px',
               padding: '18px',
               background: 'rgba(0, 217, 255, 0.05)',
@@ -1486,7 +1489,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               borderRadius: '12px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '700', color: '#fff', marginBottom: '14px' }}>
-                <span>🎨</span> 3. Design Your QR Code:
+                <span>🎨</span> 4. Design Your QR Code:
               </div>
               
               <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
