@@ -464,6 +464,31 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, { subscriptionStatus: 'free', planType: 'free' });
     }
 
+    // ── QR Codes: Get all from MongoDB ──────────────────────────────────────
+    if (method === 'GET' && pathname === '/api/qrcodes/all') {
+      try {
+        if (db) {
+          const qrCodesList = await db.collection('qrcodes').find({}).toArray();
+          return sendJSON(res, 200, {
+            qrCodes: qrCodesList.map(qr => ({
+              id: qr.id,
+              destination: qr.destination
+            }))
+          });
+        } else {
+          // Fallback to in-memory
+          const qrCodesList = Object.values(qrCodes).map(qr => ({
+            id: qr.id,
+            destination: qr.destination
+          }));
+          return sendJSON(res, 200, { qrCodes: qrCodesList });
+        }
+      } catch (error) {
+        console.error('Error fetching all QR codes:', error.message);
+        return sendJSON(res, 500, { error: error.message });
+      }
+    }
+
     // ── QR Codes: Save standalone ────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/qrcodes') {
       const body = await parseBody(req);
