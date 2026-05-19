@@ -489,24 +489,57 @@ async function handleRequest(req, res) {
       }
     }
 
-    // ── QR Codes: Save standalone ────────────────────────────────────────────
-    if (method === 'POST' && pathname === '/api/qrcodes') {
+    // ── QR Codes: Save standalone (called by Worker) ─────────────────────────
+    if (method === 'POST' && (pathname === '/api/qrcodes' || pathname === '/qrcodes')) {
       const body = await parseBody(req);
-      const { id, destination, qrCodeData } = body;
+      const { id, data, destination, qrCodeData } = body;
+
+      // Accept 'data', 'destination', or 'qrCodeData' field
+      const targetDestination = data || destination || qrCodeData || '';
 
       if (!id) {
-        return sendJSON(res, 400, { error: 'id is required' });
+        console.error(`❌ Invalid request: id=${id}, destination=${targetDestination}`);
+        return sendJSON(res, 400, { error: 'Missing QR code ID or destination.' });
       }
 
+      // Always save to in-memory (for fast redirects)
       qrCodes[id] = {
+        ...qrCodes[id],
         id,
-        destination: destination || '',
-        qrCodeData: qrCodeData || '',
-        createdAt: new Date().toISOString(),
-        scan_count: 0
+        destination: targetDestination,
+        qrCodeData: qrCodeData || targetDestination,
+        updatedAt: new Date().toISOString(),
+        createdAt: qrCodes[id]?.createdAt || new Date().toISOString(),
+        scan_count: qrCodes[id]?.scan_count || 0
       };
 
-      console.log(`✅ QR code saved: ${id} -> ${destination}`);
+      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination}`);
+
+      // Also save to MongoDB with upsert (persistent storage)
+      if (db) {
+        try {
+          const collection = db.collection('qrcodes');
+          await collection.updateOne(
+            { id: id },
+            {
+              $set: {
+                id: id,
+                destination: targetDestination,
+                updatedAt: new Date()
+              },
+              $setOnInsert: {
+                createdAt: new Date()
+              }
+            },
+            { upsert: true }
+          );
+          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB save error: ${mongoError.message}`);
+          // Non-blocking: still return success since in-memory save worked
+        }
+      }
+
       return sendJSON(res, 200, { success: true, id });
     }
 
