@@ -826,7 +826,7 @@ async function startServer() {
 
   const server = http.createServer(handleRequest);
 
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`   (MongoDB + Stripe webhook + subscription handling enabled)`);
   });
