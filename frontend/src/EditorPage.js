@@ -1601,7 +1601,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {subscriptionLoading ? (
                     <span>⏳ Checking subscription status...</span>
                   ) : getIsPro() ? (
-                    <span>🎉 Congratulations! With your {getPlanDisplayName() || 'Pro'}/{getPlanDisplayName() === 'Ultra' ? 'Ultra' : 'Pro'} plan you can modify the original metadata associated to your QR codes</span>
+                    <span>🎉 Congratulations! With your "{getPlanDisplayName() || 'Pro'}" plan you can modify the original metadata associated to your QR codes</span>
                   ) : getCanCreateDynamic() ? (
                     <span>⭐ Trial: {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
                   ) : (
@@ -2017,6 +2017,68 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       </label>
                       <div style={{ fontSize: '11px', color: '#888', textAlign: 'center' }}>
                         Recommended: PNG with transparent background
+                      </div>
+
+                      {/* Common Logos Banner */}
+                      <div style={{ fontSize: '12px', color: '#aaa', fontWeight: '600', marginBottom: '8px', marginTop: '8px' }}>
+                        Or choose a common logo:
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        gap: '10px',
+                        overflowX: 'auto',
+                        paddingBottom: '8px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#00D9FF rgba(0, 217, 255, 0.1)',
+                        WebkitOverflowScrolling: 'touch',
+                      }}>
+                        {[
+                          { id: 'whatsapp', label: 'WhatsApp', color: '#25D366', icon: '💬' },
+                          { id: 'wifi', label: 'Wi-Fi', color: '#007BFF', icon: '📶' },
+                          { id: 'wechat', label: 'WeChat', color: '#07C160', icon: '💚' },
+                          { id: 'link', label: 'Link', color: '#0A66C2', icon: '🔗' },
+                          { id: 'paypal', label: 'PayPal', color: '#00457C', icon: '🅿️' },
+                          { id: 'mail', label: 'Mail', color: '#EA4335', icon: '✉️' },
+                          { id: 'bitcoin', label: 'Bitcoin', color: '#F7931A', icon: '₿' },
+                        ].map((logo) => (
+                          <div
+                            key={logo.id}
+                            onClick={() => setSelectedLogo(logo.icon)}
+                            style={{
+                              flex: '0 0 auto',
+                              width: '72px',
+                              height: '72px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px',
+                              background: selectedLogo === logo.icon ? 'rgba(0, 217, 255, 0.2)' : 'rgba(0, 217, 255, 0.05)',
+                              border: selectedLogo === logo.icon ? '2px solid #00D9FF' : '1px solid rgba(0, 217, 255, 0.2)',
+                              borderRadius: '10px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              padding: '4px',
+                            }}
+                            title={logo.label}
+                          >
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: logo.color,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '18px',
+                            }}>
+                              {logo.icon}
+                            </div>
+                            <span style={{ fontSize: '9px', color: '#ccc', fontWeight: '600', textAlign: 'center', lineHeight: '1.1' }}>
+                              {logo.label}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                       
                       {/* Selected Logo Display */}
