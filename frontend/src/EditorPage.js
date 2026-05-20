@@ -97,7 +97,143 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // PDF file state
   const [pdfFile, setPdfFile] = useState(null);
   
+  // Local subscription state - fetched directly from backend to ensure accuracy
+  const [isPro, setIsPro] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  
   const { isAuthenticated, saveLogo, saveQrCode, getUserAssets, canCreateDynamicQrCodes, getTrialDaysLeft, isProUser } = useAuth();
+  
+  // Fetch subscription status from backend on mount and when auth changes
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+      if (!token) {
+        setIsPro(false);
+        setSubscriptionPlan(null);
+        setSubscriptionLoading(false);
+        return;
+      }
+      
+      try {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const response = await fetch(`${baseUrl}/api/user/subscription`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const isActivePro = data.subscriptionStatus === 'active' && 
+            (data.planType === 'pro' || data.planType === 'ultra' || data.planType === 'enterprise');
+          
+          setIsPro(isActivePro);
+          setSubscriptionPlan(data.planType);
+          
+          // Also update the user object in localStorage so AuthContext functions work correctly
+          const savedUser = localStorage.getItem('user');
+          if (savedUser) {
+            try {
+              const parsedUser = JSON.parse(savedUser);
+              parsedUser.subscription = parsedUser.subscription || {};
+              parsedUser.subscription.plan = data.planType || parsedUser.subscription.plan;
+              parsedUser.subscription.isActive = data.subscriptionStatus === 'active';
+              parsedUser.subscription.subscriptionStatus = data.subscriptionStatus;
+              localStorage.setItem('user', JSON.stringify(parsedUser));
+              console.log('✅ Updated user subscription in localStorage:', data.planType, data.subscriptionStatus);
+            } catch (e) {
+              console.error('Error updating user subscription in localStorage:', e);
+            }
+          }
+        } else {
+          console.warn('Failed to fetch subscription status, using cached data');
+          // Fall back to AuthContext's isProUser
+          setIsPro(isProUser());
+          setSubscriptionPlan(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error);
+        // Fall back to AuthContext's isProUser
+        setIsPro(isProUser());
+        setSubscriptionPlan(null);
+      } finally {
+        setSubscriptionLoading(false);
+      }
+    };
+    
+    fetchSubscriptionStatus();
+  }, [isAuthenticated]);
+  
+  // Also re-fetch when isAuthenticated changes (user logs in/out)
+  useEffect(() => {
+    if (isAuthenticated) {
+      setSubscriptionLoading(true);
+      const fetchOnAuth = async () => {
+        const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
+        if (!token) return;
+        
+        try {
+          const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+          const response = await fetch(`${baseUrl}/api/user/subscription`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const isActivePro = data.subscriptionStatus === 'active' && 
+              (data.planType === 'pro' || data.planType === 'ultra' || data.planType === 'enterprise');
+            setIsPro(isActivePro);
+            setSubscriptionPlan(data.planType);
+            
+            // Update localStorage user object
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+              try {
+                const parsedUser = JSON.parse(savedUser);
+                parsedUser.subscription = parsedUser.subscription || {};
+                parsedUser.subscription.plan = data.planType || parsedUser.subscription.plan;
+                parsedUser.subscription.isActive = data.subscriptionStatus === 'active';
+                parsedUser.subscription.subscriptionStatus = data.subscriptionStatus;
+                localStorage.setItem('user', JSON.stringify(parsedUser));
+              } catch (e) {}
+            }
+          }
+        } catch (error) {
+          console.error('Failed to re-fetch subscription:', error);
+        } finally {
+          setSubscriptionLoading(false);
+        }
+      };
+      fetchOnAuth();
+    } else {
+      setIsPro(false);
+      setSubscriptionPlan(null);
+      setSubscriptionLoading(false);
+    }
+  }, [isAuthenticated]);
+  
+  // Helper to check if user can create dynamic QR codes (uses local state + AuthContext)
+  const getCanCreateDynamic = () => {
+    if (!isAuthenticated) return false;
+    // Use local isPro state if available, otherwise fall back to AuthContext
+    if (isPro) return true;
+    return canCreateDynamicQrCodes();
+  };
+  
+  // Helper to check if user is pro (uses local state + AuthContext)
+  const getIsPro = () => {
+    if (isPro) return true;
+    return isProUser();
+  };
+  
+  // Helper to get plan display name
+  const getPlanDisplayName = () => {
+    if (subscriptionPlan === 'pro') return 'Pro';
+    if (subscriptionPlan === 'ultra') return 'Ultra';
+    if (subscriptionPlan === 'enterprise') return 'Enterprise';
+    return null;
+  };
   
   // Frame customization state
   const [selectedFrame, setSelectedFrame] = useState('none');
@@ -551,13 +687,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           img.src = selectedLogo;
         }
         
-        // Draw red dot at center of QR code for alignment debugging
-        const centerX = qrAreaX + qrAreaSize / 2;
-        const centerY = qrAreaY + qrAreaSize / 2;
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
-        ctx.fill();
+        // (Red dot removed - was used for alignment debugging)
       }
     };
     
@@ -1468,12 +1598,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   color: '#00D9FF',
                   textAlign: 'center',
                 }}>
-                  {canCreateDynamicQrCodes() ? (
-                    isProUser() ? (
-                      <span>✅ Pro Plan: Unlimited Dynamic QR codes</span>
-                    ) : (
-                      <span>⭐ Trial: {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
-                    )
+                  {subscriptionLoading ? (
+                    <span>⏳ Checking subscription status...</span>
+                  ) : getIsPro() ? (
+                    <span>🎉 Congratulations! With your {getPlanDisplayName() || 'Pro'}/{getPlanDisplayName() === 'Ultra' ? 'Ultra' : 'Pro'} plan you can modify the original metadata associated to your QR codes</span>
+                  ) : getCanCreateDynamic() ? (
+                    <span>⭐ Trial: {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
                   ) : (
                     <span>⛔ Trial expired. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Subscribe to Pro plan</a></span>
                   )}
