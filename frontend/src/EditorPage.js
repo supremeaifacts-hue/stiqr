@@ -2033,17 +2033,22 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         WebkitOverflowScrolling: 'touch',
                       }}>
                         {[
-                          { id: 'whatsapp', label: 'WhatsApp', color: '#25D366', icon: '💬' },
-                          { id: 'wifi', label: 'Wi-Fi', color: '#007BFF', icon: '📶' },
-                          { id: 'wechat', label: 'WeChat', color: '#07C160', icon: '💚' },
-                          { id: 'link', label: 'Link', color: '#0A66C2', icon: '🔗' },
-                          { id: 'paypal', label: 'PayPal', color: '#00457C', icon: '🅿️' },
-                          { id: 'mail', label: 'Mail', color: '#EA4335', icon: '✉️' },
-                          { id: 'bitcoin', label: 'Bitcoin', color: '#F7931A', icon: '₿' },
+                          // Use compact inline SVG data-URIs so selected logos render as images
+                          {
+                            id: 'whatsapp',
+                            label: 'WhatsApp',
+                            src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#25D366"/><path d="M17.6 14.2c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.8.2-.3.3-1 1-1.2 1.2-.2.3-.5.4-.8.1-.3-.3-1.2-1.1-2.2-2.2-.8-.9-.7-1.5-.1-1.9.6-.4 1.4-1 1.6-1.2.2-.2.3-.3.1-.6-.2-.3-.8-1.6-1.1-2.2-.3-.6-.6-.5-.9-.5-.2 0-.5 0-.8 0-.3 0-.8.1-1.2.6-.4.5-1.4 1.5 1.5 4.5 2.9 3 4.2 3.5 5 3.7.8.2 1.3.1 1.8-.1.5-.2 1.7-.7 1.9-1.3.2-.6.2-1.1 0-1.3-.2-.2-.5-.3-.8-.5z" fill="#fff"/></svg>')}`
+                          },
+                          { id: 'wifi', label: 'Wi-Fi', src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#007BFF" rx="4"/><path d="M12 16.5c.8 0 1.5-.7 1.5-1.5S12.8 13.5 12 13.5 10.5 14.2 10.5 15s.7 1.5 1.5 1.5zm3.6-3.6c1.4-1 2.6-2.4 3.8-4.1-1.1-1.5-2.3-2.7-3.8-3.6-2.2 2.5-4.6 3.9-6.8 4.5 2.2.6 4.6 2 6.8 3.2z" fill="#fff"/></svg>')}` },
+                          { id: 'wechat', label: 'WeChat', src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#07C160" rx="4"/><g fill="#fff"><path d="M7.5 9.2c.8 0 1.4.6 1.4 1.4S8.3 12 7.5 12 6.1 11.4 6.1 10.6s.6-1.4 1.4-1.4zM12.5 9.2c.8 0 1.4.6 1.4 1.4s-.6 1.4-1.4 1.4-1.4-.6-1.4-1.4.6-1.4 1.4-1.4z"/><path d="M6 15.5c0-1.5 2.2-2.8 4.9-2.8s4.9 1.3 4.9 2.8c0 .9-.8 1.7-2.2 2.2l-.6.2-.2.6c-.2.7-.9 1.2-1.7 1.2-.9 0-1.6-.6-1.7-1.4L9.4 17l-.6-.1c-1.1-.3-1.8-.8-2.8-1.3-.4-.2-.4-.3-.2-.2z"/></g></svg>')}` },
+                          { id: 'link', label: 'Link', src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#0A66C2" rx="4"/><path d="M8.7 15.3l1.4-1.4 3.4 3.4-1.4 1.4c-1.2 1.2-3.1 1.2-4.3 0-1.2-1.2-1.2-3.1 0-4.3zM15.3 8.7l-1.4 1.4-3.4-3.4 1.4-1.4c1.2-1.2 3.1-1.2 4.3 0 1.2 1.2 1.2 3.1 0 4.3z" fill="#fff"/></svg>')}` },
+                          { id: 'paypal', label: 'PayPal', src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#00457C" rx="4"/><path d="M9.5 7h4.2c1.5 0 2.7.9 2.4 2.4-.3 1.3-1.4 2.1-2.7 2.1h-1.7c-.3 0-.6.2-.6.5l-.5 3.3c-.1.5-.6.9-1.1.9H8.4c-.4 0-.8-.2-1-.5-.2-.3-.4-.7-.3-1.1L8 7.4C8.1 7 8.4 7 9 7h.5z" fill="#fff"/></svg>')}` },
+                          { id: 'mail', label: 'Mail', src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#EA4335" rx="4"/><path d="M4 7v10h16V7l-8 5L4 7z" fill="#fff"/></svg>')}` },
+                          { id: 'bitcoin', label: 'Bitcoin', src: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#F7931A" rx="4"/><path d="M12.5 7.2c1.7 0 2.8.5 3.2 1.6.3.9-.2 1.7-1 2.1.9.3 1.4 1 1 2-.4 1-1.6 1.4-3.4 1.4-1.7 0-2.8-.5-3.2-1.6-.3-.9.2-1.7 1-2.1-.9-.3-1.4-1-1-2 .4-1 1.6-1.4 3.4-1.4z" fill="#fff"/></svg>')}` },
                         ].map((logo) => (
                           <div
                             key={logo.id}
-                            onClick={() => setSelectedLogo(logo.icon)}
+                            onClick={() => setSelectedLogo(logo.src)}
                             style={{
                               flex: '0 0 auto',
                               width: '72px',
@@ -2053,8 +2058,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: '4px',
-                              background: selectedLogo === logo.icon ? 'rgba(0, 217, 255, 0.2)' : 'rgba(0, 217, 255, 0.05)',
-                              border: selectedLogo === logo.icon ? '2px solid #00D9FF' : '1px solid rgba(0, 217, 255, 0.2)',
+                              background: selectedLogo === logo.src ? 'rgba(0, 217, 255, 0.2)' : 'rgba(0, 217, 255, 0.05)',
+                              border: selectedLogo === logo.src ? '2px solid #00D9FF' : '1px solid rgba(0, 217, 255, 0.2)',
                               borderRadius: '10px',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
@@ -2066,13 +2071,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                               width: '32px',
                               height: '32px',
                               borderRadius: '8px',
-                              background: logo.color,
+                              overflow: 'hidden',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '18px',
+                              background: 'transparent'
                             }}>
-                              {logo.icon}
+                              <img src={logo.src} alt={logo.label} style={{ width: '28px', height: '28px', display: 'block' }} />
                             </div>
                             <span style={{ fontSize: '9px', color: '#ccc', fontWeight: '600', textAlign: 'center', lineHeight: '1.1' }}>
                               {logo.label}
