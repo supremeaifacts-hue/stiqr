@@ -138,6 +138,8 @@ async function handleRequest(req, res) {
     pathname.startsWith('/qrcodes/') ||
     pathname === '/api/qrcodes/all';
 
+
+
   if (!isPublicEndpoint) {
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -662,7 +664,18 @@ async function handleRequest(req, res) {
 
       let qrCodesList;
       if (userId) {
-        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
+        // Try MongoDB first for persistent data
+        if (db) {
+          try {
+            qrCodesList = await db.collection('qrcodes').find({ userId: userId }).toArray();
+            console.log(`GET /api/assets/qrcodes: Found ${qrCodesList.length} QR codes in MongoDB for userId: ${userId}`);
+          } catch (mongoError) {
+            console.error('GET /api/assets/qrcodes: MongoDB query error:', mongoError.message);
+            qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
+          }
+        } else {
+          qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
+        }
         console.log(`Returning ${qrCodesList.length} QR codes for userId: ${userId}`);
       } else {
         qrCodesList = Object.values(qrCodes);
@@ -671,6 +684,7 @@ async function handleRequest(req, res) {
 
       return sendJSON(res, 200, { qrCodes: qrCodesList });
     }
+
 
 
     // ── QR Codes: Delete from assets ─────────────────────────────────────────

@@ -432,14 +432,13 @@ export const AuthProvider = ({ children }) => {
       console.log('📡 STEP 1: Saving to standalone qrcodes collection...');
       const qrcodesResponse = await fetch(`${API_BASE_URL}/api/qrcodes`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,  // Use the same headers with Authorization token
         body: JSON.stringify({
           id: qrCodeId,
           data: qrData
         })
       });
+
       
       console.log('AuthContext: qrcodes collection response status:', qrcodesResponse.status, qrcodesResponse.statusText);
       

@@ -748,11 +748,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // Send the data to your backend
       try {
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const token = localStorage.getItem('jwtToken');
+        const qrcodesHeaders = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          qrcodesHeaders['Authorization'] = `Bearer ${token}`;
+        }
         const response = await fetch(`${baseUrl}/qrcodes`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: qrcodesHeaders,
           body: JSON.stringify({
             id: effectiveQrCodeId,
             data: destinationUrl,
@@ -767,6 +772,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       } catch (error) {
         console.error('Error saving QR code:', error);
       }
+
       
       // Use tracking URL for QR code generation
       const trackingUrl = getTrackingUrl(effectiveQrCodeId);
@@ -2634,16 +2640,22 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrData }));
                 
                 const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                const token = localStorage.getItem('jwtToken');
+                const qrcodesHeaders = {
+                  'Content-Type': 'application/json',
+                };
+                if (token) {
+                  qrcodesHeaders['Authorization'] = `Bearer ${token}`;
+                }
                 const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
                   method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
+                  headers: qrcodesHeaders,
                   body: JSON.stringify({
                     id: qrCodeId,
                     data: qrData
                   })
                 });
+
                 
                 console.log('   Response status:', qrcodesResponse.status, qrcodesResponse.statusText);
                 
