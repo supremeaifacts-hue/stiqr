@@ -2033,13 +2033,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         WebkitOverflowScrolling: 'touch',
                       }}>
                         {[
-                          { id: 'whatsapp', label: 'WhatsApp', src: 'https://magecdn.com/tools/social/icons/whatsapp.png' },
-                          { id: 'wifi', label: 'Wi-Fi', src: 'https://magecdn.com/tools/social/icons/wifi.png' },
-                          { id: 'wechat', label: 'WeChat', src: 'https://magecdn.com/tools/social/icons/wechat.png' },
-                          { id: 'link', label: 'Link', src: 'https://magecdn.com/tools/social/icons/link.png' },
-                          { id: 'paypal', label: 'PayPal', src: 'https://magecdn.com/tools/social/icons/paypal.png' },
-                          { id: 'mail', label: 'Mail', src: 'https://magecdn.com/tools/social/icons/mail.png' },
-                          { id: 'bitcoin', label: 'Bitcoin', src: 'https://magecdn.com/tools/social/icons/bitcoin.png' },
+                          { id: 'whatsapp', label: 'WhatsApp', src: '/logos/whatsapp.png' },
+                          { id: 'wechat', label: 'WeChat', src: '/logos/wechat.png' },
+                          { id: 'instagram', label: 'Instagram', src: '/logos/instagram.png' },
+                          { id: 'mail', label: 'Mail', src: '/logos/mail.png' },
+                          { id: 'wifi', label: 'Wi-Fi', src: '/logos/wifi.png' },
+                          { id: 'paypal', label: 'PayPal', src: '/logos/paypal.png' },
+                          { id: 'link', label: 'Link', src: '/logos/link.png' },
+                          { id: 'bitcoin', label: 'Bitcoin', src: '/logos/bitcoin.png' },
                         ].map((logo) => (
                           <div
                             key={logo.id}
@@ -2107,7 +2108,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             justifyContent: 'center',
                             overflow: 'hidden',
                           }}>
-                            {selectedLogo.startsWith('data:') || selectedLogo.startsWith('http') ? (
+                            {selectedLogo.startsWith('data:') || selectedLogo.startsWith('http') || selectedLogo.startsWith('/logos/') ? (
                               <img 
                                 src={selectedLogo} 
                                 alt="Selected logo" 
