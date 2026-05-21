@@ -782,16 +782,20 @@ async function handleRequest(req, res) {
       const { data, name, category } = body;
       const id = String(stickerIdCounter++);
 
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
       stickers[id] = {
         id,
         data: data || '',
         name: name || 'Untitled Sticker',
         category: category || 'custom',
-        userId: req.headers['x-user-email'] || 'anonymous',
+        userId: userId || 'anonymous',
         createdAt: new Date().toISOString()
       };
 
-      console.log(`Sticker saved: ${stickers[id].name} (ID: ${id})`);
+      console.log(`Sticker saved: ${stickers[id].name} (ID: ${id}, userId: ${userId || 'none'})`);
       return sendJSON(res, 200, { success: true, sticker: stickers[id] });
     }
 
@@ -802,6 +806,16 @@ async function handleRequest(req, res) {
 
       if (!stickers[id]) {
         return sendJSON(res, 404, { error: 'Sticker not found' });
+      }
+
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
+      // Security: only allow deletion if user owns the sticker or is admin
+      if (userId && stickers[id].userId && stickers[id].userId !== userId && stickers[id].userId !== decoded?.email) {
+        console.warn(`⚠️ Unauthorized delete attempt for sticker ${id} by userId ${userId}`);
+        return sendJSON(res, 403, { error: 'Not authorized to delete this sticker' });
       }
 
       delete stickers[id];
@@ -815,15 +829,19 @@ async function handleRequest(req, res) {
       const { data, name } = body;
       const id = String(logoIdCounter++);
 
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
       logos[id] = {
         id,
         data: data || '',
         name: name || 'Untitled Logo',
-        userId: req.headers['x-user-email'] || 'anonymous',
+        userId: userId || 'anonymous',
         createdAt: new Date().toISOString()
       };
 
-      console.log(`Logo saved: ${logos[id].name} (ID: ${id})`);
+      console.log(`Logo saved: ${logos[id].name} (ID: ${id}, userId: ${userId || 'none'})`);
       return sendJSON(res, 200, { success: true, logo: logos[id] });
     }
 
@@ -834,6 +852,16 @@ async function handleRequest(req, res) {
 
       if (!logos[id]) {
         return sendJSON(res, 404, { error: 'Logo not found' });
+      }
+
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
+      // Security: only allow deletion if user owns the logo or is admin
+      if (userId && logos[id].userId && logos[id].userId !== userId && logos[id].userId !== decoded?.email) {
+        console.warn(`⚠️ Unauthorized delete attempt for logo ${id} by userId ${userId}`);
+        return sendJSON(res, 403, { error: 'Not authorized to delete this logo' });
       }
 
       delete logos[id];
