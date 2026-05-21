@@ -2033,18 +2033,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         WebkitOverflowScrolling: 'touch',
                       }}>
                         {[
-                          // Use compact inline SVG data-URIs so selected logos render as images
-                          {
-                            id: 'whatsapp',
-                            label: 'WhatsApp',
-                            src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#25D366"/><path d="M16.85 16.18c-.28-.14-1.63-.8-1.88-.9-.25-.1-.43-.14-.61.15-.18.29-.7.9-.86 1.09-.16.19-.32.22-.6.08-.28-.14-1.13-.42-2.15-1.32-.8-.7-1.34-1.54-1.5-1.83-.16-.29-.02-.45.13-.59.13-.12.28-.32.42-.48.14-.16.18-.29.28-.48.1-.19.05-.35-.02-.49-.07-.14-.6-1.45-.83-1.98-.22-.5-.45-.43-.61-.44-.16 0-.35-.01-.54-.01-.19 0-.49.07-.75.34-.26.28-1 1.01-1 2.48 0 1.47 1.03 2.9 1.17 3.1.14.19 2.03 3.1 4.94 4.34 2.16.93 2.8.07 3.3-.13.5-.2 1.63-1.3 1.81-2.58.18-1.27-.09-1.86-.58-2.15z" fill="#fff"/><path d="M9.25 9.4a.95.95 0 1 1 0-1.9.95.95 0 0 1 0 1.9zm3.5 0a.95.95 0 1 1 0-1.9.95.95 0 0 1 0 1.9z" fill="#fff"/></svg>')}`
-                          },
-                          { id: 'wifi', label: 'Wi-Fi', src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#007BFF"/><path d="M7.5 12.5c2.2-2.1 5.8-2.1 8 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M9.5 15.5c1.3-1.2 3.5-1.2 4.8 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="18" r="1.5" fill="#fff"/></svg>')}` },
-                          { id: 'wechat', label: 'WeChat', src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#07C160"/><path d="M7.2 8.8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm4.6 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-4 7.9c.3-.5.9-1.1 1.8-1.4 1.5-.5 3.1-.4 4.4.2.9.4 1.8 1.4 1.8 2.3 0 .7-.5 1.4-1.2 1.6l-.7.2-.2.7c-.1.3-.4.5-.8.5-.5 0-.9-.3-1-.8l-.2-1-.7-.1c-.8-.2-1.3-.6-2-1-.4-.2-.5-.2-.4-.1z" fill="#fff"/></svg>')}` },
-                          { id: 'link', label: 'Link', src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#0A66C2"/><path d="M9.5 14.5l1.5-1.5 3 3-1.5 1.5c-1.2 1.2-3.1 1.2-4.3 0-1.2-1.2-1.2-3.1 0-4.3zm6-6l-1.5 1.5-3-3 1.5-1.5c1.2-1.2 3.1-1.2 4.3 0 1.2 1.2 1.2 3.1 0 4.3z" fill="#fff"/></svg>')}` },
-                          { id: 'paypal', label: 'PayPal', src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#003087"/><path d="M10.8 7.2h3.4c1.7 0 2.9 1 2.6 2.6-.3 1.4-1.6 2.3-3.3 2.3h-1.4l-.5 3.2c-.1.6-.7 1-1.3 1H8.8c-.5 0-.9-.2-1.1-.6-.2-.4-.4-.8-.3-1.2l.5-7C8 7.5 8.3 7.2 8.8 7.2h2z" fill="#fff"/><path d="M12 7.2c.9 0 1.5.7 1.6 1.6h-1.6V7.2z" fill="#66B1FF"/></svg>')}` },
-                          { id: 'mail', label: 'Mail', src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#EA4335"/><path d="M5 8h14v8H5V8zm2 1.5l5 3.3 5-3.3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>')}` },
-                          { id: 'bitcoin', label: 'Bitcoin', src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#F7931A"/><path d="M12 7.5c1.7 0 3.2.4 3.8 1.8.5 1.1 0 2.1-1 2.5.9.2 1.5.8 1.4 1.8-.1 1.2-1.1 1.9-2.6 1.9-1.8 0-3.2-.4-3.8-1.8-.5-1.1 0-2.1 1-2.5-.9-.2-1.5-.8-1.4-1.8.1-1.2 1.1-1.9 2.6-1.9zm0 1.5c-.7 0-1.3.1-1.7.4-.4.3-.6.8-.5 1.3.1.7.6 1.1 1.2 1.2.7.1 1.3-.1 1.8-.5.4-.3.7-.8.6-1.4-.1-.5-.6-.9-1.4-.9z" fill="#fff"/></svg>')}` },
+                          { id: 'whatsapp', label: 'WhatsApp', src: 'https://magecdn.com/tools/social/icons/whatsapp.png' },
+                          { id: 'wifi', label: 'Wi-Fi', src: 'https://magecdn.com/tools/social/icons/wifi.png' },
+                          { id: 'wechat', label: 'WeChat', src: 'https://magecdn.com/tools/social/icons/wechat.png' },
+                          { id: 'link', label: 'Link', src: 'https://magecdn.com/tools/social/icons/link.png' },
+                          { id: 'paypal', label: 'PayPal', src: 'https://magecdn.com/tools/social/icons/paypal.png' },
+                          { id: 'mail', label: 'Mail', src: 'https://magecdn.com/tools/social/icons/mail.png' },
+                          { id: 'bitcoin', label: 'Bitcoin', src: 'https://magecdn.com/tools/social/icons/bitcoin.png' },
                         ].map((logo) => (
                           <div
                             key={logo.id}
@@ -2112,7 +2107,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             justifyContent: 'center',
                             overflow: 'hidden',
                           }}>
-                            {selectedLogo.startsWith('data:') ? (
+                            {selectedLogo.startsWith('data:') || selectedLogo.startsWith('http') ? (
                               <img 
                                 src={selectedLogo} 
                                 alt="Selected logo" 
