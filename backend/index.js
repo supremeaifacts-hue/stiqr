@@ -502,38 +502,54 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Missing QR code ID or destination.' });
       }
 
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
+      if (!userId) {
+        console.warn(`⚠️ No authenticated user for QR code save: ${id}`);
+        // Still save but without userId
+      }
+
       // Always save to in-memory (for fast redirects)
       qrCodes[id] = {
         ...qrCodes[id],
         id,
         destination: targetDestination,
         qrCodeData: qrCodeData || targetDestination,
+        userId: userId || qrCodes[id]?.userId || null,
         updatedAt: new Date().toISOString(),
         createdAt: qrCodes[id]?.createdAt || new Date().toISOString(),
         scan_count: qrCodes[id]?.scan_count || 0
       };
 
-      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination}`);
+      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination} (userId: ${userId || 'none'})`);
 
       // Also save to MongoDB with upsert (persistent storage)
       if (db) {
         try {
           const collection = db.collection('qrcodes');
+          const updateDoc = {
+            $set: {
+              id: id,
+              destination: targetDestination,
+              userId: userId,
+              updatedAt: new Date()
+            },
+            $setOnInsert: {
+              createdAt: new Date()
+            }
+          };
+          // Only include userId in $set if we have one
+          if (!userId) {
+            delete updateDoc.$set.userId;
+          }
           await collection.updateOne(
             { id: id },
-            {
-              $set: {
-                id: id,
-                destination: targetDestination,
-                updatedAt: new Date()
-              },
-              $setOnInsert: {
-                createdAt: new Date()
-              }
-            },
+            updateDoc,
             { upsert: true }
           );
-          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination}`);
+          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination} (userId: ${userId || 'none'})`);
         } catch (mongoError) {
           console.error(`❌ MongoDB save error: ${mongoError.message}`);
           // Non-blocking: still return success since in-memory save worked
@@ -552,7 +568,11 @@ async function handleRequest(req, res) {
       const finalImageData = qrImageData || imageData || '';
       const finalName = name || finalId || 'Untitled QR Code';
 
-      console.log(`Saving QR code to user assets: ${finalId}`);
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
+      console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId || 'none'})`);
 
       qrCodes[finalId] = {
         id: finalId,
@@ -560,7 +580,7 @@ async function handleRequest(req, res) {
         destination: finalData,
         qrImageData: finalImageData,
         design: design || null,
-        userId: req.headers['x-user-email'] || 'anonymous',
+        userId: userId || 'anonymous',
         createdAt: new Date().toISOString(),
         scan_count: 0
       };
@@ -570,8 +590,19 @@ async function handleRequest(req, res) {
 
     // ── QR Codes: Get all user QR codes ─────────────────────────────────────
     if (method === 'GET' && pathname === '/api/assets/qrcodes') {
-      const qrCodesList = Object.values(qrCodes);
-      console.log(`Returning ${qrCodesList.length} QR codes`);
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
+      let qrCodesList;
+      if (userId) {
+        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === decoded?.email);
+        console.log(`Returning ${qrCodesList.length} QR codes for userId: ${userId}`);
+      } else {
+        qrCodesList = Object.values(qrCodes);
+        console.log(`Returning ${qrCodesList.length} QR codes (no auth filter)`);
+      }
+
       return sendJSON(res, 200, { qrCodes: qrCodesList });
     }
 
@@ -714,10 +745,35 @@ async function handleRequest(req, res) {
 
     // ── Assets: Get all assets ───────────────────────────────────────────────
     if (method === 'GET' && pathname === '/api/assets') {
-      const stickersList = Object.values(stickers);
-      const logosList = Object.values(logos);
-      console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos`);
-      return sendJSON(res, 200, { stickers: stickersList, logos: logosList });
+      // Get the authenticated user's ID from the JWT token
+      const decoded = getUserFromAuthHeader(req);
+      const userId = decoded?.id || decoded?._id || null;
+
+      if (!userId) {
+        console.log('GET /api/assets: No authenticated user, returning empty');
+        return sendJSON(res, 200, { stickers: [], logos: [], qrCodes: [] });
+      }
+
+      // Filter stickers and logos by userId
+      const stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === decoded?.email);
+      const logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === decoded?.email);
+
+      // Also fetch QR codes from MongoDB filtered by userId
+      let qrCodesList = [];
+      if (db) {
+        try {
+          qrCodesList = await db.collection('qrcodes').find({ userId: userId }).toArray();
+          console.log(`GET /api/assets: Found ${qrCodesList.length} QR codes in MongoDB for userId: ${userId}`);
+        } catch (mongoError) {
+          console.error('GET /api/assets: MongoDB query error:', mongoError.message);
+        }
+      } else {
+        // Fallback to in-memory filter
+        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === decoded?.email);
+      }
+
+      console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos, ${qrCodesList.length} QR codes`);
+      return sendJSON(res, 200, { stickers: stickersList, logos: logosList, qrCodes: qrCodesList });
     }
 
     // ── Stickers: Save ───────────────────────────────────────────────────────
