@@ -100,8 +100,10 @@ const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
           // Store JWT token if provided (used by Dashboard/TopBar for subscription checks)
           if (loginData.token) {
             localStorage.setItem('jwtToken', loginData.token);
+            localStorage.setItem('token', loginData.token);  // Also save as 'token' for EditorPage compatibility
             console.log('✅ JWT token stored after signup:', loginData.token.substring(0, 30) + '...');
           }
+
           
           // Dispatch a custom event that any component can listen to
           window.dispatchEvent(new CustomEvent('userLoggedIn', { 
