@@ -573,6 +573,7 @@ async function handleRequest(req, res) {
               $set: {
                 id: id,
                 destination: targetDestination,
+                qrImageData: qrCodes[id]?.qrImageData || body.qrImageData || '',
                 userId: userId,
                 updatedAt: new Date()
               },
@@ -588,6 +589,7 @@ async function handleRequest(req, res) {
           // Non-blocking: still return success since in-memory save worked
         }
       }
+
 
       return sendJSON(res, 200, { success: true, id });
 
