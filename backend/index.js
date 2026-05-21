@@ -507,8 +507,8 @@ async function handleRequest(req, res) {
       const userId = decoded?.id || decoded?._id || null;
 
       if (!userId) {
-        console.warn(`⚠️ No authenticated user for QR code save: ${id}`);
-        // Still save but without userId
+        console.error(`❌ No userId found in request for QR code save: ${id}`);
+        return sendJSON(res, 401, { error: 'User not authenticated' });
       }
 
       // Always save to in-memory (for fast redirects)
@@ -517,39 +517,34 @@ async function handleRequest(req, res) {
         id,
         destination: targetDestination,
         qrCodeData: qrCodeData || targetDestination,
-        userId: userId || qrCodes[id]?.userId || null,
+        userId: userId,
         updatedAt: new Date().toISOString(),
         createdAt: qrCodes[id]?.createdAt || new Date().toISOString(),
         scan_count: qrCodes[id]?.scan_count || 0
       };
 
-      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination} (userId: ${userId || 'none'})`);
+      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination} for user ${userId}`);
 
       // Also save to MongoDB with upsert (persistent storage)
       if (db) {
         try {
           const collection = db.collection('qrcodes');
-          const updateDoc = {
-            $set: {
-              id: id,
-              destination: targetDestination,
-              userId: userId,
-              updatedAt: new Date()
-            },
-            $setOnInsert: {
-              createdAt: new Date()
-            }
-          };
-          // Only include userId in $set if we have one
-          if (!userId) {
-            delete updateDoc.$set.userId;
-          }
           await collection.updateOne(
             { id: id },
-            updateDoc,
+            {
+              $set: {
+                id: id,
+                destination: targetDestination,
+                userId: userId,
+                updatedAt: new Date()
+              },
+              $setOnInsert: {
+                createdAt: new Date()
+              }
+            },
             { upsert: true }
           );
-          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination} (userId: ${userId || 'none'})`);
+          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination} for user ${userId}`);
         } catch (mongoError) {
           console.error(`❌ MongoDB save error: ${mongoError.message}`);
           // Non-blocking: still return success since in-memory save worked
