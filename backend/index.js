@@ -611,6 +611,9 @@ async function handleRequest(req, res) {
       }
 
       console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId})`);
+      console.log(`🔍 DEBUG SAVE: userId type=${typeof userId}, value=${JSON.stringify(userId)}`);
+      console.log(`🔍 DEBUG SAVE: req.user keys=${Object.keys(req.user || {})}`);
+      console.log(`🔍 DEBUG SAVE: req.user.id=${req.user?.id}, req.user._id=${req.user?._id}, req.user.email=${req.user?.email}`);
 
       // Always save to in-memory (for fast redirects)
       qrCodes[finalId] = {
@@ -628,7 +631,9 @@ async function handleRequest(req, res) {
       if (db) {
         try {
           const collection = db.collection('qrcodes');
-          await collection.updateOne(
+          console.log(`🔍 DEBUG SAVE: Using database: ${db.databaseName}, collection: qrcodes`);
+          console.log(`🔍 DEBUG SAVE: Upserting with id=${finalId}, userId=${userId}`);
+          const result = await collection.updateOne(
             { id: finalId },
             {
               $set: {
@@ -646,15 +651,29 @@ async function handleRequest(req, res) {
             { upsert: true }
           );
           console.log(`✅ QR code saved to MongoDB qrcodes collection: ${finalId} for user ${userId}`);
+          console.log(`🔍 DEBUG SAVE: MongoDB result: upsertedId=${result.upsertedId}, modified=${result.modifiedCount}, upserted=${result.upsertedCount}`);
+          
+          // Verify by reading back
+          const verifyDoc = await collection.findOne({ id: finalId });
+          console.log(`🔍 DEBUG SAVE: Verified doc in MongoDB:`, JSON.stringify({
+            id: verifyDoc?.id,
+            userId: verifyDoc?.userId,
+            userIdType: typeof verifyDoc?.userId,
+            destination: verifyDoc?.destination?.substring(0, 50)
+          }));
         } catch (mongoError) {
           console.error(`❌ MongoDB save error: ${mongoError.message}`);
+          console.error(`🔍 DEBUG SAVE: Full error:`, mongoError);
           // Non-blocking: still return success since in-memory save worked
         }
+      } else {
+        console.log(`🔍 DEBUG SAVE: db is null/undefined, cannot save to MongoDB`);
       }
 
       return sendJSON(res, 200, { success: true, id: finalId });
 
     }
+
 
 
     // ── QR Codes: Get all user QR codes ─────────────────────────────────────
@@ -829,6 +848,10 @@ async function handleRequest(req, res) {
       // Get the authenticated user's ID from req.user (set by auth middleware)
       const userId = req.user?.id || req.user?._id || null;
 
+      console.log(`🔍 DEBUG FETCH: /api/assets called`);
+      console.log(`🔍 DEBUG FETCH: req.user =`, JSON.stringify(req.user));
+      console.log(`🔍 DEBUG FETCH: userId = ${userId}, type = ${typeof userId}`);
+
       if (!userId) {
         console.log('GET /api/assets: No authenticated user, returning empty');
         return sendJSON(res, 200, { stickers: [], logos: [], qrCodes: [] });
@@ -838,12 +861,46 @@ async function handleRequest(req, res) {
       let qrCodesList = [];
       if (db) {
         try {
+          console.log(`🔍 DEBUG FETCH: Using database: ${db.databaseName}`);
+          
+          // First, check what collections exist
+          const collections = await db.listCollections().toArray();
+          console.log(`🔍 DEBUG FETCH: Available collections: ${collections.map(c => c.name).join(', ')}`);
+          
+          // Check if qrcodes collection exists and has any documents
+          const totalCount = await db.collection('qrcodes').countDocuments();
+          console.log(`🔍 DEBUG FETCH: Total documents in qrcodes collection: ${totalCount}`);
+          
+          // Sample a few documents to see their structure
+          const sampleDocs = await db.collection('qrcodes').find({}).limit(3).toArray();
+          console.log(`🔍 DEBUG FETCH: Sample documents:`, JSON.stringify(sampleDocs.map(d => ({
+            id: d.id,
+            userId: d.userId,
+            userIdType: typeof d.userId,
+            destination: d.destination?.substring(0, 50)
+          }))));
+          
+          // Now query with the userId
           qrCodesList = await db.collection('qrcodes').find({ userId: userId }).toArray();
-          console.log(`GET /api/assets: Found ${qrCodesList.length} QR codes in MongoDB for userId: ${userId}`);
+          console.log(`🔍 DEBUG FETCH: Found ${qrCodesList.length} QR codes in MongoDB for userId: ${userId}`);
+          
+          // Also try querying with different userId formats
+          if (qrCodesList.length === 0) {
+            // Try string comparison
+            const allDocs = await db.collection('qrcodes').find({}).toArray();
+            console.log(`🔍 DEBUG FETCH: All documents userIds:`, allDocs.map(d => `"${d.userId}" (${typeof d.userId})`));
+            console.log(`🔍 DEBUG FETCH: Looking for userId: "${userId}" (${typeof userId})`);
+            
+            // Try to find any matching by loose comparison
+            const matchingDocs = allDocs.filter(d => String(d.userId) === String(userId));
+            console.log(`🔍 DEBUG FETCH: Documents matching by string comparison: ${matchingDocs.length}`);
+          }
         } catch (mongoError) {
           console.error('GET /api/assets: MongoDB query error:', mongoError.message);
+          console.error('🔍 DEBUG FETCH: Full error:', mongoError);
         }
       } else {
+        console.log(`🔍 DEBUG FETCH: db is null/undefined`);
         // Fallback to in-memory filter
         qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
       }
@@ -855,6 +912,7 @@ async function handleRequest(req, res) {
       console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos, ${qrCodesList.length} QR codes`);
       return sendJSON(res, 200, { stickers: stickersList, logos: logosList, qrCodes: qrCodesList });
     }
+
 
 
 
