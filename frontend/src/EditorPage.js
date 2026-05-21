@@ -2040,6 +2040,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                           { id: 'wifi', label: 'Wi-Fi', src: '/logos/wifi.png' },
                           { id: 'paypal', label: 'PayPal', src: '/logos/paypal.png' },
                           { id: 'link', label: 'Link', src: '/logos/link.png' },
+                          { id: 'tiktok', label: 'TikTok', src: '/logos/tiktok.png' },
                           { id: 'bitcoin', label: 'Bitcoin', src: '/logos/bitcoin.png' },
                         ].map((logo) => (
                           <div
