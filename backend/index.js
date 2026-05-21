@@ -124,7 +124,42 @@ async function handleRequest(req, res) {
 
   console.log(`${method} ${pathname}`);
 
+  // ── Authentication Middleware ──────────────────────────────────────────────
+  // Decode JWT and set req.user before any route logic
+  // Skip auth for webhook and public endpoints
+  const isPublicEndpoint =
+    pathname === '/api/webhook' ||
+    pathname === '/auth/status' ||
+    pathname === '/auth/user' ||
+    pathname === '/me' ||
+    pathname === '/auth/signup' ||
+    pathname === '/auth/login' ||
+    pathname.startsWith('/track/') ||
+    pathname.startsWith('/qrcodes/') ||
+    pathname === '/api/qrcodes/all';
+
+  if (!isPublicEndpoint) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        console.log(`✅ Authenticated user ${req.user.email} for ${method} ${pathname}`);
+      } catch (err) {
+        console.log(`❌ Token verification failed for ${method} ${pathname}: ${err.message}`);
+        req.user = null;
+      }
+    } else {
+      console.log(`❌ No valid auth header for ${method} ${pathname}`);
+      req.user = null;
+    }
+  } else {
+    req.user = null;
+  }
+
   try {
+
     // ── Stripe Webhook ───────────────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/webhook') {
       // Read raw body for Stripe signature verification
@@ -412,17 +447,17 @@ async function handleRequest(req, res) {
       console.log('🔑 Authorization header:', req.headers.authorization ? req.headers.authorization.substring(0, 50) + '...' : 'NOT SET');
       console.log('📧 User email header:', req.headers['x-user-email'] || 'NOT SET');
 
-      // Get user from JWT token
-      const decoded = getUserFromAuthHeader(req);
-      let userId = decoded?.id || decoded?.userId || null;
-      let userEmail = decoded?.email || null;
+      // Get user from req.user (set by auth middleware)
+      let userId = req.user?.id || req.user?.userId || null;
+      let userEmail = req.user?.email || null;
+
 
       // Fallback to x-user-email header
       if (!userEmail) {
         userEmail = req.headers['x-user-email'] || null;
       }
 
-      console.log(`📊 Subscription check: userId=${userId}, email=${userEmail}, decoded=${JSON.stringify(decoded)}`);
+      console.log(`📊 Subscription check: userId=${userId}, email=${userEmail}`);
 
       let user = null;
 
@@ -502,14 +537,15 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Missing QR code ID or destination.' });
       }
 
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       if (!userId) {
         console.error(`❌ No userId found in request for QR code save: ${id}`);
         return sendJSON(res, 401, { error: 'User not authenticated' });
       }
+
+      console.log(`📝 Saving QR code for user: ${userId}`);
 
       // Always save to in-memory (for fast redirects)
       qrCodes[id] = {
@@ -552,6 +588,7 @@ async function handleRequest(req, res) {
       }
 
       return sendJSON(res, 200, { success: true, id });
+
     }
 
     // ── QR Codes: Save to user assets ────────────────────────────────────────
@@ -563,9 +600,8 @@ async function handleRequest(req, res) {
       const finalImageData = qrImageData || imageData || '';
       const finalName = name || finalId || 'Untitled QR Code';
 
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId || 'none'})`);
 
@@ -581,17 +617,17 @@ async function handleRequest(req, res) {
       };
 
       return sendJSON(res, 200, { success: true, id: finalId });
+
     }
 
     // ── QR Codes: Get all user QR codes ─────────────────────────────────────
     if (method === 'GET' && pathname === '/api/assets/qrcodes') {
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       let qrCodesList;
       if (userId) {
-        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === decoded?.email);
+        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
         console.log(`Returning ${qrCodesList.length} QR codes for userId: ${userId}`);
       } else {
         qrCodesList = Object.values(qrCodes);
@@ -600,6 +636,7 @@ async function handleRequest(req, res) {
 
       return sendJSON(res, 200, { qrCodes: qrCodesList });
     }
+
 
     // ── QR Codes: Delete from assets ─────────────────────────────────────────
     const deleteAssetsQrMatch = matchPath('/api/assets/qrcodes/:id', pathname);
@@ -740,9 +777,8 @@ async function handleRequest(req, res) {
 
     // ── Assets: Get all assets ───────────────────────────────────────────────
     if (method === 'GET' && pathname === '/api/assets') {
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       if (!userId) {
         console.log('GET /api/assets: No authenticated user, returning empty');
@@ -750,8 +786,8 @@ async function handleRequest(req, res) {
       }
 
       // Filter stickers and logos by userId
-      const stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === decoded?.email);
-      const logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === decoded?.email);
+      const stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === req.user?.email);
+      const logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === req.user?.email);
 
       // Also fetch QR codes from MongoDB filtered by userId
       let qrCodesList = [];
@@ -764,12 +800,13 @@ async function handleRequest(req, res) {
         }
       } else {
         // Fallback to in-memory filter
-        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === decoded?.email);
+        qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
       }
 
       console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos, ${qrCodesList.length} QR codes`);
       return sendJSON(res, 200, { stickers: stickersList, logos: logosList, qrCodes: qrCodesList });
     }
+
 
     // ── Stickers: Save ───────────────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/assets/stickers') {
@@ -777,9 +814,8 @@ async function handleRequest(req, res) {
       const { data, name, category } = body;
       const id = String(stickerIdCounter++);
 
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       stickers[id] = {
         id,
@@ -803,12 +839,11 @@ async function handleRequest(req, res) {
         return sendJSON(res, 404, { error: 'Sticker not found' });
       }
 
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       // Security: only allow deletion if user owns the sticker or is admin
-      if (userId && stickers[id].userId && stickers[id].userId !== userId && stickers[id].userId !== decoded?.email) {
+      if (userId && stickers[id].userId && stickers[id].userId !== userId && stickers[id].userId !== req.user?.email) {
         console.warn(`⚠️ Unauthorized delete attempt for sticker ${id} by userId ${userId}`);
         return sendJSON(res, 403, { error: 'Not authorized to delete this sticker' });
       }
@@ -824,9 +859,8 @@ async function handleRequest(req, res) {
       const { data, name } = body;
       const id = String(logoIdCounter++);
 
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       logos[id] = {
         id,
@@ -849,12 +883,11 @@ async function handleRequest(req, res) {
         return sendJSON(res, 404, { error: 'Logo not found' });
       }
 
-      // Get the authenticated user's ID from the JWT token
-      const decoded = getUserFromAuthHeader(req);
-      const userId = decoded?.id || decoded?._id || null;
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
 
       // Security: only allow deletion if user owns the logo or is admin
-      if (userId && logos[id].userId && logos[id].userId !== userId && logos[id].userId !== decoded?.email) {
+      if (userId && logos[id].userId && logos[id].userId !== userId && logos[id].userId !== req.user?.email) {
         console.warn(`⚠️ Unauthorized delete attempt for logo ${id} by userId ${userId}`);
         return sendJSON(res, 403, { error: 'Not authorized to delete this logo' });
       }
@@ -863,6 +896,7 @@ async function handleRequest(req, res) {
       console.log(`Logo deleted: ${id}`);
       return sendJSON(res, 200, { success: true, id });
     }
+
 
     // ── Scan: Log analytics ──────────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/scan/log') {
