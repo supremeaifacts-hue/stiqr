@@ -603,22 +603,57 @@ async function handleRequest(req, res) {
       // Get the authenticated user's ID from req.user (set by auth middleware)
       const userId = req.user?.id || req.user?._id || null;
 
-      console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId || 'none'})`);
+      if (!userId) {
+        console.error(`❌ No userId found for QR code save to assets: ${finalId}`);
+        return sendJSON(res, 401, { error: 'User not authenticated' });
+      }
 
+      console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId})`);
+
+      // Always save to in-memory (for fast redirects)
       qrCodes[finalId] = {
         id: finalId,
         name: finalName,
         destination: finalData,
         qrImageData: finalImageData,
         design: design || null,
-        userId: userId || 'anonymous',
+        userId: userId,
         createdAt: new Date().toISOString(),
         scan_count: 0
       };
 
+      // Also save to MongoDB qrcodes collection with userId (persistent storage)
+      if (db) {
+        try {
+          const collection = db.collection('qrcodes');
+          await collection.updateOne(
+            { id: finalId },
+            {
+              $set: {
+                id: finalId,
+                destination: finalData,
+                qrImageData: finalImageData,
+                design: design || null,
+                userId: userId,
+                updatedAt: new Date()
+              },
+              $setOnInsert: {
+                createdAt: new Date()
+              }
+            },
+            { upsert: true }
+          );
+          console.log(`✅ QR code saved to MongoDB qrcodes collection: ${finalId} for user ${userId}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB save error: ${mongoError.message}`);
+          // Non-blocking: still return success since in-memory save worked
+        }
+      }
+
       return sendJSON(res, 200, { success: true, id: finalId });
 
     }
+
 
     // ── QR Codes: Get all user QR codes ─────────────────────────────────────
     if (method === 'GET' && pathname === '/api/assets/qrcodes') {
@@ -785,11 +820,7 @@ async function handleRequest(req, res) {
         return sendJSON(res, 200, { stickers: [], logos: [], qrCodes: [] });
       }
 
-      // Filter stickers and logos by userId
-      const stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === req.user?.email);
-      const logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === req.user?.email);
-
-      // Also fetch QR codes from MongoDB filtered by userId
+      // Fetch QR codes from MongoDB qrcodes collection filtered by userId
       let qrCodesList = [];
       if (db) {
         try {
@@ -803,9 +834,14 @@ async function handleRequest(req, res) {
         qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
       }
 
+      // Filter stickers and logos by userId
+      const stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === req.user?.email);
+      const logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === req.user?.email);
+
       console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos, ${qrCodesList.length} QR codes`);
       return sendJSON(res, 200, { stickers: stickersList, logos: logosList, qrCodes: qrCodesList });
     }
+
 
 
     // ── Stickers: Save ───────────────────────────────────────────────────────
