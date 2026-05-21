@@ -2,6 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import StickerPicker from './StickerPicker';
 import { useAuth } from './contexts/AuthContext';
+import whatsappLogo from './assets/logos/whatsapp.png';
+import wechatLogo from './assets/logos/wechat.png';
+import instagramLogo from './assets/logos/instagram.png';
+import mailLogo from './assets/logos/mail.png';
+import wifiLogo from './assets/logos/wifi.png';
+import paypalLogo from './assets/logos/paypal.png';
+import linkLogo from './assets/logos/link.png';
+import tiktokLogo from './assets/logos/tiktok.png';
+import bitcoinLogo from './assets/logos/bitcoin.png';
 
 const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, qrCodeToEdit, onClearQrCodeToEdit }) => {
   const [selectedType, setSelectedType] = useState('url');
@@ -2033,15 +2042,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         WebkitOverflowScrolling: 'touch',
                       }}>
                         {[
-                          { id: 'whatsapp', label: 'WhatsApp', src: '/logos/whatsapp.png' },
-                          { id: 'wechat', label: 'WeChat', src: '/logos/wechat.png' },
-                          { id: 'instagram', label: 'Instagram', src: '/logos/instagram.png' },
-                          { id: 'mail', label: 'Mail', src: '/logos/mail.png' },
-                          { id: 'wifi', label: 'Wi-Fi', src: '/logos/wifi.png' },
-                          { id: 'paypal', label: 'PayPal', src: '/logos/paypal.png' },
-                          { id: 'link', label: 'Link', src: '/logos/link.png' },
-                          { id: 'tiktok', label: 'TikTok', src: '/logos/tiktok.png' },
-                          { id: 'bitcoin', label: 'Bitcoin', src: '/logos/bitcoin.png' },
+                          { id: 'whatsapp', label: 'WhatsApp', src: whatsappLogo },
+                          { id: 'wechat', label: 'WeChat', src: wechatLogo },
+                          { id: 'instagram', label: 'Instagram', src: instagramLogo },
+                          { id: 'mail', label: 'Mail', src: mailLogo },
+                          { id: 'wifi', label: 'Wi-Fi', src: wifiLogo },
+                          { id: 'paypal', label: 'PayPal', src: paypalLogo },
+                          { id: 'link', label: 'Link', src: linkLogo },
+                          { id: 'tiktok', label: 'TikTok', src: tiktokLogo },
+                          { id: 'bitcoin', label: 'Bitcoin', src: bitcoinLogo },
                         ].map((logo) => (
                           <div
                             key={logo.id}
@@ -2109,7 +2118,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             justifyContent: 'center',
                             overflow: 'hidden',
                           }}>
-                            {selectedLogo.startsWith('data:') || selectedLogo.startsWith('http') || selectedLogo.startsWith('/logos/') ? (
+                            {selectedLogo.startsWith('data:') || selectedLogo.startsWith('http') || selectedLogo.startsWith('/logos/') || selectedLogo.startsWith('/assets/') ? (
                               <img 
                                 src={selectedLogo} 
                                 alt="Selected logo" 
