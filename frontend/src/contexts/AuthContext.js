@@ -208,10 +208,11 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   // Save user asset functions
-  const saveSticker = async (stickerData, name, category) => {
+  const saveSticker = async (stickerData, name, category, qrCodeId = null) => {
     try {
       console.log('AuthContext: Saving sticker, isAuthenticated:', !!user);
       console.log('AuthContext: Sticker data length:', stickerData?.length || 0);
+      console.log('AuthContext: Sticker qrCodeId:', qrCodeId);
       
       // Get JWT token from localStorage
       const token = localStorage.getItem('jwtToken');
@@ -231,7 +232,8 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({
           data: stickerData,
           name: name || 'Untitled Sticker',
-          category: category || 'custom'
+          category: category || 'custom',
+          qrCodeId: qrCodeId
         })
       });
 
@@ -252,10 +254,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const saveLogo = async (logoData, name) => {
+
+  const saveLogo = async (logoData, name, qrCodeId = null) => {
     try {
       console.log('AuthContext: Saving logo, isAuthenticated:', !!user);
       console.log('AuthContext: Logo data length:', logoData?.length || 0);
+      console.log('AuthContext: Logo qrCodeId:', qrCodeId);
       
       // Get JWT token from localStorage
       const token = localStorage.getItem('jwtToken');
@@ -274,7 +278,8 @@ export const AuthProvider = ({ children }) => {
         credentials: 'include',
         body: JSON.stringify({
           data: logoData,
-          name: name || 'Untitled Logo'
+          name: name || 'Untitled Logo',
+          qrCodeId: qrCodeId
         })
       });
 
@@ -294,6 +299,7 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+
 
   const deleteSticker = async (stickerId) => {
     try {

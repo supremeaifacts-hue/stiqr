@@ -907,12 +907,37 @@ async function handleRequest(req, res) {
         qrCodesList = Object.values(qrCodes).filter(q => q.userId === userId || q.userId === req.user?.email);
       }
 
-      // Filter stickers and logos by userId
-      const stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === req.user?.email);
-      const logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === req.user?.email);
+      // Fetch stickers from MongoDB (with in-memory fallback)
+      let stickersList = [];
+      if (db) {
+        try {
+          stickersList = await db.collection('stickers').find({ userId: userId }).toArray();
+          console.log(`GET /api/assets: Found ${stickersList.length} stickers in MongoDB for userId: ${userId}`);
+        } catch (mongoError) {
+          console.error('GET /api/assets: MongoDB stickers query error:', mongoError.message);
+          stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === req.user?.email);
+        }
+      } else {
+        stickersList = Object.values(stickers).filter(s => s.userId === userId || s.userId === req.user?.email);
+      }
+
+      // Fetch logos from MongoDB (with in-memory fallback)
+      let logosList = [];
+      if (db) {
+        try {
+          logosList = await db.collection('logos').find({ userId: userId }).toArray();
+          console.log(`GET /api/assets: Found ${logosList.length} logos in MongoDB for userId: ${userId}`);
+        } catch (mongoError) {
+          console.error('GET /api/assets: MongoDB logos query error:', mongoError.message);
+          logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === req.user?.email);
+        }
+      } else {
+        logosList = Object.values(logos).filter(l => l.userId === userId || l.userId === req.user?.email);
+      }
 
       console.log(`GET /api/assets: returning ${stickersList.length} stickers, ${logosList.length} logos, ${qrCodesList.length} QR codes`);
       return sendJSON(res, 200, { stickers: stickersList, logos: logosList, qrCodes: qrCodesList });
+
     }
 
 
@@ -921,24 +946,50 @@ async function handleRequest(req, res) {
     // ── Stickers: Save ───────────────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/assets/stickers') {
       const body = await parseBody(req);
-      const { data, name, category } = body;
+      const { data, name, category, qrCodeId } = body;
       const id = String(stickerIdCounter++);
 
       // Get the authenticated user's ID from req.user (set by auth middleware)
       const userId = req.user?.id || req.user?._id || null;
 
+      if (!userId) {
+        return sendJSON(res, 401, { error: 'User not authenticated' });
+      }
+
+      // Always save to in-memory
       stickers[id] = {
         id,
         data: data || '',
         name: name || 'Untitled Sticker',
         category: category || 'custom',
-        userId: userId || 'anonymous',
+        qrCodeId: qrCodeId || null,
+        userId: userId,
         createdAt: new Date().toISOString()
       };
+
+      // Also save to MongoDB
+      if (db) {
+        try {
+          const collection = db.collection('stickers');
+          const result = await collection.insertOne({
+            id: id,
+            userId: userId,
+            qrCodeId: qrCodeId || null,
+            name: name || 'Untitled Sticker',
+            category: category || 'custom',
+            data: data || '',
+            createdAt: new Date()
+          });
+          console.log(`✅ Sticker saved to MongoDB: ${id} (name: ${stickers[id].name})`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB sticker save error: ${mongoError.message}`);
+        }
+      }
 
       console.log(`Sticker saved: ${stickers[id].name} (ID: ${id}, userId: ${userId || 'none'})`);
       return sendJSON(res, 200, { success: true, sticker: stickers[id] });
     }
+
 
     // ── Stickers: Delete ─────────────────────────────────────────────────────
     const deleteStickerMatch = matchPath('/api/assets/stickers/:id', pathname);
@@ -958,31 +1009,68 @@ async function handleRequest(req, res) {
         return sendJSON(res, 403, { error: 'Not authorized to delete this sticker' });
       }
 
+      // Also delete from MongoDB
+      if (db) {
+        try {
+          const collection = db.collection('stickers');
+          await collection.deleteOne({ id: id, userId: userId });
+          console.log(`✅ Sticker deleted from MongoDB: ${id}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB sticker delete error: ${mongoError.message}`);
+        }
+      }
+
       delete stickers[id];
       console.log(`Sticker deleted: ${id}`);
       return sendJSON(res, 200, { success: true, id });
     }
 
+
     // ── Logos: Save ──────────────────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/assets/logos') {
       const body = await parseBody(req);
-      const { data, name } = body;
+      const { data, name, qrCodeId } = body;
       const id = String(logoIdCounter++);
 
       // Get the authenticated user's ID from req.user (set by auth middleware)
       const userId = req.user?.id || req.user?._id || null;
 
+      if (!userId) {
+        return sendJSON(res, 401, { error: 'User not authenticated' });
+      }
+
+      // Always save to in-memory
       logos[id] = {
         id,
         data: data || '',
         name: name || 'Untitled Logo',
-        userId: userId || 'anonymous',
+        qrCodeId: qrCodeId || null,
+        userId: userId,
         createdAt: new Date().toISOString()
       };
+
+      // Also save to MongoDB
+      if (db) {
+        try {
+          const collection = db.collection('logos');
+          const result = await collection.insertOne({
+            id: id,
+            userId: userId,
+            qrCodeId: qrCodeId || null,
+            name: name || 'Untitled Logo',
+            data: data || '',
+            createdAt: new Date()
+          });
+          console.log(`✅ Logo saved to MongoDB: ${id} (name: ${logos[id].name})`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB logo save error: ${mongoError.message}`);
+        }
+      }
 
       console.log(`Logo saved: ${logos[id].name} (ID: ${id}, userId: ${userId || 'none'})`);
       return sendJSON(res, 200, { success: true, logo: logos[id] });
     }
+
 
     // ── Logos: Delete ────────────────────────────────────────────────────────
     const deleteLogoMatch = matchPath('/api/assets/logos/:id', pathname);
@@ -1002,10 +1090,22 @@ async function handleRequest(req, res) {
         return sendJSON(res, 403, { error: 'Not authorized to delete this logo' });
       }
 
+      // Also delete from MongoDB
+      if (db) {
+        try {
+          const collection = db.collection('logos');
+          await collection.deleteOne({ id: id, userId: userId });
+          console.log(`✅ Logo deleted from MongoDB: ${id}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB logo delete error: ${mongoError.message}`);
+        }
+      }
+
       delete logos[id];
       console.log(`Logo deleted: ${id}`);
       return sendJSON(res, 200, { success: true, id });
     }
+
 
 
     // ── Scan: Log analytics ──────────────────────────────────────────────────
