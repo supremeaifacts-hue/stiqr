@@ -86,7 +86,14 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
           console.log('Dashboard: Stickers count:', assets.stickers?.length || 0);
           console.log('Dashboard: Logos count:', assets.logos?.length || 0);
           console.log('Dashboard: QR Codes count:', assets.qrCodes?.length || 0);
+          // Log scan counts for debugging
+          if (assets.qrCodes?.length > 0) {
+            assets.qrCodes.forEach(qr => {
+              console.log(`Dashboard: QR "${qr.name}" scans: ${qr.scans} (raw: scan_count=${qr.scan_count}, scans=${qr.scans})`);
+            });
+          }
           setUserAssets({
+
             stickers: assets?.stickers || [],
             logos: assets?.logos || [],
             qrCodes: assets?.qrCodes || []
@@ -125,7 +132,39 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
     fetchAssets();
   }, [isAuthenticated, getUserAssets, user?.isDemo]);
 
+  // Refresh QR code data when the dashboard tab becomes active (visibilitychange)
+  // This ensures scan counts are up-to-date after user scans a QR code and returns
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated) {
+        console.log('Dashboard: Tab became visible, refreshing QR code data for updated scan counts...');
+        const refreshAssets = async () => {
+          try {
+            const assets = await getUserAssets();
+            if (assets?.qrCodes) {
+              console.log('Dashboard: Refreshed QR codes with scan counts:', 
+                assets.qrCodes.map(qr => `${qr.name}: ${qr.scans} scans`));
+              setUserAssets(prev => ({
+                ...prev,
+                qrCodes: assets.qrCodes || [],
+                stickers: assets.stickers || prev.stickers,
+                logos: assets.logos || prev.logos
+              }));
+            }
+          } catch (error) {
+            console.error('Dashboard: Error refreshing assets on visibility change:', error);
+          }
+        };
+        refreshAssets();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated, getUserAssets]);
+
   const handlePricingClick = () => {
+
     if (onViewPricing) {
       onViewPricing();
     } else {
