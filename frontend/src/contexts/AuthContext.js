@@ -572,11 +572,14 @@ export const AuthProvider = ({ children }) => {
         console.error('AuthContext: Error fetching QR codes:', qrError);
       }
       
+      // Use the properly mapped qrCodes from the dedicated endpoint
+      // (data.qrCodes from GET /api/assets may not have destination/scan_count mapped)
       return {
         stickers: normalizedStickers,
         logos: normalizedLogos,
-        qrCodes: data.qrCodes || qrCodes
+        qrCodes: qrCodes.length > 0 ? qrCodes : (data.qrCodes || [])
       };
+
     } catch (error) {
       console.error('AuthContext: Error fetching user assets:', error);
       throw error;

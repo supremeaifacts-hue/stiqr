@@ -572,9 +572,11 @@ async function handleRequest(req, res) {
             {
               $set: {
                 id: id,
+                name: qrCodes[id]?.name || body.name || id,
                 destination: targetDestination,
                 qrImageData: qrCodes[id]?.qrImageData || body.qrImageData || '',
                 userId: userId,
+                scan_count: qrCodes[id]?.scan_count || 0,
                 updatedAt: new Date()
               },
               $setOnInsert: {
@@ -589,6 +591,7 @@ async function handleRequest(req, res) {
           // Non-blocking: still return success since in-memory save worked
         }
       }
+
 
 
       return sendJSON(res, 200, { success: true, id });
@@ -640,10 +643,12 @@ async function handleRequest(req, res) {
             {
               $set: {
                 id: finalId,
+                name: finalName,
                 destination: finalData,
                 qrImageData: finalImageData,
                 design: design || null,
                 userId: userId,
+                scan_count: 0,
                 updatedAt: new Date()
               },
               $setOnInsert: {
@@ -652,6 +657,7 @@ async function handleRequest(req, res) {
             },
             { upsert: true }
           );
+
           console.log(`✅ QR code saved to MongoDB qrcodes collection: ${finalId} for user ${userId}`);
           console.log(`🔍 DEBUG SAVE: MongoDB result: upsertedId=${result.upsertedId}, modified=${result.modifiedCount}, upserted=${result.upsertedCount}`);
           
