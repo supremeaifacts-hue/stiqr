@@ -782,35 +782,50 @@ async function handleRequest(req, res) {
 
       console.log(`✅ QR code metadata updated: ${id}`, updates);
 
-      // CRITICAL: Update KV cache for fast redirects
-      // The worker checks KV first for redirects, so we must keep KV in sync.
-      // This makes an internal request to the Worker's KV update endpoint.
-      // WORKER_URL env var should point to the worker base URL (e.g. https://stiqr.supreme-ai-facts.workers.dev)
-      // If WORKER_URL already includes /api/kv/update, use it directly.
+      // ── STEP 1: Update MongoDB ──────────────────────────────────────────────
+      if (db && updates.destination) {
+        try {
+          const collection = db.collection('qrcodes');
+          await collection.updateOne(
+            { id: id },
+            { $set: { destination: updates.destination, updatedAt: new Date() } }
+          );
+          console.log(`✅ MongoDB updated for ${id} -> ${updates.destination}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB update error for ${id}: ${mongoError.message}`);
+        }
+      }
+
+      // ── STEP 2: CRITICAL - Update KV cache immediately (synchronous) ────────
+      // The Worker checks KV first for redirects, so we must keep KV in sync.
+      // This must complete before we respond to ensure scans redirect correctly.
       if (updates.destination) {
-        const workerUrl = process.env.WORKER_URL || 'https://stiqr.your-subdomain.workers.dev';
-        // Remove trailing slash if present
+        const workerUrl = process.env.WORKER_URL || 'https://stiqr.supreme-ai-facts.workers.dev';
         const baseUrl = workerUrl.replace(/\/+$/, '');
-        // If WORKER_URL already contains the full path, use it; otherwise append /api/kv/update
         const kvUrl = baseUrl.includes('/api/kv/update') ? baseUrl : `${baseUrl}/api/kv/update`;
-        console.log(`🔄 Updating KV cache: POST ${kvUrl}`);
-        fetch(kvUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: id, value: updates.destination }),
-        }).then(kvRes => {
-          if (kvRes.ok) {
+        
+        console.log(`🔄 Updating KV cache synchronously: POST ${kvUrl}`);
+        try {
+          const kvResponse = await fetch(kvUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: id, value: updates.destination }),
+          });
+          
+          if (kvResponse.ok) {
             console.log(`✅ KV cache updated for ${id} -> ${updates.destination}`);
           } else {
-            console.warn(`⚠️ KV cache update failed for ${id}: ${kvRes.status}`);
+            const kvText = await kvResponse.text();
+            console.error(`❌ KV update failed for ${id}: ${kvResponse.status} - ${kvText}`);
           }
-        }).catch(kvErr => {
-          console.warn(`⚠️ KV cache update error for ${id}:`, kvErr.message);
-        });
+        } catch (kvErr) {
+          console.error(`❌ KV update error for ${id}:`, kvErr.message);
+        }
       }
 
       return sendJSON(res, 200, { success: true, id, updates });
     }
+
 
     // ── QR Codes: Increment scan count ───────────────────────────────────────
     const incrementMatch = matchPath('/api/qrcodes/:id/increment', pathname);
