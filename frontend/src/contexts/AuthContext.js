@@ -554,7 +554,7 @@ export const AuthProvider = ({ children }) => {
         if (qrResponse.ok) {
           const qrData = await qrResponse.json();
           qrCodes = (qrData.qrCodes || []).map(qr => ({
-            id: qr.id,
+            id: qr.id || qr._id?.toString() || qr._id || '',
             data: qr.destination || qr.data || '',
             imageData: qr.qrImageData || qr.imageData || '',
             qrImageData: qr.qrImageData || qr.imageData || '',
@@ -564,6 +564,7 @@ export const AuthProvider = ({ children }) => {
             design: qr.design || null,
             createdAt: qr.createdAt || null
           }));
+
 
 
           console.log('AuthContext: QR Codes fetched and normalized:', qrCodes.length);

@@ -720,13 +720,25 @@ async function handleRequest(req, res) {
       const { id } = deleteAssetsQrMatch;
       console.log(`Deleting QR code: ${id}`);
 
-      if (!qrCodes[id]) {
-        return sendJSON(res, 404, { error: 'QR code not found' });
+      // Delete from in-memory
+      if (qrCodes[id]) {
+        delete qrCodes[id];
       }
 
-      delete qrCodes[id];
+      // Also delete from MongoDB
+      if (db) {
+        try {
+          const collection = db.collection('qrcodes');
+          const result = await collection.deleteOne({ id: id });
+          console.log(`✅ QR code deleted from MongoDB: ${id} (deleted: ${result.deletedCount})`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB delete error for ${id}: ${mongoError.message}`);
+        }
+      }
+
       return sendJSON(res, 200, { success: true, id });
     }
+
 
     // ── QR Codes: Delete standalone ──────────────────────────────────────────
     const deleteQrMatch = matchPath('/qrcodes/:id', pathname);
@@ -858,13 +870,26 @@ async function handleRequest(req, res) {
         return sendRedirect(res, 'https://www.youtube.com');
       }
 
-      // Increment scan count
+      // Increment scan count in-memory
       qrCode.scan_count = (qrCode.scan_count || 0) + 1;
+
+      // Also persist scan count to MongoDB (fire-and-forget, don't block redirect)
+      if (db) {
+        db.collection('qrcodes').updateOne(
+          { id: id },
+          { $inc: { scan_count: 1 } }
+        ).then(() => {
+          console.log(`✅ Scan count persisted to MongoDB for ${id}: ${qrCode.scan_count}`);
+        }).catch(err => {
+          console.error(`❌ Failed to persist scan count to MongoDB for ${id}: ${err.message}`);
+        });
+      }
 
       const destination = qrCode.destination || qrCode.qrCodeData;
       console.log(`Redirecting to: ${destination}`);
       return sendRedirect(res, destination);
     }
+
 
     // ── Assets: Get all assets ───────────────────────────────────────────────
     if (method === 'GET' && pathname === '/api/assets') {
