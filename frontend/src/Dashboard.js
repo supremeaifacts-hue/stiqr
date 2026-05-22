@@ -874,12 +874,22 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                       <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff', marginBottom: '5px' }}>
                         {qrCode.name}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '5px' }}>
-                        {(qrCode.data || '').length > 30 ? (qrCode.data || '').substring(0, 30) + '...' : qrCode.data || ''}
+                      <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '3px' }}>
+                        📍 {(qrCode.destination || qrCode.data || '').length > 30 ? (qrCode.destination || qrCode.data || '').substring(0, 30) + '...' : qrCode.destination || qrCode.data || ''}
                       </div>
-                      <div style={{ fontSize: '10px', color: trialExpired ? '#FF0000' : '#00D9FF' }}>
-                        Scans: {qrCode.scans || 0}
+                      {qrCode.design?.framePhrase && (
+                        <div style={{ fontSize: '11px', color: '#FFD700', marginBottom: '3px' }}>
+                          🖼️ "{qrCode.design.framePhrase}"
+                        </div>
+                      )}
+                      <div style={{ fontSize: '10px', color: trialExpired ? '#FF0000' : '#00D9FF', marginBottom: '3px' }}>
+                        👁️ Scans: {qrCode.scans || 0}
                       </div>
+                      {qrCode.createdAt && (
+                        <div style={{ fontSize: '9px', color: '#888', marginBottom: '3px' }}>
+                          📅 {new Date(qrCode.createdAt).toLocaleDateString()}
+                        </div>
+                      )}
                       {isDynamicQr && !trialExpired && !isProUser() && (
                         <div style={{ fontSize: '9px', color: '#FF00FF', marginTop: '5px' }}>
                           ⭐ Trial: {getTrialDaysLeft()} days left
@@ -891,6 +901,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                         </div>
                       )}
                     </div>
+
                     
                     {/* Download button */}
                     <button

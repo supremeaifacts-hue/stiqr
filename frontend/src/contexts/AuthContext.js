@@ -555,8 +555,10 @@ export const AuthProvider = ({ children }) => {
             name: qr.name || qr.id || 'Untitled QR Code',
             scans: qr.scan_count || qr.scans || 0,
             destination: qr.destination || qr.data || '',
-            design: qr.design || null
+            design: qr.design || null,
+            createdAt: qr.createdAt || null
           }));
+
 
           console.log('AuthContext: QR Codes fetched and normalized:', qrCodes.length);
         }
