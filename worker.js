@@ -4,6 +4,64 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
+    // Handle KV update requests (called by backend PUT /api/qrcodes/:id)
+    if (pathname === '/api/kv/update' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const { key, value } = body;
+        
+        if (!key) {
+          return new Response(JSON.stringify({ error: 'Key is required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        await env.QR_DESTINATIONS.put(key, value);
+        console.log(`✅ KV updated: ${key} -> ${value}`);
+        
+        return new Response(JSON.stringify({ success: true, key }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        console.error(`❌ KV update error: ${error.message}`);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Handle KV delete requests (called by backend DELETE /api/assets/qrcodes/:id)
+    if (pathname === '/api/kv/delete' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const { key } = body;
+        
+        if (!key) {
+          return new Response(JSON.stringify({ error: 'Key is required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        await env.QR_DESTINATIONS.delete(key);
+        console.log(`✅ KV deleted: ${key}`);
+        
+        return new Response(JSON.stringify({ success: true, key }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        console.error(`❌ KV delete error: ${error.message}`);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // 1. Forward API requests to your Render backend
     if (pathname.startsWith('/auth/') ||
         pathname.startsWith('/api/') ||

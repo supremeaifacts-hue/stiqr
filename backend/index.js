@@ -736,7 +736,30 @@ async function handleRequest(req, res) {
         }
       }
 
+      // Also delete from Cloudflare KV (fire-and-forget, don't block response)
+      const workerUrl = process.env.WORKER_URL || 'https://stiqr.supreme-ai-facts.workers.dev';
+      const baseUrl = workerUrl.replace(/\/+$/, '');
+      const kvDeleteUrl = baseUrl.includes('/api/kv/delete') ? baseUrl : `${baseUrl}/api/kv/delete`;
+      
+      console.log(`🔄 Deleting from KV cache: POST ${kvDeleteUrl}`);
+      fetch(kvDeleteUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: id }),
+      }).then(kvResponse => {
+        if (kvResponse.ok) {
+          console.log(`✅ KV cache deleted for ${id}`);
+        } else {
+          return kvResponse.text().then(kvText => {
+            console.error(`❌ KV delete failed for ${id}: ${kvResponse.status} - ${kvText}`);
+          });
+        }
+      }).catch(kvErr => {
+        console.error(`❌ KV delete error for ${id}:`, kvErr.message);
+      });
+
       return sendJSON(res, 200, { success: true, id });
+
     }
 
 
