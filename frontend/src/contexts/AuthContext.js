@@ -551,11 +551,13 @@ export const AuthProvider = ({ children }) => {
             id: qr.id,
             data: qr.destination || qr.data || '',
             imageData: qr.qrImageData || qr.imageData || '',
+            qrImageData: qr.qrImageData || qr.imageData || '',
             name: qr.name || qr.id || 'Untitled QR Code',
             scans: qr.scan_count || qr.scans || 0,
             destination: qr.destination || qr.data || '',
             design: qr.design || null
           }));
+
           console.log('AuthContext: QR Codes fetched and normalized:', qrCodes.length);
         }
       } catch (qrError) {

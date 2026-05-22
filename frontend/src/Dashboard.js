@@ -818,29 +818,48 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                       filter: trialExpired ? 'blur(2px)' : 'none',
                       opacity: trialExpired ? 0.5 : 1,
                     }}>
-                      {qrCode.imageData && qrCode.imageData.startsWith('data:') ? (
+                      {qrCode.qrImageData ? (
                         <img 
-                          src={qrCode.imageData} 
-                          alt={`QR Code for ${qrCode.destination || qrCode.data || qrCode.name}`}
+                          src={qrCode.qrImageData} 
+                          alt="QR Code"
                           style={{ 
                             width: '100%', 
                             height: '100%', 
-                            objectFit: 'contain' 
+                            objectFit: 'contain',
+                            display: 'block'
                           }}
                           onError={(e) => {
-                            console.error('Image failed to load:', qrCode.id, qrCode.name);
+                            console.error('Image failed to load:', qrCode.id, qrCode.name, e);
                             e.target.style.display = 'none';
                             e.target.parentElement.innerHTML = '<div style="font-size:32px">🔲</div>';
                           }}
+                          onLoad={() => console.log('Image loaded:', qrCode.id, qrCode.name)}
+                        />
+                      ) : qrCode.imageData ? (
+                        <img 
+                          src={qrCode.imageData} 
+                          alt="QR Code"
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'contain',
+                            display: 'block'
+                          }}
+                          onError={(e) => {
+                            console.error('Image (fallback) failed to load:', qrCode.id, qrCode.name, e);
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML = '<div style="font-size:32px">🔲</div>';
+                          }}
+                          onLoad={() => console.log('Image (fallback) loaded:', qrCode.id, qrCode.name)}
                         />
                       ) : qrCode.data ? (
                         <img 
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode.data)}`}
-                          alt={`QR Code for ${qrCode.destination || qrCode.data}`}
+                          alt="QR Code"
                           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                           crossOrigin="anonymous"
                           onError={(e) => {
-                            console.error('QR server image failed to load:', qrCode.id);
+                            console.error('QR server image failed to load:', qrCode.id, e);
                             e.target.style.display = 'none';
                             e.target.parentElement.innerHTML = '<div style="font-size:32px">🔲</div>';
                           }}
@@ -849,6 +868,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                         <div style={{ fontSize: '32px' }}>🔲</div>
                       )}
                     </div>
+
 
                     <div style={{ textAlign: 'center', filter: trialExpired ? 'blur(1px)' : 'none', opacity: trialExpired ? 0.7 : 1 }}>
                       <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff', marginBottom: '5px' }}>
