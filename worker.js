@@ -74,7 +74,12 @@ export default {
         body: request.body,
       });
       
-      return fetch(backendRequest);
+      const response = await fetch(backendRequest);
+      const newResponse = new Response(response.body, response);
+      newResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      newResponse.headers.set('Pragma', 'no-cache');
+      newResponse.headers.set('Expires', '0');
+      return newResponse;
     }
 
     // 2. For all other requests (like /, /dashboard, /pricing), serve your Cloudflare Pages site
