@@ -509,14 +509,20 @@ async function handleRequest(req, res) {
           return sendJSON(res, 200, {
             qrCodes: qrCodesList.map(qr => ({
               id: qr.id,
-              destination: qr.destination
+              destination: qr.destination,
+              scan_count: qr.scan_count || 0,
+              name: qr.name || qr.id,
+              createdAt: qr.createdAt || null
             }))
           });
         } else {
           // Fallback to in-memory
           const qrCodesList = Object.values(qrCodes).map(qr => ({
             id: qr.id,
-            destination: qr.destination
+            destination: qr.destination,
+            scan_count: qr.scan_count || 0,
+            name: qr.name || qr.id,
+            createdAt: qr.createdAt || null
           }));
           return sendJSON(res, 200, { qrCodes: qrCodesList });
         }
@@ -737,26 +743,24 @@ async function handleRequest(req, res) {
       }
 
       // Also delete from Cloudflare KV (fire-and-forget, don't block response)
-      const workerUrl = process.env.WORKER_URL || 'https://stiqr.supreme-ai-facts.workers.dev';
-      const baseUrl = workerUrl.replace(/\/+$/, '');
-      const kvDeleteUrl = baseUrl.includes('/api/kv/delete') ? baseUrl : `${baseUrl}/api/kv/delete`;
-      
-      console.log(`🔄 Deleting from KV cache: POST ${kvDeleteUrl}`);
-      fetch(kvDeleteUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: id }),
-      }).then(kvResponse => {
-        if (kvResponse.ok) {
-          console.log(`✅ KV cache deleted for ${id}`);
-        } else {
-          return kvResponse.text().then(kvText => {
-            console.error(`❌ KV delete failed for ${id}: ${kvResponse.status} - ${kvText}`);
-          });
-        }
-      }).catch(kvErr => {
-        console.error(`❌ KV delete error for ${id}:`, kvErr.message);
-      });
+      const workerUrl = process.env.WORKER_URL;
+      if (workerUrl) {
+        fetch(`${workerUrl}/api/kv/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: id }),
+        }).then(kvResponse => {
+          if (kvResponse.ok) {
+            console.log(`✅ KV cache deleted for ${id}`);
+          } else {
+            return kvResponse.text().then(kvText => {
+              console.error(`❌ KV delete failed for ${id}: ${kvResponse.status} - ${kvText}`);
+            });
+          }
+        }).catch(kvErr => {
+          console.error(`❌ KV delete error for ${id}:`, kvErr.message);
+        });
+      }
 
       return sendJSON(res, 200, { success: true, id });
 
@@ -886,7 +890,22 @@ async function handleRequest(req, res) {
       const { id } = trackMatch;
       console.log(`Tracking request for QR code: ${id}`);
 
-      const qrCode = qrCodes[id];
+      // Try to find QR code in in-memory first, then MongoDB
+      let qrCode = qrCodes[id];
+      
+      if (!qrCode && db) {
+        try {
+          const mongoQr = await db.collection('qrcodes').findOne({ id: id });
+          if (mongoQr) {
+            // Load into in-memory for fast subsequent access
+            qrCodes[id] = mongoQr;
+            qrCode = qrCodes[id];
+            console.log(`✅ QR code loaded from MongoDB for tracking: ${id}`);
+          }
+        } catch (err) {
+          console.error(`❌ Failed to load QR code from MongoDB for tracking: ${err.message}`);
+        }
+      }
 
       if (!qrCode) {
         console.log(`QR code not found: ${id}`);
@@ -1180,10 +1199,46 @@ async function handleRequest(req, res) {
     // ── Scan: Log analytics ──────────────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/scan/log') {
       const body = await parseBody(req);
-      scans.push({
+      
+      // Always save to in-memory
+      const scanRecord = {
         ...body,
         processedAt: new Date().toISOString()
-      });
+      };
+      scans.push(scanRecord);
+
+      // Also save to MongoDB scans collection (persistent storage)
+      if (db) {
+        try {
+          const collection = db.collection('scans');
+          await collection.insertOne({
+            qrCodeId: body.qrCodeId,
+            timestamp: body.timestamp || new Date().toISOString(),
+            country: body.country || null,
+            countryCode: body.countryCode || null,
+            city: body.city || null,
+            region: body.region || null,
+            deviceType: body.deviceType || null,
+            os: body.os || null,
+            browser: body.browser || null,
+            userAgent: body.userAgent || null,
+            referer: body.referer || null,
+            ip: body.ip || null,
+            processedAt: new Date()
+          });
+          console.log(`✅ Scan saved to MongoDB: ${body.qrCodeId} from ${body.country || 'unknown'}`);
+          
+          // Also increment scan_count in qrcodes collection
+          await db.collection('qrcodes').updateOne(
+            { id: body.qrCodeId },
+            { $inc: { scan_count: 1 } }
+          );
+          console.log(`✅ Scan count incremented in MongoDB for ${body.qrCodeId}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB scan save error: ${mongoError.message}`);
+          // Non-blocking: still return success since in-memory save worked
+        }
+      }
 
       console.log(`📊 Scan logged: ${body.qrCodeId} from ${body.country || 'unknown'}`);
       return sendJSON(res, 200, { success: true });
@@ -1193,7 +1248,25 @@ async function handleRequest(req, res) {
     const analyticsMatch = matchPath('/api/analytics/:qrCodeId', pathname);
     if (method === 'GET' && analyticsMatch && !pathname.endsWith('/timeline') && !pathname.endsWith('/summary')) {
       const { qrCodeId } = analyticsMatch;
-      const qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+      
+      // Try to get scans from MongoDB first, fallback to in-memory
+      let qrScans = [];
+      if (db) {
+        try {
+          const mongoScans = await db.collection('scans').find({ qrCodeId: qrCodeId }).toArray();
+          qrScans = mongoScans.map(s => ({
+            ...s,
+            timestamp: s.timestamp || s.processedAt?.toISOString() || new Date().toISOString(),
+            processedAt: s.processedAt?.toISOString() || new Date().toISOString()
+          }));
+          console.log(`📊 Analytics: Found ${qrScans.length} scans in MongoDB for ${qrCodeId}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB analytics query error: ${mongoError.message}`);
+          qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+        }
+      } else {
+        qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+      }
 
       const summary = {
         totalScans: qrScans.length,
@@ -1221,7 +1294,23 @@ async function handleRequest(req, res) {
     const timelineMatch = matchPath('/api/analytics/:qrCodeId/timeline', pathname);
     if (method === 'GET' && timelineMatch) {
       const { qrCodeId } = timelineMatch;
-      const qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+      
+      // Try to get scans from MongoDB first, fallback to in-memory
+      let qrScans = [];
+      if (db) {
+        try {
+          const mongoScans = await db.collection('scans').find({ qrCodeId: qrCodeId }).toArray();
+          qrScans = mongoScans.map(s => ({
+            ...s,
+            timestamp: s.timestamp || s.processedAt?.toISOString() || new Date().toISOString()
+          }));
+        } catch (mongoError) {
+          console.error(`❌ MongoDB timeline query error: ${mongoError.message}`);
+          qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+        }
+      } else {
+        qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+      }
 
       const timeline = {};
       qrScans.forEach(scan => {
@@ -1236,7 +1325,23 @@ async function handleRequest(req, res) {
     const summaryMatch = matchPath('/api/analytics/:qrCodeId/summary', pathname);
     if (method === 'GET' && summaryMatch) {
       const { qrCodeId } = summaryMatch;
-      const qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+      
+      // Try to get scans from MongoDB first, fallback to in-memory
+      let qrScans = [];
+      if (db) {
+        try {
+          const mongoScans = await db.collection('scans').find({ qrCodeId: qrCodeId }).toArray();
+          qrScans = mongoScans.map(s => ({
+            ...s,
+            timestamp: s.timestamp || s.processedAt?.toISOString() || new Date().toISOString()
+          }));
+        } catch (mongoError) {
+          console.error(`❌ MongoDB summary query error: ${mongoError.message}`);
+          qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+        }
+      } else {
+        qrScans = scans.filter(s => s.qrCodeId === qrCodeId);
+      }
 
       const summary = {
         totalScans: qrScans.length,
