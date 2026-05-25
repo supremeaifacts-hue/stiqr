@@ -372,14 +372,11 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
       // Call the backend API to delete the QR code permanently
       await deleteQrCode(qrCode.id);
       
-      // Also remove from local state
-      const updatedQrCodes = (userAssets?.qrCodes || []).filter(qr => qr.id !== qrCode.id);
-      setUserAssets({
-        ...userAssets,
-        qrCodes: updatedQrCodes
-      });
+      // Refresh assets from the backend so deleted items do not reappear on reload
+      const refreshedAssets = await getUserAssets();
+      setUserAssets(refreshedAssets);
       
-      console.log('QR code deleted successfully from database');
+      console.log('QR code deleted successfully from database and dashboard refreshed');
       alert(`QR code "${qrCode.name}" has been deleted permanently from the database.`);
       
     } catch (error) {

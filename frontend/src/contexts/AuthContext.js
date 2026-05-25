@@ -575,10 +575,23 @@ export const AuthProvider = ({ children }) => {
       
       // Use the properly mapped qrCodes from the dedicated endpoint
       // (data.qrCodes from GET /api/assets may not have destination/scan_count mapped)
+      const fallbackQrCodes = (data.qrCodes || []).map(qr => ({
+        id: qr.id || qr._id?.toString() || qr._id || '',
+        data: qr.destination || qr.data || '',
+        imageData: qr.qrImageData || qr.imageData || '',
+        qrImageData: qr.qrImageData || qr.imageData || '',
+        name: qr.name || qr.id || 'Untitled QR Code',
+        scans: qr.scan_count ?? qr.scans ?? 0,
+        destination: qr.destination || qr.data || '',
+        design: qr.design || null,
+        createdAt: qr.createdAt || null,
+        lastScanned: qr.lastScanned || null
+      }));
+
       return {
         stickers: normalizedStickers,
         logos: normalizedLogos,
-        qrCodes: qrCodes.length > 0 ? qrCodes : (data.qrCodes || [])
+        qrCodes: qrCodes.length > 0 ? qrCodes : fallbackQrCodes
       };
 
     } catch (error) {
