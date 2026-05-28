@@ -1,6 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from './contexts/AuthContext';
 
+// Helper to detect QR type from destination data
+const detectQrType = (data) => {
+  if (!data) return 'url';
+  if (data.startsWith('mailto:')) return 'email';
+  if (data.startsWith('sms:')) return 'sms';
+  if (data.startsWith('https://wa.me/')) return 'whatsapp';
+  if (data.startsWith('WIFI:S:')) return 'wifi';
+  if (data.startsWith('PDF:')) return 'pdf';
+  return 'url';
+};
+
+// Helper to parse destination data back into individual fields
+const parseDestinationData = (data) => {
+  if (!data) return { type: 'url', fields: { destination: '' } };
+
+  if (data.startsWith('mailto:')) {
+    // mailto:email?subject=...&body=...
+    const mailtoMatch = data.match(/^mailto:([^?]+)/);
+    const email = mailtoMatch ? decodeURIComponent(mailtoMatch[1]) : '';
+    const subjectMatch = data.match(/[?&]subject=([^&]*)/);
+    const subject = subjectMatch ? decodeURIComponent(subjectMatch[1]) : '';
+    const bodyMatch = data.match(/[?&]body=([^&]*)/);
+    const message = bodyMatch ? decodeURIComponent(bodyMatch[1]) : '';
+    return { type: 'email', fields: { email, subject, message } };
+  }
+
+  if (data.startsWith('sms:')) {
+    // sms:+1number?body=...
+    const smsMatch = data.match(/^sms:(\+?\d+)/);
+    const phoneNumber = smsMatch ? smsMatch[1] : '';
+    let countryCode = '+1';
+    let number = phoneNumber;
+    if (phoneNumber.startsWith('+')) {
+      const ccMatch = phoneNumber.match(/^(\+\d{1,3})/);
+      if (ccMatch) {
+        countryCode = ccMatch[1];
+        number = phoneNumber.substring(ccMatch[1].length);
+      }
+    }
+    const bodyMatch = data.match(/[?&]body=([^&]*)/);
+    const message = bodyMatch ? decodeURIComponent(bodyMatch[1]) : '';
+    return { type: 'sms', fields: { countryCode, phoneNumber: number, message } };
+  }
+
+  if (data.startsWith('https://wa.me/')) {
+    // https://wa.me/1number?text=...
+    const waMatch = data.match(/^https:\/\/wa\.me\/(\d+)/);
+    const fullNumber = waMatch ? waMatch[1] : '';
+    let countryCode = '+1';
+    let number = fullNumber;
+    if (fullNumber.length > 0) {
+      const ccMatch = fullNumber.match(/^(\d{1,3})/);
+      if (ccMatch) {
+        countryCode = '+' + ccMatch[1];
+        number = fullNumber.substring(ccMatch[1].length);
+      }
+    }
+    const textMatch = data.match(/[?&]text=([^&]*)/);
+    const message = textMatch ? decodeURIComponent(textMatch[1]) : '';
+    return { type: 'whatsapp', fields: { countryCode, phoneNumber: number, message } };
+  }
+
+  if (data.startsWith('WIFI:S:')) {
+    // WIFI:S:ssid;T:encryption;P:password;;
+    const ssidMatch = data.match(/WIFI:S:([^;]*)/);
+    const ssid = ssidMatch ? decodeURIComponent(ssidMatch[1]) : '';
+    const encMatch = data.match(/;T:([^;]*)/);
+    const encryption = encMatch ? encMatch[1] : 'WPA/WPA2';
+    const passMatch = data.match(/;P:([^;]*)/);
+    const password = passMatch ? decodeURIComponent(passMatch[1]) : '';
+    return { type: 'wifi', fields: { ssid, encryption, password } };
+  }
+
+  if (data.startsWith('PDF:')) {
+    const pdfName = data.substring(4);
+    return { type: 'pdf', fields: { pdfName } };
+  }
+
+  return { type: 'url', fields: { destination: data } };
+};
+
+// Helper to format fields back into destination string
+const formatDestinationData = (type, fields) => {
+  switch (type) {
+    case 'email': {
+      const subject = fields.subject ? `?subject=${encodeURIComponent(fields.subject)}` : '';
+      const body = fields.message ? `${subject ? '&' : '?'}body=${encodeURIComponent(fields.message)}` : '';
+      return `mailto:${fields.email}${subject}${body}`;
+    }
+    case 'sms': {
+      const body = fields.message ? `?body=${encodeURIComponent(fields.message)}` : '';
+      return `sms:${fields.countryCode}${fields.phoneNumber}${body}`;
+    }
+    case 'whatsapp': {
+      const text = fields.message ? `?text=${encodeURIComponent(fields.message)}` : '';
+      return `https://wa.me/${fields.countryCode.replace('+', '')}${fields.phoneNumber}${text}`;
+    }
+    case 'wifi': {
+      return `WIFI:S:${fields.ssid};T:${fields.encryption};P:${fields.password};;`;
+    }
+    case 'pdf':
+      return `PDF:${fields.pdfName}`;
+    default:
+      return fields.destination || '';
+  }
+};
+
 const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
   const [destination, setDestination] = useState('');
   const [name, setName] = useState('');
@@ -11,20 +118,59 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  // Pre-fill form with existing QR code data
+  const [qrType, setQrType] = useState('url');
+  const [emailFields, setEmailFields] = useState({ email: '', subject: '', message: '' });
+  const [smsFields, setSmsFields] = useState({ countryCode: '+1', phoneNumber: '', message: '' });
+  const [wifiFields, setWifiFields] = useState({ ssid: '', encryption: 'WPA/WPA2', password: '' });
+  const [pdfName, setPdfName] = useState('');
+
   useEffect(() => {
     if (qrCode) {
-      setDestination(qrCode.destination || qrCode.data || '');
+      const rawData = qrCode.destination || qrCode.data || '';
+      setDestination(rawData);
       setName(qrCode.name || '');
       setCategory(qrCode.category || '');
       setTags(Array.isArray(qrCode.tags) ? qrCode.tags.join(', ') : (qrCode.tags || ''));
       setNotes(qrCode.notes || '');
+
+      const parsed = parseDestinationData(rawData);
+      setQrType(parsed.type);
+
+      switch (parsed.type) {
+        case 'email':
+          setEmailFields(parsed.fields);
+          break;
+        case 'sms':
+        case 'whatsapp':
+          setSmsFields(parsed.fields);
+          break;
+        case 'wifi':
+          setWifiFields(parsed.fields);
+          break;
+        case 'pdf':
+          setPdfName(parsed.fields.pdfName || '');
+          break;
+        default:
+          break;
+      }
     }
   }, [qrCode]);
 
   const handleSave = async () => {
-    if (!destination.trim()) {
-      setError('Destination URL is required');
+    let finalDestination;
+    if (qrType === 'url') {
+      finalDestination = destination.trim();
+    } else {
+      finalDestination = formatDestinationData(qrType, {
+        ...emailFields,
+        ...smsFields,
+        ...wifiFields,
+        pdfName,
+      });
+    }
+
+    if (!finalDestination.trim()) {
+      setError('Destination is required');
       return;
     }
 
@@ -45,7 +191,7 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
         method: 'PUT',
         headers,
         body: JSON.stringify({
-          destination: destination.trim(),
+          destination: finalDestination,
           name: name.trim() || qrCode.name,
           category: category.trim(),
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -62,11 +208,10 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
       console.log('✅ QR code metadata updated:', result);
       setSuccess(true);
 
-      // Call onSave callback to refresh dashboard
       if (onSave) {
         onSave({
           ...qrCode,
-          destination: destination.trim(),
+          destination: finalDestination,
           name: name.trim() || qrCode.name,
           category: category.trim(),
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -74,7 +219,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
         });
       }
 
-      // Close modal after short delay
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -86,7 +230,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
     }
   };
 
-  // Format creation date
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
     try {
@@ -99,6 +242,319 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
       });
     } catch {
       return dateStr;
+    }
+  };
+
+  const getQrTypeLabel = () => {
+    const labels = {
+      url: 'URL',
+      email: 'E-mail',
+      sms: 'SMS',
+      whatsapp: 'WhatsApp',
+      wifi: 'Wi-Fi',
+      pdf: 'PDF',
+    };
+    return labels[qrType] || 'URL';
+  };
+
+  const renderTypeSpecificFields = () => {
+    switch (qrType) {
+      case 'email':
+        return (
+          <>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Email Address <span style={{ color: '#FF00FF' }}>*</span>
+              </label>
+              <input
+                type="email"
+                value={emailFields.email}
+                onChange={(e) => setEmailFields({...emailFields, email: e.target.value})}
+                placeholder="email@example.com"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: emailFields.email.trim() ? '1px solid rgba(0, 217, 255, 0.3)' : '1px solid rgba(255, 0, 0, 0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                onBlur={(e) => e.target.style.borderColor = emailFields.email.trim() ? 'rgba(0, 217, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)'}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Subject <span style={{ color: '#888' }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={emailFields.subject}
+                onChange={(e) => setEmailFields({...emailFields, subject: e.target.value})}
+                placeholder="Subject of Email"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Message <span style={{ color: '#888' }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={emailFields.message}
+                onChange={(e) => setEmailFields({...emailFields, message: e.target.value})}
+                placeholder="Email body text"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              />
+            </div>
+          </>
+        );
+
+      case 'sms':
+      case 'whatsapp':
+        return (
+          <>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Phone Number <span style={{ color: '#FF00FF' }}>*</span>
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select
+                  value={smsFields.countryCode}
+                  onChange={(e) => setSmsFields({...smsFields, countryCode: e.target.value})}
+                  style={{
+                    flex: '0 0 120px',
+                    padding: '10px 14px',
+                    background: '#1a1a2e',
+                    border: '1px solid rgba(0, 217, 255, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <option value="+1" style={{ background: '#1a1a2e', color: '#fff' }}>🇺🇸 +1 (USA)</option>
+                  <option value="+44" style={{ background: '#1a1a2e', color: '#fff' }}>🇬🇧 +44 (UK)</option>
+                  <option value="+91" style={{ background: '#1a1a2e', color: '#fff' }}>🇮🇳 +91 (India)</option>
+                  <option value="+86" style={{ background: '#1a1a2e', color: '#fff' }}>🇨🇳 +86 (China)</option>
+                  <option value="+81" style={{ background: '#1a1a2e', color: '#fff' }}>🇯🇵 +81 (Japan)</option>
+                  <option value="+49" style={{ background: '#1a1a2e', color: '#fff' }}>🇩🇪 +49 (Germany)</option>
+                  <option value="+33" style={{ background: '#1a1a2e', color: '#fff' }}>🇫🇷 +33 (France)</option>
+                  <option value="+61" style={{ background: '#1a1a2e', color: '#fff' }}>🇦🇺 +61 (Australia)</option>
+                  <option value="+55" style={{ background: '#1a1a2e', color: '#fff' }}>🇧🇷 +55 (Brazil)</option>
+                  <option value="+7" style={{ background: '#1a1a2e', color: '#fff' }}>🇷🇺 +7 (Russia)</option>
+                </select>
+                <input
+                  type="tel"
+                  value={smsFields.phoneNumber}
+                  onChange={(e) => setSmsFields({...smsFields, phoneNumber: e.target.value})}
+                  placeholder="Phone Number"
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    border: smsFields.phoneNumber.trim() ? '1px solid rgba(0, 217, 255, 0.3)' : '1px solid rgba(255, 0, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                  onBlur={(e) => e.target.style.borderColor = smsFields.phoneNumber.trim() ? 'rgba(0, 217, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)'}
+                />
+              </div>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Message <span style={{ color: '#888' }}>(optional)</span>
+              </label>
+              <textarea
+                value={smsFields.message}
+                onChange={(e) => setSmsFields({...smsFields, message: e.target.value})}
+                placeholder="Message"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              />
+            </div>
+          </>
+        );
+
+      case 'wifi':
+        return (
+          <>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                SSID (Network Name) <span style={{ color: '#FF00FF' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={wifiFields.ssid}
+                onChange={(e) => setWifiFields({...wifiFields, ssid: e.target.value})}
+                placeholder="Network Name"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: wifiFields.ssid.trim() ? '1px solid rgba(0, 217, 255, 0.3)' : '1px solid rgba(255, 0, 0, 0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                onBlur={(e) => e.target.style.borderColor = wifiFields.ssid.trim() ? 'rgba(0, 217, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)'}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Encryption
+              </label>
+              <select
+                value={wifiFields.encryption}
+                onChange={(e) => setWifiFields({...wifiFields, encryption: e.target.value})}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: '#1a1a2e',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <option value="WEP" style={{ background: '#1a1a2e', color: '#fff' }}>WEP</option>
+                <option value="WPA/WPA2" style={{ background: '#1a1a2e', color: '#fff' }}>WPA/WPA2</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+                Password <span style={{ color: '#888' }}>(optional)</span>
+              </label>
+              <input
+                type="password"
+                value={wifiFields.password}
+                onChange={(e) => setWifiFields({...wifiFields, password: e.target.value})}
+                placeholder="Wi-Fi Password"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              />
+            </div>
+          </>
+        );
+
+      case 'pdf':
+        return (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
+              PDF File
+            </label>
+            <div style={{
+              padding: '12px 14px',
+              background: 'rgba(0, 0, 0, 0.4)',
+              border: '1px solid rgba(0, 217, 255, 0.3)',
+              borderRadius: '8px',
+              color: '#00D9FF',
+              fontSize: '13px',
+            }}>
+              📄 {pdfName || 'PDF file (cannot be changed in metadata)'}
+            </div>
+            <div style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>
+              PDF file cannot be changed here. Create a new QR code to use a different PDF.
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '13px',
+              color: '#aaa',
+              marginBottom: '6px',
+              fontWeight: '600',
+            }}>
+              Destination URL <span style={{ color: '#FF00FF' }}>*</span>
+            </label>
+            <input
+              type="url"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="https://example.com"
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                background: 'rgba(0, 0, 0, 0.4)',
+                border: destination.trim() ? '1px solid rgba(0, 217, 255, 0.3)' : '1px solid rgba(255, 0, 0, 0.3)',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
+              onBlur={(e) => e.target.style.borderColor = destination.trim() ? 'rgba(0, 217, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)'}
+            />
+          </div>
+        );
     }
   };
 
@@ -129,7 +585,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
         position: 'relative',
         boxShadow: '0 0 40px rgba(0, 217, 255, 0.1), 0 0 20px rgba(255, 0, 255, 0.05)',
       }}>
-        {/* Close button */}
         <button
           onClick={onClose}
           style={{
@@ -155,7 +610,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
           ×
         </button>
 
-        {/* Header */}
         <div style={{
           fontSize: '22px',
           fontWeight: '700',
@@ -169,7 +623,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
           Edit Metadata (for Dynamic QR codes)
         </div>
 
-        {/* Warning Banner */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 217, 255, 0.1))',
           border: '1px solid rgba(255, 0, 255, 0.3)',
@@ -186,12 +639,11 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
               Dynamic QR Code Mode
             </div>
             <div style={{ fontSize: '12px', color: '#a0a0a0', lineHeight: '1.5' }}>
-              Appearance is locked. Only the destination URL and metadata can be changed. The QR code image will remain identical.
+              Appearance is locked. Only the destination and metadata can be changed. The QR code image will remain identical.
             </div>
           </div>
         </div>
 
-        {/* Read-only Info */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -228,46 +680,33 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
           </div>
         </div>
 
-        {/* Form Fields */}
+        <div style={{
+          marginBottom: '15px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          <span style={{ fontSize: '12px', color: '#888' }}>QR Type:</span>
+          <span style={{
+            padding: '3px 10px',
+            background: 'rgba(0, 217, 255, 0.15)',
+            border: '1px solid rgba(0, 217, 255, 0.3)',
+            borderRadius: '12px',
+            fontSize: '12px',
+            color: '#00D9FF',
+            fontWeight: '600',
+          }}>
+            {getQrTypeLabel()}
+          </span>
+        </div>
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '15px',
         }}>
-          {/* Destination URL (full width) */}
-          <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '13px',
-              color: '#aaa',
-              marginBottom: '6px',
-              fontWeight: '600',
-            }}>
-              Destination URL <span style={{ color: '#FF00FF' }}>*</span>
-            </label>
-            <input
-              type="url"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="https://example.com"
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: destination.trim() ? '1px solid rgba(0, 217, 255, 0.3)' : '1px solid rgba(255, 0, 0, 0.3)',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#00D9FF'}
-              onBlur={(e) => e.target.style.borderColor = destination.trim() ? 'rgba(0, 217, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)'}
-            />
-          </div>
+          {renderTypeSpecificFields()}
 
-          {/* QR Code Name */}
           <div>
             <label style={{
               display: 'block',
@@ -300,7 +739,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             />
           </div>
 
-          {/* Category/Folder */}
           <div>
             <label style={{
               display: 'block',
@@ -333,7 +771,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             />
           </div>
 
-          {/* Tags */}
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{
               display: 'block',
@@ -342,13 +779,13 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
               marginBottom: '6px',
               fontWeight: '600',
             }}>
-              Tags <span style={{ color: '#888' }}>(optional, comma-separated)</span>
+              Tags <span style={{ color: '#888' }}>(comma separated)</span>
             </label>
             <input
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="summer, sale, campaign"
+              placeholder="tag1, tag2, tag3"
               style={{
                 width: '100%',
                 padding: '10px 14px',
@@ -366,7 +803,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             />
           </div>
 
-          {/* Notes */}
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{
               display: 'block',
@@ -380,7 +816,7 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Internal notes about this QR code..."
+              placeholder="Any additional notes about this QR code..."
               rows={3}
               style={{
                 width: '100%',
@@ -410,10 +846,14 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             background: 'rgba(255, 0, 0, 0.1)',
             border: '1px solid rgba(255, 0, 0, 0.3)',
             borderRadius: '8px',
-            color: '#ff4444',
+            color: '#ff6b6b',
             fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}>
-            ❌ {error}
+            <span>❌</span>
+            {error}
           </div>
         )}
 
@@ -425,21 +865,23 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             background: 'rgba(0, 255, 0, 0.1)',
             border: '1px solid rgba(0, 255, 0, 0.3)',
             borderRadius: '8px',
-            color: '#00FF00',
+            color: '#6bff6b',
             fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}>
-            ✅ Metadata updated successfully! Closing...
+            <span>✅</span>
+            QR code metadata updated successfully!
           </div>
         )}
 
         {/* Action Buttons */}
         <div style={{
           display: 'flex',
-          justifyContent: 'flex-end',
           gap: '12px',
-          marginTop: '25px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          marginTop: '20px',
+          justifyContent: 'flex-end',
         }}>
           <button
             onClick={onClose}
@@ -454,26 +896,31 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.2s',
+              opacity: saving ? 0.5 : 1,
             }}
-            onMouseEnter={(e) => { e.target.style.borderColor = '#fff'; e.target.style.color = '#fff'; }}
-            onMouseLeave={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'; e.target.style.color = '#aaa'; }}
+            onMouseEnter={(e) => {
+              if (!saving) e.target.style.borderColor = '#fff';
+            }}
+            onMouseLeave={(e) => {
+              if (!saving) e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !destination.trim()}
+            disabled={saving}
             style={{
               padding: '10px 24px',
-              background: saving ? 'linear-gradient(135deg, #666 0%, #888 100%)' : 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+              background: saving ? 'rgba(0, 217, 255, 0.5)' : 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
               border: 'none',
               borderRadius: '8px',
-              color: saving ? '#aaa' : '#000',
+              color: saving ? '#888' : '#000',
               fontSize: '14px',
               fontWeight: '700',
               cursor: saving ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
-              opacity: (!destination.trim() || saving) ? 0.6 : 1,
+              opacity: saving ? 0.7 : 1,
             }}
           >
             {saving ? '⏳ Saving...' : '💾 Save Changes'}
