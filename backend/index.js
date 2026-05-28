@@ -416,12 +416,34 @@ async function handleRequest(req, res) {
 
       console.log(`✅ Login successful for ${user.email}, token generated`);
 
+      // Determine trial info
+      let trialEndsAt = null;
+      let trialStartedAt = null;
+      if (user.createdAt) {
+        trialStartedAt = user.createdAt;
+        // Trial ends 7 days after creation
+        const trialEnd = new Date(user.createdAt);
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        trialEndsAt = trialEnd.toISOString();
+      } else {
+        trialStartedAt = new Date().toISOString();
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        trialEndsAt = trialEnd.toISOString();
+      }
+
       return sendJSON(res, 200, {
         success: true,
         user: {
           id: user._id ? user._id.toString() : null,
           email: user.email,
-          name: user.name || user.email.split('@')[0]
+          name: user.name || user.email.split('@')[0],
+          subscription: {
+            plan: 'free',
+            trialStartedAt: trialStartedAt,
+            trialEndsAt: trialEndsAt,
+            isActive: true
+          }
         },
         token: token  // ← CRITICAL: frontend stores this as jwtToken
       });
@@ -482,11 +504,23 @@ async function handleRequest(req, res) {
 
         if (user) {
           console.log(`📊 Subscription for ${user.email}: status=${user.subscriptionStatus}, plan=${user.planType}`);
+          
+          // Calculate trial info from createdAt
+          let trialStartedAt = user.createdAt || null;
+          let trialEndsAt = null;
+          if (trialStartedAt) {
+            const trialEnd = new Date(trialStartedAt);
+            trialEnd.setDate(trialEnd.getDate() + 7);
+            trialEndsAt = trialEnd.toISOString();
+          }
+          
           return sendJSON(res, 200, {
             subscriptionStatus: user.subscriptionStatus || 'free',
             planType: user.planType || 'free',
             subscriptionEndDate: user.subscriptionEndDate || null,
-            updatedAt: user.updatedAt || null
+            updatedAt: user.updatedAt || null,
+            trialStartedAt: trialStartedAt,
+            trialEndsAt: trialEndsAt
           });
         }
       } else {

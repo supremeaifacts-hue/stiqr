@@ -110,6 +110,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [isPro, setIsPro] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [trialStartedAt, setTrialStartedAt] = useState(null);
+  const [trialEndsAt, setTrialEndsAt] = useState(null);
   
   const { isAuthenticated, saveLogo, saveQrCode, getUserAssets, canCreateDynamicQrCodes, getTrialDaysLeft, isProUser } = useAuth();
   
@@ -140,6 +142,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           setIsPro(isActivePro);
           setSubscriptionPlan(data.planType);
           
+          // Store trial info from backend response
+          if (data.trialStartedAt) {
+            setTrialStartedAt(data.trialStartedAt);
+          }
+          if (data.trialEndsAt) {
+            setTrialEndsAt(data.trialEndsAt);
+          }
+          
           // Also update the user object in localStorage so AuthContext functions work correctly
           const savedUser = localStorage.getItem('user');
           if (savedUser) {
@@ -149,6 +159,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               parsedUser.subscription.plan = data.planType || parsedUser.subscription.plan;
               parsedUser.subscription.isActive = data.subscriptionStatus === 'active';
               parsedUser.subscription.subscriptionStatus = data.subscriptionStatus;
+              if (data.trialStartedAt) parsedUser.subscription.trialStartedAt = data.trialStartedAt;
+              if (data.trialEndsAt) parsedUser.subscription.trialEndsAt = data.trialEndsAt;
               localStorage.setItem('user', JSON.stringify(parsedUser));
               console.log('✅ Updated user subscription in localStorage:', data.planType, data.subscriptionStatus);
             } catch (e) {
@@ -242,6 +254,46 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     if (subscriptionPlan === 'ultra') return 'Ultra';
     if (subscriptionPlan === 'enterprise') return 'Enterprise';
     return null;
+  };
+
+  // Helper to check if any QR content has been entered (for any type)
+  const hasQrContent = () => {
+    if (selectedType === 'url' || selectedType === 'text') {
+      return qrData && qrData.trim().length > 0;
+    } else if (selectedType === 'email') {
+      return emailData.email && emailData.email.trim().length > 0;
+    } else if (selectedType === 'sms' || selectedType === 'whatsapp') {
+      return smsData.phoneNumber && smsData.phoneNumber.trim().length > 0;
+    } else if (selectedType === 'wifi') {
+      return wifiData.ssid && wifiData.ssid.trim().length > 0;
+    } else if (selectedType === 'pdf') {
+      return pdfFile !== null;
+    } else {
+      return qrData && qrData.trim().length > 0;
+    }
+  };
+
+  // Helper to get the formatted QR content for any type
+  const getQrContent = () => {
+    if (selectedType === 'url' || selectedType === 'text') {
+      return qrData || '';
+    } else if (selectedType === 'email') {
+      const subject = emailData.subject ? `?subject=${encodeURIComponent(emailData.subject)}` : '';
+      const body = emailData.message ? `${subject ? '&' : '?'}body=${encodeURIComponent(emailData.message)}` : '';
+      return `mailto:${emailData.email}${subject}${body}`;
+    } else if (selectedType === 'sms') {
+      const body = smsData.message ? `?body=${encodeURIComponent(smsData.message)}` : '';
+      return `sms:${smsData.countryCode}${smsData.phoneNumber}${body}`;
+    } else if (selectedType === 'whatsapp') {
+      const text = smsData.message ? `?text=${encodeURIComponent(smsData.message)}` : '';
+      return `https://wa.me/${smsData.countryCode.replace('+', '')}${smsData.phoneNumber}${text}`;
+    } else if (selectedType === 'wifi') {
+      return `WIFI:S:${wifiData.ssid};T:${wifiData.encryption};P:${wifiData.password};;`;
+    } else if (selectedType === 'pdf') {
+      return pdfFile ? `PDF:${pdfFile.name}` : '';
+    } else {
+      return qrData || '';
+    }
   };
   
   // Frame customization state
@@ -734,7 +786,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   };
 
   const handleDownload = async () => {
-    if (canvasRef.current && qrData) {
+    if (canvasRef.current && hasQrContent()) {
       // ============================================================
       // Use the SAME ID that was generated when the component mounted
       // (or when the user last clicked "Save to My QR codes").
@@ -742,8 +794,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // ============================================================
       const effectiveQrCodeId = qrCodeId;
       
-      // The destination URL the user entered
-      const destinationUrl = qrData; // This variable holds what the user typed (e.g., "google.com")
+      // Get the formatted QR content for the current type
+      const qrContentForDownload = getQrContent();
       
       // Send the data to your backend
       try {
@@ -760,7 +812,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           headers: qrcodesHeaders,
           body: JSON.stringify({
             id: effectiveQrCodeId,
-            data: destinationUrl,
+            data: qrContentForDownload,
           }),
         });
         
@@ -1158,7 +1210,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       if (isAuthenticated) {
         try {
           savedQrCode = await saveQrCode(
-            qrData,
+            getQrContent(),
             finalImageData,
             `QR Code ${new Date().toLocaleDateString()}`,
             effectiveQrCodeId
@@ -1305,7 +1357,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       style={{
                         flex: '0 0 120px',
                         padding: '12px',
-                        background: 'rgba(0, 217, 255, 0.05)',
+                        background: '#1a1a2e',
                         border: '1px solid rgba(0, 217, 255, 0.2)',
                         borderRadius: '8px',
                         color: '#fff',
@@ -1313,16 +1365,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         boxSizing: 'border-box',
                       }}
                     >
-                      <option value="+1">🇺🇸 +1 (USA)</option>
-                      <option value="+44">🇬🇧 +44 (UK)</option>
-                      <option value="+91">🇮🇳 +91 (India)</option>
-                      <option value="+86">🇨🇳 +86 (China)</option>
-                      <option value="+81">🇯🇵 +81 (Japan)</option>
-                      <option value="+49">🇩🇪 +49 (Germany)</option>
-                      <option value="+33">🇫🇷 +33 (France)</option>
-                      <option value="+61">🇦🇺 +61 (Australia)</option>
-                      <option value="+55">🇧🇷 +55 (Brazil)</option>
-                      <option value="+7">🇷🇺 +7 (Russia)</option>
+                      <option value="+1" style={{ background: '#1a1a2e', color: '#fff' }}>🇺🇸 +1 (USA)</option>
+                      <option value="+44" style={{ background: '#1a1a2e', color: '#fff' }}>🇬🇧 +44 (UK)</option>
+                      <option value="+91" style={{ background: '#1a1a2e', color: '#fff' }}>🇮🇳 +91 (India)</option>
+                      <option value="+86" style={{ background: '#1a1a2e', color: '#fff' }}>🇨🇳 +86 (China)</option>
+                      <option value="+81" style={{ background: '#1a1a2e', color: '#fff' }}>🇯🇵 +81 (Japan)</option>
+                      <option value="+49" style={{ background: '#1a1a2e', color: '#fff' }}>🇩🇪 +49 (Germany)</option>
+                      <option value="+33" style={{ background: '#1a1a2e', color: '#fff' }}>🇫🇷 +33 (France)</option>
+                      <option value="+61" style={{ background: '#1a1a2e', color: '#fff' }}>🇦🇺 +61 (Australia)</option>
+                      <option value="+55" style={{ background: '#1a1a2e', color: '#fff' }}>🇧🇷 +55 (Brazil)</option>
+                      <option value="+7" style={{ background: '#1a1a2e', color: '#fff' }}>🇷🇺 +7 (Russia)</option>
                     </select>
                     <input
                       type="tel"
@@ -1383,7 +1435,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     style={{
                       width: '100%',
                       padding: '12px',
-                      background: 'rgba(0, 217, 255, 0.05)',
+                      background: '#1a1a2e',
                       border: '1px solid rgba(0, 217, 255, 0.2)',
                       borderRadius: '8px',
                       color: '#fff',
@@ -1391,8 +1443,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       boxSizing: 'border-box',
                     }}
                   >
-                    <option value="WEP">WEP</option>
-                    <option value="WPA/WPA2">WPA/WPA2</option>
+                    <option value="WEP" style={{ background: '#1a1a2e', color: '#fff' }}>WEP</option>
+                    <option value="WPA/WPA2" style={{ background: '#1a1a2e', color: '#fff' }}>WPA/WPA2</option>
                   </select>
                   <input
                     type="password"
@@ -1599,7 +1651,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   color: '#FF00FF',
                   textAlign: 'center',
                 }}>
-                  🔒 Login to create a Dynamic QR code
+                  🔒 Login to create Dynamic QR codes for free for 7 days
                 </div>
               )}
               {qrMode === 'dynamic' && isAuthenticated && (
@@ -1616,9 +1668,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {subscriptionLoading ? (
                     <span>⏳ Checking subscription status...</span>
                   ) : getIsPro() ? (
-                    <span>🎉 Congratulations! With your "{getPlanDisplayName() || 'Pro'}" plan you can modify the original metadata associated to your QR codes</span>
+                    <span>🎉 With your "{getPlanDisplayName() || 'Pro'}" plan you can edit the QR code's metadata in your Dashboard page</span>
                   ) : getCanCreateDynamic() ? (
-                    <span>⭐ Trial: {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
+                    <span>⭐ Your free Pro trial started on {trialStartedAt ? new Date(trialStartedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'today'}, you can generate Dynamic QR codes during these first 7 days. {getTrialDaysLeft()} days left. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Upgrade to Pro</a></span>
                   ) : (
                     <span>⛔ Trial expired. <a href="/pricing" style={{color: '#FF00FF', textDecoration: 'underline'}}>Subscribe to Pro plan</a></span>
                   )}
@@ -2361,7 +2413,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 return;
               }
               
-              if (!qrData) {
+              if (!hasQrContent()) {
                 alert('Please create a QR code first');
                 return;
               }
@@ -2635,9 +2687,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // STEP 1: Save to the standalone qrcodes collection
                 // This is what the EdgeOne function queries for /track/:id
                 // ============================================================
+                // Get the formatted QR content for the current type
+                const qrContent = getQrContent();
                 console.log('📡 STEP 1: Saving to standalone qrcodes collection...');
                 console.log('   POST /qrcodes');
-                console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrData }));
+                console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrContent }));
                 
                 const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
                 const token = localStorage.getItem('jwtToken');
@@ -2652,7 +2706,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   headers: qrcodesHeaders,
                   body: JSON.stringify({
                     id: qrCodeId,
-                    data: qrData
+                    data: qrContent
                   })
                 });
 
@@ -2672,7 +2726,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // ============================================================
                 console.log('📡 STEP 2: Saving to user account...');
                 const savedQrCode = await saveQrCode(
-                  qrData, 
+                  qrContent, 
                   imageData, 
                   framePhrase || `QR Code ${new Date().toLocaleDateString()}`,
                   qrCodeId, // Pass the QR code ID generated by frontend

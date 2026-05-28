@@ -543,7 +543,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
           </div>
         )}
 
-        <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '20px' }}>Your QR Codes</h2>
+        <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '20px' }}>My QR Codes</h2>
         {isAuthenticated ? (
           loadingAssets ? (
             <div style={{
@@ -1062,7 +1062,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             <div style={{ marginBottom: '20px' }}>
               <div>
                 <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff', marginBottom: '8px' }}>
-                  Your Saved Assets
+                  My Saved Assets
                 </div>
                 <div style={{ fontSize: '14px', color: '#a0a0a0' }}>
                   Store and manage your custom stickers and logos for quick access when creating QR codes.
