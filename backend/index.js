@@ -104,6 +104,17 @@ function getUserFromAuthHeader(req) {
   }
 }
 
+// ─── QR Type Detection ────────────────────────────────────────────────────────
+function detectQrType(destination) {
+  if (!destination) return 'url';
+  if (destination.startsWith('WIFI:S:')) return 'wifi';
+  if (destination.startsWith('PDF:')) return 'pdf';
+  if (destination.startsWith('mailto:')) return 'email';
+  if (destination.startsWith('sms:')) return 'sms';
+  if (destination.startsWith('https://wa.me/')) return 'whatsapp';
+  return 'url';
+}
+
 // ─── Route Handler ────────────────────────────────────────────────────────────
 
 async function handleRequest(req, res) {
@@ -569,10 +580,11 @@ async function handleRequest(req, res) {
     // ── QR Codes: Save standalone (called by Worker) ─────────────────────────
     if (method === 'POST' && (pathname === '/api/qrcodes' || pathname === '/qrcodes')) {
       const body = await parseBody(req);
-      const { id, data, destination, qrCodeData } = body;
+      const { id, data, destination, qrCodeData, type } = body;
 
       // Accept 'data', 'destination', or 'qrCodeData' field
       const targetDestination = data || destination || qrCodeData || '';
+      const qrType = type || detectQrType(targetDestination);
 
       if (!id) {
         console.error(`❌ Invalid request: id=${id}, destination=${targetDestination}`);
@@ -587,7 +599,7 @@ async function handleRequest(req, res) {
         return sendJSON(res, 401, { error: 'User not authenticated' });
       }
 
-      console.log(`📝 Saving QR code for user: ${userId}`);
+      console.log(`📝 Saving QR code for user: ${userId}, type: ${qrType}`);
 
       // Always save to in-memory (for fast redirects)
       qrCodes[id] = {
@@ -595,13 +607,14 @@ async function handleRequest(req, res) {
         id,
         destination: targetDestination,
         qrCodeData: qrCodeData || targetDestination,
+        type: qrType,
         userId: userId,
         updatedAt: new Date().toISOString(),
         createdAt: qrCodes[id]?.createdAt || new Date().toISOString(),
         scan_count: qrCodes[id]?.scan_count || 0
       };
 
-      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination} for user ${userId}`);
+      console.log(`✅ QR code saved to memory: ${id} -> ${targetDestination} (type: ${qrType}) for user ${userId}`);
 
       // Also save to MongoDB with upsert (persistent storage)
       if (db) {
@@ -614,6 +627,7 @@ async function handleRequest(req, res) {
                 id: id,
                 name: qrCodes[id]?.name || body.name || id,
                 destination: targetDestination,
+                type: qrType,
                 qrImageData: qrCodes[id]?.qrImageData || body.qrImageData || '',
                 userId: userId,
                 scan_count: qrCodes[id]?.scan_count || 0,
@@ -625,7 +639,7 @@ async function handleRequest(req, res) {
             },
             { upsert: true }
           );
-          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination} for user ${userId}`);
+          console.log(`✅ QR code saved to MongoDB: ${id} -> ${targetDestination} (type: ${qrType}) for user ${userId}`);
         } catch (mongoError) {
           console.error(`❌ MongoDB save error: ${mongoError.message}`);
           // Non-blocking: still return success since in-memory save worked
@@ -641,11 +655,12 @@ async function handleRequest(req, res) {
     // ── QR Codes: Save to user assets ────────────────────────────────────────
     if (method === 'POST' && pathname === '/api/assets/qrcodes') {
       const body = await parseBody(req);
-      const { qrCodeId, qrData, qrImageData, design, data, imageData, name } = body;
+      const { qrCodeId, qrData, qrImageData, design, data, imageData, name, type } = body;
       const finalId = qrCodeId || body.id;
       const finalData = qrData || data || '';
       const finalImageData = qrImageData || imageData || '';
       const finalName = name || finalId || 'Untitled QR Code';
+      const qrType = type || detectQrType(finalData);
 
       // Get the authenticated user's ID from req.user (set by auth middleware)
       const userId = req.user?.id || req.user?._id || null;
@@ -655,7 +670,7 @@ async function handleRequest(req, res) {
         return sendJSON(res, 401, { error: 'User not authenticated' });
       }
 
-      console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId})`);
+      console.log(`Saving QR code to user assets: ${finalId} (userId: ${userId}, type: ${qrType})`);
       console.log(`🔍 DEBUG SAVE: userId type=${typeof userId}, value=${JSON.stringify(userId)}`);
       console.log(`🔍 DEBUG SAVE: req.user keys=${Object.keys(req.user || {})}`);
       console.log(`🔍 DEBUG SAVE: req.user.id=${req.user?.id}, req.user._id=${req.user?._id}, req.user.email=${req.user?.email}`);
@@ -665,6 +680,7 @@ async function handleRequest(req, res) {
         id: finalId,
         name: finalName,
         destination: finalData,
+        type: qrType,
         qrImageData: finalImageData,
         design: design || null,
         userId: userId,
@@ -677,7 +693,7 @@ async function handleRequest(req, res) {
         try {
           const collection = db.collection('qrcodes');
           console.log(`🔍 DEBUG SAVE: Using database: ${db.databaseName}, collection: qrcodes`);
-          console.log(`🔍 DEBUG SAVE: Upserting with id=${finalId}, userId=${userId}`);
+          console.log(`🔍 DEBUG SAVE: Upserting with id=${finalId}, userId=${userId}, type=${qrType}`);
           const result = await collection.updateOne(
             { id: finalId },
             {
@@ -685,6 +701,7 @@ async function handleRequest(req, res) {
                 id: finalId,
                 name: finalName,
                 destination: finalData,
+                type: qrType,
                 qrImageData: finalImageData,
                 design: design || null,
                 userId: userId,
@@ -707,7 +724,8 @@ async function handleRequest(req, res) {
             id: verifyDoc?.id,
             userId: verifyDoc?.userId,
             userIdType: typeof verifyDoc?.userId,
-            destination: verifyDoc?.destination?.substring(0, 50)
+            destination: verifyDoc?.destination?.substring(0, 50),
+            type: verifyDoc?.type
           }));
         } catch (mongoError) {
           console.error(`❌ MongoDB save error: ${mongoError.message}`);
@@ -962,6 +980,28 @@ async function handleRequest(req, res) {
       }
 
       const destination = qrCode.destination || qrCode.qrCodeData;
+      const qrType = qrCode.type || 'url';
+      
+      console.log(`QR code type: ${qrType}, destination: ${destination?.substring(0, 100)}`);
+      
+      if (qrType === 'wifi') {
+        // For WiFi QR codes, return the raw WiFi config as text/plain
+        // The phone's OS will automatically detect and handle the WiFi config
+        console.log(`Serving WiFi config as text/plain`);
+        res.writeHead(200, {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+        });
+        return res.end(destination);
+      }
+      
+      if (qrType === 'pdf') {
+        // For PDF QR codes, redirect to the PDF URL
+        console.log(`Redirecting to PDF: ${destination}`);
+        return sendRedirect(res, destination);
+      }
+      
+      // For all other types (url, email, sms, whatsapp), redirect as before
       console.log(`Redirecting to: ${destination}`);
       return sendRedirect(res, destination);
     }

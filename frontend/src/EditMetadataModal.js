@@ -310,15 +310,15 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
                 onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
               />
             </div>
-            <div>
+            <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '6px', fontWeight: '600' }}>
                 Message <span style={{ color: '#888' }}>(optional)</span>
               </label>
-              <input
-                type="text"
+              <textarea
                 value={emailFields.message}
                 onChange={(e) => setEmailFields({...emailFields, message: e.target.value})}
                 placeholder="Email body text"
+                rows={4}
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -328,6 +328,8 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
                   color: '#fff',
                   fontSize: '14px',
                   outline: 'none',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
                   boxSizing: 'border-box',
                 }}
                 onFocus={(e) => e.target.style.borderColor = '#00D9FF'}

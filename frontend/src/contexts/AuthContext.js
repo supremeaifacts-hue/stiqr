@@ -412,7 +412,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const saveQrCode = async (qrData, imageData, name, qrCodeId = null, designCharacteristics = null) => {
+  const saveQrCode = async (qrData, imageData, name, qrCodeId = null, designCharacteristics = null, qrType = null) => {
     try {
       console.log('AuthContext: Saving QR code, isAuthenticated:', !!user);
       console.log('AuthContext: QR data:', qrData?.substring(0, 50) + '...');
@@ -471,7 +471,8 @@ export const AuthProvider = ({ children }) => {
           imageData,
           name: name || 'Untitled QR Code',
           qrCodeId: qrCodeId, // Send QR code ID to backend
-          design: designCharacteristics // Send design characteristics to backend
+          design: designCharacteristics, // Send design characteristics to backend
+          type: qrType // Send QR type (wifi, pdf, email, sms, whatsapp, url)
         })
       });
 
