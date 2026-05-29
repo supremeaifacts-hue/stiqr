@@ -290,7 +290,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     } else if (selectedType === 'wifi') {
       return `WIFI:S:${wifiData.ssid};T:${wifiData.encryption};P:${wifiData.password};;`;
     } else if (selectedType === 'pdf') {
-      return pdfFile ? `PDF:${pdfFile.name}` : '';
+      // If we have an uploaded PDF URL stored, use it; otherwise fall back to PDF:filename
+      return pdfFile ? (pdfFile.uploadedUrl || `PDF:${pdfFile.name}`) : '';
     } else {
       return qrData || '';
     }
@@ -2684,6 +2685,60 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 const isEditing = qrCodeToEdit && qrCodeToEdit.id;
                 
                 // ============================================================
+                // Get base URL and auth token (needed for both PDF upload and STEP 1)
+                // ============================================================
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                const token = localStorage.getItem('jwtToken');
+                
+                // ============================================================
+                // PDF UPLOAD: If this is a PDF QR code, upload the file first
+                // ============================================================
+                if (selectedType === 'pdf' && pdfFile && !pdfFile.uploadedUrl) {
+                  console.log('📄 Uploading PDF file:', pdfFile.name);
+                  
+                  // Read the PDF file as base64
+                  const pdfReader = new FileReader();
+                  const pdfBase64 = await new Promise((resolve, reject) => {
+                    pdfReader.onload = () => resolve(pdfReader.result);
+                    pdfReader.onerror = reject;
+                    pdfReader.readAsDataURL(pdfFile);
+                  });
+                  
+                  // Upload to backend
+                  const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                      fileData: pdfBase64,
+                      fileName: pdfFile.name
+                    })
+                  });
+                  
+                  if (uploadResponse.ok) {
+                    const uploadResult = await uploadResponse.json();
+                    console.log('✅ PDF uploaded successfully:', uploadResult.url);
+                    
+                    // Store the uploaded URL on the pdfFile object
+                    setPdfFile(prev => {
+                      const updated = prev;
+                      updated.uploadedUrl = uploadResult.url;
+                      return updated;
+                    });
+                    
+                    // Also update the ref directly for immediate use
+                    pdfFile.uploadedUrl = uploadResult.url;
+                  } else {
+                    const uploadError = await uploadResponse.text();
+                    console.error('❌ PDF upload failed:', uploadError);
+                    alert('Failed to upload PDF file. Please try again.');
+                    return;
+                  }
+                }
+                
+                // ============================================================
                 // STEP 1: Save to the standalone qrcodes collection
                 // This is what the EdgeOne function queries for /track/:id
                 // ============================================================
@@ -2692,9 +2747,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 console.log('📡 STEP 1: Saving to standalone qrcodes collection...');
                 console.log('   POST /qrcodes');
                 console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrContent }));
-                
-                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                const token = localStorage.getItem('jwtToken');
                 const qrcodesHeaders = {
                   'Content-Type': 'application/json',
                 };

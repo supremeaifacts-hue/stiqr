@@ -1,4 +1,6 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const { randomUUID } = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const jwt = require('jsonwebtoken');
@@ -1439,6 +1441,96 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, summary);
     }
 
+    // ── PDF Upload ──────────────────────────────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/upload/pdf') {
+      const body = await parseBody(req);
+      const { fileData, fileName } = body;
+
+      if (!fileData) {
+        return sendJSON(res, 400, { error: 'Missing fileData (base64 encoded PDF)' });
+      }
+
+      // Get the authenticated user's ID from req.user (set by auth middleware)
+      const userId = req.user?.id || req.user?._id || null;
+
+      if (!userId) {
+        return sendJSON(res, 401, { error: 'User not authenticated' });
+      }
+
+      // Decode base64 data (strip data:application/pdf;base64, prefix if present)
+      let base64Data = fileData;
+      if (base64Data.includes(';base64,')) {
+        base64Data = base64Data.split(';base64,')[1];
+      }
+
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      // Generate a unique filename
+      const safeName = (fileName || 'document.pdf')
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .replace(/_{2,}/g, '_');
+      const uniqueName = `${Date.now()}-${userId}-${safeName}`;
+      const uploadsDir = path.join(__dirname, 'uploads');
+      
+      // Ensure uploads directory exists
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const filePath = path.join(uploadsDir, uniqueName);
+      fs.writeFileSync(filePath, buffer);
+
+      // Determine the public URL
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers['x-forwarded-host'] || req.headers.host || `localhost:${PORT}`;
+      const publicUrl = `${protocol}://${host}/uploads/${uniqueName}`;
+
+      console.log(`✅ PDF uploaded: ${publicUrl} (${buffer.length} bytes) by user ${userId}`);
+
+      return sendJSON(res, 200, {
+        success: true,
+        url: publicUrl,
+        fileName: uniqueName,
+        size: buffer.length
+      });
+    }
+
+    // ── Serve Uploaded Files (Static) ─────────────────────────────────────────────
+    const uploadsMatch = pathname.startsWith('/uploads/');
+    if (method === 'GET' && uploadsMatch) {
+      const relativePath = pathname.replace('/uploads/', '');
+      const filePath = path.join(__dirname, 'uploads', relativePath);
+
+      // Security: prevent directory traversal
+      if (!filePath.startsWith(path.join(__dirname, 'uploads'))) {
+        return sendJSON(res, 403, { error: 'Forbidden' });
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return sendJSON(res, 404, { error: 'File not found' });
+      }
+
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes = {
+        '.pdf': 'application/pdf',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+      };
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+      const content = fs.readFileSync(filePath);
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': content.length,
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=31536000',
+      });
+      return res.end(content);
+    }
+
     // ── 404 ──────────────────────────────────────────────────────────────────
     sendJSON(res, 404, { error: 'Not found' });
 
@@ -1453,11 +1545,19 @@ async function handleRequest(req, res) {
 async function startServer() {
   await connectToMongoDB();
 
+  // Ensure uploads directory exists
+  const uploadsDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log(`📁 Created uploads directory: ${uploadsDir}`);
+  }
+
   const server = http.createServer(handleRequest);
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`   (MongoDB + Stripe webhook + subscription handling enabled)`);
+    console.log(`   Uploads directory: ${uploadsDir}`);
   });
 }
 

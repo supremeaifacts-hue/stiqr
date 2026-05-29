@@ -9,6 +9,8 @@ const detectQrType = (data) => {
   if (data.startsWith('https://wa.me/')) return 'whatsapp';
   if (data.startsWith('WIFI:S:')) return 'wifi';
   if (data.startsWith('PDF:')) return 'pdf';
+  // Check if it's a PDF URL (uploaded PDF)
+  if (data.includes('/uploads/') && data.toLowerCase().endsWith('.pdf')) return 'pdf';
   return 'url';
 };
 
@@ -79,6 +81,14 @@ const parseDestinationData = (data) => {
     return { type: 'pdf', fields: { pdfName } };
   }
 
+  // Check if it's a PDF URL (uploaded PDF)
+  if (data.includes('/uploads/') && data.toLowerCase().endsWith('.pdf')) {
+    // Extract filename from URL
+    const urlParts = data.split('/');
+    const pdfName = urlParts[urlParts.length - 1] || 'PDF file';
+    return { type: 'pdf', fields: { pdfName } };
+  }
+
   return { type: 'url', fields: { destination: data } };
 };
 
@@ -123,6 +133,8 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
   const [smsFields, setSmsFields] = useState({ countryCode: '+1', phoneNumber: '', message: '' });
   const [wifiFields, setWifiFields] = useState({ ssid: '', encryption: 'WPA/WPA2', password: '' });
   const [pdfName, setPdfName] = useState('');
+  const [pdfFile, setPdfFile] = useState(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   useEffect(() => {
     if (qrCode) {
@@ -160,6 +172,56 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
     let finalDestination;
     if (qrType === 'url') {
       finalDestination = destination.trim();
+    } else if (qrType === 'pdf' && pdfFile) {
+      // Upload the new PDF file first
+      setUploadingPdf(true);
+      setError(null);
+      
+      try {
+        const token = localStorage.getItem('jwtToken');
+        
+        // Read the PDF file as base64
+        const pdfReader = new FileReader();
+        const pdfBase64 = await new Promise((resolve, reject) => {
+          pdfReader.onload = () => resolve(pdfReader.result);
+          pdfReader.onerror = reject;
+          pdfReader.readAsDataURL(pdfFile);
+        });
+        
+        // Upload to backend
+        const uploadResponse = await fetch(`${API_BASE_URL}/api/upload/pdf`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            fileData: pdfBase64,
+            fileName: pdfFile.name
+          })
+        });
+        
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          console.log('✅ PDF uploaded successfully:', uploadResult.url);
+          finalDestination = uploadResult.url;
+        } else {
+          const uploadError = await uploadResponse.text();
+          console.error('❌ PDF upload failed:', uploadError);
+          setError('Failed to upload PDF file. Please try again.');
+          setUploadingPdf(false);
+          setSaving(false);
+          return;
+        }
+      } catch (uploadErr) {
+        console.error('❌ PDF upload error:', uploadErr);
+        setError('Failed to upload PDF file. Please try again.');
+        setUploadingPdf(false);
+        setSaving(false);
+        return;
+      }
+      
+      setUploadingPdf(false);
     } else {
       finalDestination = formatDestinationData(qrType, {
         ...emailFields,
@@ -514,11 +576,49 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
               borderRadius: '8px',
               color: '#00D9FF',
               fontSize: '13px',
+              marginBottom: '10px',
             }}>
-              📄 {pdfName || 'PDF file (cannot be changed in metadata)'}
+              📄 {pdfFile ? pdfFile.name : (pdfName || 'No PDF selected')}
             </div>
+            <input
+              type="file"
+              id="pdf-upload-metadata"
+              accept=".pdf"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setPdfFile(file);
+                }
+              }}
+              style={{ display: 'none' }}
+            />
+            <label
+              htmlFor="pdf-upload-metadata"
+              style={{
+                display: 'block',
+                padding: '12px 14px',
+                background: 'rgba(0, 217, 255, 0.1)',
+                border: '2px dashed rgba(0, 217, 255, 0.3)',
+                borderRadius: '8px',
+                color: '#00D9FF',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '600',
+                textAlign: 'center',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => e.target.style.borderColor = '#00D9FF'}
+              onMouseLeave={(e) => e.target.style.borderColor = 'rgba(0, 217, 255, 0.3)'}
+            >
+              📁 Upload New PDF
+            </label>
+            {pdfFile && (
+              <div style={{ fontSize: '11px', color: '#6bff6b', marginTop: '6px' }}>
+                ✅ New PDF selected: {pdfFile.name} ({(pdfFile.size / 1024).toFixed(1)} KB)
+              </div>
+            )}
             <div style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>
-              PDF file cannot be changed here. Create a new QR code to use a different PDF.
+              Upload a new PDF to update the destination for this dynamic QR code.
             </div>
           </div>
         );
