@@ -1123,34 +1123,36 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         }
       }
       
-      // Apply sticker if selected
-      if (selectedSticker) {
-        const stickerSize = qrSize * 0.2;
-        const offset = 25;
-        const x = (qrSize - stickerSize) / 2 - offset;
-        const y = (qrSize - stickerSize) / 2 - offset;
-        const padding = 6;
-        // White square perfectly centered (no offset)
-        const whiteSquareX = x - padding;
-        const whiteSquareY = y - padding;
-        ctx.fillStyle = 'white';
-        const radius = 8;
-        ctx.beginPath();
-        ctx.moveTo(whiteSquareX + radius, whiteSquareY);
-        ctx.lineTo(whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY);
-        ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY, whiteSquareX + stickerSize + padding * 2, whiteSquareY + radius);
-        ctx.lineTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2 - radius);
-        ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2, whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY + stickerSize + padding * 2);
-        ctx.lineTo(whiteSquareX + radius, whiteSquareY + stickerSize + padding * 2);
-        ctx.quadraticCurveTo(whiteSquareX, whiteSquareY + stickerSize + padding * 2, whiteSquareX, whiteSquareY + stickerSize + padding * 2 - radius);
-        ctx.lineTo(whiteSquareX, whiteSquareY + radius);
-        ctx.quadraticCurveTo(whiteSquareX, whiteSquareY, whiteSquareX + radius, whiteSquareY);
-        ctx.closePath();
-        ctx.fill();
+                // Apply sticker if selected
+                if (selectedSticker) {
+                  const stickerSize = qrSize * 0.2;
+                  // Calculate QR code area dimensions (same as how QR is drawn)
+                  const qrAreaSize = qrSize - 60;
+                  // Center sticker within the QR code area
+                  const x = (qrAreaSize - stickerSize) / 2;
+                  const y = (qrAreaSize - stickerSize) / 2;
+                  const padding = 6;
+                  // White square perfectly centered (no offset)
+                  const whiteSquareX = x - padding;
+                  const whiteSquareY = y - padding;
+                  ctx.fillStyle = 'white';
+                  const radius = 8;
+                  ctx.beginPath();
+                  ctx.moveTo(whiteSquareX + radius, whiteSquareY);
+                  ctx.lineTo(whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY);
+                  ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY, whiteSquareX + stickerSize + padding * 2, whiteSquareY + radius);
+                  ctx.lineTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2 - radius);
+                  ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2, whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY + stickerSize + padding * 2);
+                  ctx.lineTo(whiteSquareX + radius, whiteSquareY + stickerSize + padding * 2);
+                  ctx.quadraticCurveTo(whiteSquareX, whiteSquareY + stickerSize + padding * 2, whiteSquareX, whiteSquareY + stickerSize + padding * 2 - radius);
+                  ctx.lineTo(whiteSquareX, whiteSquareY + radius);
+                  ctx.quadraticCurveTo(whiteSquareX, whiteSquareY, whiteSquareX + radius, whiteSquareY);
+                  ctx.closePath();
+                  ctx.fill();
 
-        // Sticker perfectly centered (no offset)
-        const stickerX = x;
-        const stickerY = y;
+                  // Sticker perfectly centered (no offset)
+                  const stickerX = x;
+                  const stickerY = y;
 
         if (selectedSticker.startsWith('data:')) {
           const img = new Image();
@@ -1174,9 +1176,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // Apply logo if selected
       if (selectedLogo) {
         const logoSize = 50;
-        const offset = 25;
-        const x = (qrSize - logoSize) / 2 - offset;
-        const y = (qrSize - logoSize) / 2 - offset;
+        // Calculate QR code area dimensions (same as how QR is drawn)
+        const qrAreaSize = qrSize - 60;
+        // Center logo within the QR code area
+        const x = (qrAreaSize - logoSize) / 2;
+        const y = (qrAreaSize - logoSize) / 2;
         
         const img = new Image();
         await new Promise((resolve, reject) => {
@@ -2590,9 +2594,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // Apply sticker if selected
                 if (selectedSticker) {
                   const stickerSize = qrSize * 0.2;
-                  const offset = 25;
-                  const x = (qrSize - stickerSize) / 2 - offset;
-                  const y = (qrSize - stickerSize) / 2 - offset;
+                  // Calculate QR code area dimensions (same as how QR is drawn)
+                  const qrAreaSize = qrSize - 60;
+                  // Center sticker within the QR code area
+                  const x = (qrAreaSize - stickerSize) / 2;
+                  const y = (qrAreaSize - stickerSize) / 2;
                   const padding = 6;
                   // White square perfectly centered (no offset)
                   const whiteSquareX = x - padding;
@@ -2638,9 +2644,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // Apply logo if selected
                 if (selectedLogo) {
                   const logoSize = 50;
-                  const offset = 25;
-                  const x = (qrSize - logoSize) / 2 - offset;
-                  const y = (qrSize - logoSize) / 2 - offset;
+                  // Calculate QR code area dimensions (same as how QR is drawn)
+                  const qrAreaSize = qrSize - 60;
+                  // Center logo within the QR code area
+                  const x = (qrAreaSize - logoSize) / 2;
+                  const y = (qrAreaSize - logoSize) / 2;
                   
                   const img = new Image();
                   await new Promise((resolve, reject) => {

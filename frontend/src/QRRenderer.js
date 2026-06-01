@@ -219,9 +219,9 @@ export const useQRRenderer = ({
         const totalBackgroundSize = stickerSize + 2 * padding; // Include padding in centering calculation
         const x = qrOffsetX + (qrRenderSize - totalBackgroundSize) / 2;
         const y = qrOffsetY + (qrRenderSize - totalBackgroundSize) / 2;
-        // White square moved 3px right and 3px down
-        const whiteSquareX = x + 3;
-        const whiteSquareY = y + 3;
+        // White square centered on QR area
+        const whiteSquareX = x;
+        const whiteSquareY = y;
         ctx.fillStyle = 'white';
         const radius = 8;
         ctx.beginPath();
@@ -237,9 +237,9 @@ export const useQRRenderer = ({
         ctx.closePath();
         ctx.fill();
 
-        // Position sticker in center of background (moved 3px down)
+        // Position sticker in center of background
         const stickerX = x + padding;
-        const stickerY = y + padding + 3;
+        const stickerY = y + padding;
 
         if (selectedSticker.startsWith('data:')) {
           const img = new Image();
@@ -264,13 +264,13 @@ export const useQRRenderer = ({
 
         const img = new Image();
         img.onload = () => {
-          // Draw white background for logo (moved 3px right and 3px down)
+          // Draw white background for logo (centered on QR area)
           ctx.fillStyle = 'white';
           ctx.beginPath();
-          ctx.roundRect(x - 2 + 3, y - 2 + 3, logoSize + 4, logoSize + 4, 4);
+          ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
           ctx.fill();
-          // Draw the logo (moved 3px down)
-          ctx.drawImage(img, x, y + 3, logoSize, logoSize);
+          // Draw the logo (centered)
+          ctx.drawImage(img, x, y, logoSize, logoSize);
         };
         img.src = selectedLogo;
       }
