@@ -1126,11 +1126,24 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // Apply sticker if selected
                 if (selectedSticker) {
                   const stickerSize = qrSize * 0.2;
-                  // Calculate QR code area dimensions (same as how QR is drawn)
-                  const qrAreaSize = qrSize - 60;
+                  // Calculate QR code area dimensions based on frame type
+                  let qrAreaSize, qrAreaX, qrAreaY;
+                  if (selectedFrame === 'frame1') {
+                    qrAreaSize = 240;
+                    qrAreaX = 15;
+                    qrAreaY = 15;
+                  } else if (selectedFrame === 'frame2') {
+                    qrAreaSize = 230;
+                    qrAreaX = 20;
+                    qrAreaY = 10;
+                  } else {
+                    qrAreaSize = qrSize - 60;
+                    qrAreaX = 0;
+                    qrAreaY = 0;
+                  }
                   // Center sticker within the QR code area
-                  const x = (qrAreaSize - stickerSize) / 2;
-                  const y = (qrAreaSize - stickerSize) / 2;
+                  const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
+                  const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
                   const padding = 6;
                   // White square perfectly centered (no offset)
                   const whiteSquareX = x - padding;
@@ -1176,11 +1189,24 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // Apply logo if selected
       if (selectedLogo) {
         const logoSize = 50;
-        // Calculate QR code area dimensions (same as how QR is drawn)
-        const qrAreaSize = qrSize - 60;
+        // Calculate QR code area dimensions based on frame type
+        let qrAreaSize, qrAreaX, qrAreaY;
+        if (selectedFrame === 'frame1') {
+          qrAreaSize = 240;
+          qrAreaX = 15;
+          qrAreaY = 15;
+        } else if (selectedFrame === 'frame2') {
+          qrAreaSize = 230;
+          qrAreaX = 20;
+          qrAreaY = 10;
+        } else {
+          qrAreaSize = qrSize - 60;
+          qrAreaX = 0;
+          qrAreaY = 0;
+        }
         // Center logo within the QR code area
-        const x = (qrAreaSize - logoSize) / 2;
-        const y = (qrAreaSize - logoSize) / 2;
+        const x = qrAreaX + (qrAreaSize - logoSize) / 2;
+        const y = qrAreaY + (qrAreaSize - logoSize) / 2;
         
         const img = new Image();
         await new Promise((resolve, reject) => {
@@ -2594,11 +2620,24 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // Apply sticker if selected
                 if (selectedSticker) {
                   const stickerSize = qrSize * 0.2;
-                  // Calculate QR code area dimensions (same as how QR is drawn)
-                  const qrAreaSize = qrSize - 60;
+                  // Calculate QR code area dimensions based on frame type
+                  let qrAreaSize, qrAreaX, qrAreaY;
+                  if (selectedFrame === 'frame1') {
+                    qrAreaSize = 240;
+                    qrAreaX = 15;
+                    qrAreaY = 15;
+                  } else if (selectedFrame === 'frame2') {
+                    qrAreaSize = 230;
+                    qrAreaX = 20;
+                    qrAreaY = 10;
+                  } else {
+                    qrAreaSize = qrSize - 60;
+                    qrAreaX = 0;
+                    qrAreaY = 0;
+                  }
                   // Center sticker within the QR code area
-                  const x = (qrAreaSize - stickerSize) / 2;
-                  const y = (qrAreaSize - stickerSize) / 2;
+                  const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
+                  const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
                   const padding = 6;
                   // White square perfectly centered (no offset)
                   const whiteSquareX = x - padding;
@@ -2644,11 +2683,24 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 // Apply logo if selected
                 if (selectedLogo) {
                   const logoSize = 50;
-                  // Calculate QR code area dimensions (same as how QR is drawn)
-                  const qrAreaSize = qrSize - 60;
+                  // Calculate QR code area dimensions based on frame type
+                  let qrAreaSize, qrAreaX, qrAreaY;
+                  if (selectedFrame === 'frame1') {
+                    qrAreaSize = 240;
+                    qrAreaX = 15;
+                    qrAreaY = 15;
+                  } else if (selectedFrame === 'frame2') {
+                    qrAreaSize = 230;
+                    qrAreaX = 20;
+                    qrAreaY = 10;
+                  } else {
+                    qrAreaSize = qrSize - 60;
+                    qrAreaX = 0;
+                    qrAreaY = 0;
+                  }
                   // Center logo within the QR code area
-                  const x = (qrAreaSize - logoSize) / 2;
-                  const y = (qrAreaSize - logoSize) / 2;
+                  const x = qrAreaX + (qrAreaSize - logoSize) / 2;
+                  const y = qrAreaY + (qrAreaSize - logoSize) / 2;
                   
                   const img = new Image();
                   await new Promise((resolve, reject) => {
