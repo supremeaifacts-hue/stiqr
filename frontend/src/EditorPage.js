@@ -111,7 +111,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [socialPageColor, setSocialPageColor] = useState('#FF00FF');
   const [socialHeadline, setSocialHeadline] = useState('Follow me on these Social Media');
-  const publicLogo = (filename) => `${import.meta.env.BASE_URL || '/'}logos/${filename}`;
+  const publicLogo = (filename) => `/logos/${filename}`;
   const [socialProfiles, setSocialProfiles] = useState([
     { id: 'fb', platform: 'Facebook', url: '', logo: publicLogo('Facebook.png'), handle: 'facebook' },
     { id: 'ig', platform: 'Instagram', url: '', logo: publicLogo('instagram.png'), handle: 'instagram' },
