@@ -2973,93 +2973,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     />
   ) : null;
 
-  if (embedded) {
-    return (
-      <div style={{
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '60px 20px',
-        boxSizing: 'border-box',
-      }}>
-        <div style={{ width: '100%', maxWidth: '1200px' }}>
-          {editorContent}
-          {stickerPicker}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%)',
-      color: '#fff',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: '"Inter", "Segoe UI", sans-serif',
-    }}>
-      {/* Top Navigation Bar */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        padding: '20px 40px',
-        borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
-        background: 'rgba(0, 0, 0, 0.5)',
-      }}>
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <button
-            onClick={onBack}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid #00D9FF',
-              borderRadius: '8px',
-              color: '#00D9FF',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-            }}
-          >
-            Homepage
-          </button>
-          <button
-            onClick={onGoToDashboard}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid #FF00FF',
-              borderRadius: '8px',
-              color: '#FF00FF',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-            }}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={onGoToProfile}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid #888',
-              borderRadius: '8px',
-              color: '#888',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-            }}
-          >
-            Profile
-          </button>
-        </div>
-      </header>
-
-      {editorContent}
-      {stickerPicker}
-
+  const socialMediaModals = (
+    <>
       {/* Social Media Editor Modal */}
       {showSocialModal && (
         <div style={{
@@ -3087,7 +3002,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             display: 'flex',
             gap: '30px',
           }}>
-            {/* Left Panel - Editor */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
@@ -3113,7 +3027,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 </button>
               </div>
 
-              {/* Page Color Selection */}
               <div>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
                   Page Color
@@ -3141,7 +3054,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   </div>
                 </div>
 
-                {/* Custom Color Picker */}
                 <div style={{ marginTop: '12px' }}>
                   <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -3179,7 +3091,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 </div>
               </div>
 
-              {/* Basic Information */}
               <div>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
                   Basic Information
@@ -3204,7 +3115,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#888' }}>Follow me on Social Media</p>
               </div>
 
-              {/* Social Media Profiles */}
               <div>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
                   Social Media Profiles
@@ -3301,7 +3211,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   ))}
                 </div>
 
-                {/* Add More Links Button */}
                 <button
                   onClick={() => setShowPlatformPicker(true)}
                   style={{
@@ -3322,9 +3231,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            {/* Right Panel - Phone Preview */}
             <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              {/* Phone Frame */}
               <div style={{
                 position: 'relative',
                 width: '280px',
@@ -3337,7 +3244,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 display: 'flex',
                 flexDirection: 'column',
               }}>
-                {/* Notch */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
@@ -3350,7 +3256,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   zIndex: 10,
                 }}></div>
 
-                {/* Screen Content */}
                 <div style={{
                   flex: 1,
                   background: socialPageColor,
@@ -3362,7 +3267,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   gap: '15px',
                   marginTop: '5px',
                 }}>
-                  {/* Headline */}
                   <h3 style={{
                     margin: 0,
                     color: '#000',
@@ -3374,7 +3278,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     {socialHeadline}
                   </h3>
 
-                  {/* Social Links Preview */}
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -3422,7 +3325,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         </div>
       )}
 
-      {/* Platform Picker Modal */}
       {showPlatformPicker && (
         <div style={{
           position: 'fixed',
@@ -3518,6 +3420,97 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div style={{
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '60px 20px',
+        boxSizing: 'border-box',
+      }}>
+        <div style={{ width: '100%', maxWidth: '1200px' }}>
+          {editorContent}
+          {stickerPicker}
+          {socialMediaModals}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%)',
+      color: '#fff',
+      display: 'flex',
+      flexDirection: 'column',
+      fontFamily: '"Inter", "Segoe UI", sans-serif',
+    }}>
+      {/* Top Navigation Bar */}
+      <header style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        padding: '20px 40px',
+        borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
+        background: 'rgba(0, 0, 0, 0.5)',
+      }}>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <button
+            onClick={onBack}
+            style={{
+              padding: '8px 16px',
+              background: 'transparent',
+              border: '1px solid #00D9FF',
+              borderRadius: '8px',
+              color: '#00D9FF',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}
+          >
+            Homepage
+          </button>
+          <button
+            onClick={onGoToDashboard}
+            style={{
+              padding: '8px 16px',
+              background: 'transparent',
+              border: '1px solid #FF00FF',
+              borderRadius: '8px',
+              color: '#FF00FF',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={onGoToProfile}
+            style={{
+              padding: '8px 16px',
+              background: 'transparent',
+              border: '1px solid #888',
+              borderRadius: '8px',
+              color: '#888',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}
+          >
+            Profile
+          </button>
+        </div>
+      </header>
+
+      {editorContent}
+      {stickerPicker}
+      {socialMediaModals}
     </div>
   );
 };
