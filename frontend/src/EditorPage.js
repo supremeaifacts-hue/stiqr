@@ -3455,7 +3455,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     e.currentTarget.style.transform = 'scale(1)';
                   }}
                 >
-                  <span style={{ fontSize: '28px' }}>{platform.logo}</span>
+                  <img
+                    src={platform.logo}
+                    alt={platform.name}
+                    style={{ width: '28px', height: '28px', display: 'block' }}
+                  />
                   <span>{platform.name}</span>
                 </button>
               ))}
