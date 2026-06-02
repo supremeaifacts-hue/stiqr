@@ -23,6 +23,28 @@ import spotifyLogo from './assets/logos/spotify.png';
 import messengerLogo from './assets/logos/messenger.png';
 import telegramLogo from './assets/logos/telegram.png';
 
+const commonLogos = [
+  { id: 'whatsapp', label: 'WhatsApp', src: whatsappLogo },
+  { id: 'wechat', label: 'WeChat', src: wechatLogo },
+  { id: 'instagram', label: 'Instagram', src: instagramLogo },
+  { id: 'facebook', label: 'Facebook', src: facebookLogo },
+  { id: 'x', label: 'X', src: xLogo },
+  { id: 'youtube', label: 'YouTube', src: youtubeLogo },
+  { id: 'pinterest', label: 'Pinterest', src: pinterestLogo },
+  { id: 'venmo', label: 'Venmo', src: venmoLogo },
+  { id: 'reddit', label: 'Reddit', src: redditLogo },
+  { id: 'github', label: 'GitHub', src: githubLogo },
+  { id: 'linkedin', label: 'LinkedIn', src: linkedinLogo },
+  { id: 'spotify', label: 'Spotify', src: spotifyLogo },
+  { id: 'messenger', label: 'Messenger', src: messengerLogo },
+  { id: 'mail', label: 'Mail', src: mailLogo },
+  { id: 'wifi', label: 'Wi-Fi', src: wifiLogo },
+  { id: 'paypal', label: 'PayPal', src: paypalLogo },
+  { id: 'link', label: 'Link', src: linkLogo },
+  { id: 'tiktok', label: 'TikTok', src: tiktokLogo },
+  { id: 'bitcoin', label: 'Bitcoin', src: bitcoinLogo },
+];
+
 const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, qrCodeToEdit, onClearQrCodeToEdit }) => {
   const [selectedType, setSelectedType] = useState('url');
   const [qrData, setQrData] = useState('');
@@ -2225,17 +2247,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         scrollbarColor: '#00D9FF rgba(0, 217, 255, 0.1)',
                         WebkitOverflowScrolling: 'touch',
                       }}>
-                        {[
-                          { id: 'whatsapp', label: 'WhatsApp', src: whatsappLogo },
-                          { id: 'wechat', label: 'WeChat', src: wechatLogo },
-                          { id: 'instagram', label: 'Instagram', src: instagramLogo },
-                          { id: 'mail', label: 'Mail', src: mailLogo },
-                          { id: 'wifi', label: 'Wi-Fi', src: wifiLogo },
-                          { id: 'paypal', label: 'PayPal', src: paypalLogo },
-                          { id: 'link', label: 'Link', src: linkLogo },
-                          { id: 'tiktok', label: 'TikTok', src: tiktokLogo },
-                          { id: 'bitcoin', label: 'Bitcoin', src: bitcoinLogo },
-                        ].map((logo) => (
+                        {commonLogos.map((logo) => (
                           <div
                             key={logo.id}
                             onClick={() => setSelectedLogo(logo.src)}
