@@ -118,6 +118,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     { id: 'tw', platform: 'Twitter', url: '', logo: '🐦', handle: 'twitter' }
   ]);
   const [customColorInput, setCustomColorInput] = useState('#FF00FF');
+
+  // Open social modal (separate handler for easier debugging)
+  const openSocialModal = () => {
+    console.log('Opening Social Media modal');
+    setShowSocialModal(true);
+  };
   
   // Local subscription state - fetched directly from backend to ensure accuracy
   const [isPro, setIsPro] = useState(false);
@@ -1629,7 +1635,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               ) : selectedType === 'social' || selectedType === 'event' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <button
-                    onClick={() => setShowSocialModal(true)}
+                    onClick={openSocialModal}
                     style={{
                       padding: '14px',
                       background: 'linear-gradient(135deg, #FF00FF 0%, #00D9FF 100%)',
@@ -1643,16 +1649,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   >
                     Create Now
                   </button>
-                  <div style={{
-                    padding: '10px',
-                    background: 'rgba(0, 217, 255, 0.1)',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    color: '#00D9FF',
-                    textAlign: 'center',
-                  }}>
-                    {socialProfiles.filter(p => p.url.trim().length > 0).length} profile(s) configured
-                  </div>
                 </div>
               ) : (
                 <input
