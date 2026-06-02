@@ -43,6 +43,7 @@ const commonLogos = [
   { id: 'link', label: 'Link', src: linkLogo },
   { id: 'tiktok', label: 'TikTok', src: tiktokLogo },
   { id: 'bitcoin', label: 'Bitcoin', src: bitcoinLogo },
+  { id: 'telegram', label: 'Telegram', src: telegramLogo },
 ];
 
 const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, qrCodeToEdit, onClearQrCodeToEdit }) => {
