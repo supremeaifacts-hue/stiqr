@@ -110,14 +110,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [socialPageColor, setSocialPageColor] = useState('#FF00FF');
-  const [socialHeadline, setSocialHeadline] = useState('Follow me on these Social Media');
+  const [socialHeadline, setSocialHeadline] = useState('Follow me on these / Social Media');
   const [socialProfiles, setSocialProfiles] = useState([
-    { id: 'fb', platform: 'Facebook', url: '', logo: '📘', handle: 'facebook' },
-    { id: 'ig', platform: 'Instagram', url: '', logo: '📸', handle: 'instagram' },
-    { id: 'x', platform: 'X', url: '', logo: '𝕏', handle: 'x' },
-    { id: 'tw', platform: 'Twitter', url: '', logo: '🐦', handle: 'twitter' }
+    { id: 'fb', platform: 'Facebook', url: '', logo: '/logos/Facebook.png', handle: 'facebook' },
+    { id: 'ig', platform: 'Instagram', url: '', logo: '/logos/instagram.png', handle: 'instagram' },
+    { id: 'x', platform: 'X', url: '', logo: '/logos/x.png', handle: 'x' },
+    { id: 'tg', platform: 'Telegram', url: '', logo: '/logos/telegram.png', handle: 'telegram' }
   ]);
   const [customColorInput, setCustomColorInput] = useState('#FF00FF');
+  const customColorInputRef = useRef(null);
 
   // Open social modal (separate handler for easier debugging)
   const openSocialModal = () => {
@@ -470,24 +471,22 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
   // Social Media platforms for "Add more links" feature
   const socialMediaPlatforms = [
-    { id: 'facebook', name: 'Facebook', logo: '📘', handle: 'facebook' },
-    { id: 'instagram', name: 'Instagram', logo: '📸', handle: 'instagram' },
-    { id: 'x', name: 'X', logo: '𝕏', handle: 'x' },
-    { id: 'twitter', name: 'Twitter', logo: '🐦', handle: 'twitter' },
-    { id: 'youtube', name: 'YouTube', logo: '▶️', handle: 'youtube' },
-    { id: 'pinterest', name: 'Pinterest', logo: '📌', handle: 'pinterest' },
-    { id: 'tiktok', name: 'TikTok', logo: '🎵', handle: 'tiktok' },
-    { id: 'venmo', name: 'Venmo', logo: '💰', handle: 'venmo' },
-    { id: 'reddit', name: 'Reddit', logo: '🔴', handle: 'reddit' },
-    { id: 'telegram', name: 'Telegram', logo: '✈️', handle: 'telegram' },
-    { id: 'github', name: 'GitHub', logo: '🐙', handle: 'github' },
-    { id: 'linkedin', name: 'LinkedIn', logo: '💼', handle: 'linkedin' },
-    { id: 'spotify', name: 'Spotify', logo: '🎵', handle: 'spotify' },
-    { id: 'messenger', name: 'Messenger', logo: '💬', handle: 'messenger' },
-    { id: 'whatsapp', name: 'WhatsApp', logo: '📱', handle: 'whatsapp' },
-    { id: 'wechat', name: 'WeChat', logo: '🗨️', handle: 'wechat' },
-    { id: 'telegram', name: 'Telegram', logo: '✈️', handle: 'telegram' },
-    { id: 'generic', name: 'Generic Link', logo: '🔗', handle: 'link' },
+    { id: 'facebook', name: 'Facebook', logo: '/logos/Facebook.png', handle: 'facebook' },
+    { id: 'instagram', name: 'Instagram', logo: '/logos/instagram.png', handle: 'instagram' },
+    { id: 'x', name: 'X', logo: '/logos/x.png', handle: 'x' },
+    { id: 'youtube', name: 'YouTube', logo: '/logos/youtube.png', handle: 'youtube' },
+    { id: 'pinterest', name: 'Pinterest', logo: '/logos/pinterest.png', handle: 'pinterest' },
+    { id: 'tiktok', name: 'TikTok', logo: '/logos/tiktok.png', handle: 'tiktok' },
+    { id: 'venmo', name: 'Venmo', logo: '/logos/venmo.png', handle: 'venmo' },
+    { id: 'reddit', name: 'Reddit', logo: '/logos/reddit.png', handle: 'reddit' },
+    { id: 'telegram', name: 'Telegram', logo: '/logos/telegram.png', handle: 'telegram' },
+    { id: 'github', name: 'GitHub', logo: '/logos/github.png', handle: 'github' },
+    { id: 'linkedin', name: 'LinkedIn', logo: '/logos/linkedin.png', handle: 'linkedin' },
+    { id: 'spotify', name: 'Spotify', logo: '/logos/spotify.png', handle: 'spotify' },
+    { id: 'messenger', name: 'Messenger', logo: '/logos/messenger.png', handle: 'messenger' },
+    { id: 'whatsapp', name: 'WhatsApp', logo: '/logos/whatsapp.png', handle: 'whatsapp' },
+    { id: 'wechat', name: 'WeChat', logo: '/logos/wechat.png', handle: 'wechat' },
+    { id: 'generic', name: 'Generic Link', logo: '/logos/link.png', handle: 'link' },
   ];
 
   // Helper function to handle social profile updates
@@ -3030,10 +3029,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 <div style={{ marginBottom: '10px' }}>
                   <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#aaa' }}>Choose which color your page should have</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {['#FF00FF', '#00D9FF', '#00FF00', '#FFFF00', '#FF9900', '#FF0000', '#9900FF'].map((color) => (
+                    {['#e5e9ec', '#edcbc0', '#fff5cd', '#8cd7ff', '#dad0f0', '#305971', '#25501a'].map((color) => (
                       <div
                         key={color}
-                        onClick={() => setSocialPageColor(color)}
+                        onClick={() => {
+                          setSocialPageColor(color);
+                          setCustomColorInput(color);
+                        }}
                         style={{
                           width: '40px',
                           height: '40px',
@@ -3052,7 +3054,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
                 <div style={{ marginTop: '12px' }}>
                   <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
                       type="text"
                       value={customColorInput}
@@ -3074,14 +3076,28 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         flex: 1,
                       }}
                     />
-                    <div
+                    <button
+                      type="button"
+                      onClick={() => customColorInputRef.current?.click()}
                       style={{
                         width: '40px',
                         height: '40px',
+                        borderRadius: '8px',
                         background: customColorInput,
-                        borderRadius: '6px',
                         border: '2px solid rgba(0, 217, 255, 0.3)',
+                        cursor: 'pointer',
+                        padding: 0,
                       }}
+                    />
+                    <input
+                      ref={customColorInputRef}
+                      type="color"
+                      value={customColorInput}
+                      onChange={(e) => {
+                        setCustomColorInput(e.target.value);
+                        setSocialPageColor(e.target.value);
+                      }}
+                      style={{ display: 'none' }}
                     />
                   </div>
                 </div>
@@ -3130,12 +3146,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                        <span style={{ fontSize: '20px' }}>{profile.logo}</span>
+                        {typeof profile.logo === 'string' ? (
+                          <img src={profile.logo} alt={`${profile.platform} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                        ) : (
+                          <span style={{ fontSize: '20px' }}>{profile.logo}</span>
+                        )}
                         <span style={{ fontSize: '9px', color: '#aaa', textAlign: 'center', maxWidth: '35px', wordBreak: 'break-word' }}>
                           {profile.platform}
                         </span>
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: '0' }}>
                         <input
                           type="text"
                           value={profile.url}
@@ -3150,16 +3170,17 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             color: '#fff',
                             fontSize: '12px',
                             boxSizing: 'border-box',
+                            maxWidth: '260px',
                           }}
                         />
-                        <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#666' }}>https:// preview</p>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <button
                           onClick={() => moveSocialProfileUp(profile.id)}
                           disabled={index === 0}
                           style={{
-                            padding: '4px 8px',
+                            minWidth: '62px',
+                            padding: '6px 10px',
                             background: index === 0 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
                             border: '1px solid rgba(0, 217, 255, 0.3)',
                             borderRadius: '4px',
@@ -3169,13 +3190,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             fontWeight: '600',
                           }}
                         >
-                          ↑
+                          Up
                         </button>
                         <button
                           onClick={() => moveSocialProfileDown(profile.id)}
                           disabled={index === socialProfiles.length - 1}
                           style={{
-                            padding: '4px 8px',
+                            minWidth: '62px',
+                            padding: '6px 10px',
                             background: index === socialProfiles.length - 1 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
                             border: '1px solid rgba(0, 217, 255, 0.3)',
                             borderRadius: '4px',
@@ -3185,12 +3207,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             fontWeight: '600',
                           }}
                         >
-                          ↓
+                          Down
                         </button>
                         <button
                           onClick={() => removeSocialProfile(profile.id)}
                           style={{
-                            padding: '4px 8px',
+                            minWidth: '62px',
+                            padding: '6px 10px',
                             background: 'rgba(255, 0, 0, 0.2)',
                             border: '1px solid rgba(255, 0, 0, 0.3)',
                             borderRadius: '4px',
@@ -3200,7 +3223,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             fontWeight: '600',
                           }}
                         >
-                          ✕
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -3211,6 +3234,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   onClick={() => setShowPlatformPicker(true)}
                   style={{
                     marginTop: '12px',
+                    marginBottom: '12px',
                     width: '100%',
                     padding: '10px',
                     background: 'rgba(0, 217, 255, 0.2)',
@@ -3271,7 +3295,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     textAlign: 'center',
                     lineHeight: '1.2',
                   }}>
-                    {socialHeadline}
+                    {socialHeadline.split('/').map((line, index) => (
+                      <span key={index} style={{ display: 'block' }}>{line.trim()}</span>
+                    ))}
                   </h3>
 
                   <div style={{
@@ -3294,7 +3320,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-                          <span style={{ fontSize: '16px' }}>{profile.logo}</span>
+                          {typeof profile.logo === 'string' ? (
+                            <img src={profile.logo} alt={`${profile.platform} logo`} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                          ) : (
+                            <span style={{ fontSize: '16px' }}>{profile.logo}</span>
+                          )}
                           <span style={{ fontSize: '11px', color: '#000', fontWeight: '600' }}>
                             {profile.platform}
                           </span>
