@@ -110,12 +110,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [socialPageColor, setSocialPageColor] = useState('#FF00FF');
-  const [socialHeadline, setSocialHeadline] = useState('Follow me on these / Social Media');
+  const [socialHeadline, setSocialHeadline] = useState('Follow me on these Social Media');
+  const publicLogo = (filename) => `${import.meta.env.BASE_URL || '/'}logos/${filename}`;
   const [socialProfiles, setSocialProfiles] = useState([
-    { id: 'fb', platform: 'Facebook', url: '', logo: '/logos/Facebook.png', handle: 'facebook' },
-    { id: 'ig', platform: 'Instagram', url: '', logo: '/logos/instagram.png', handle: 'instagram' },
-    { id: 'x', platform: 'X', url: '', logo: '/logos/x.png', handle: 'x' },
-    { id: 'tg', platform: 'Telegram', url: '', logo: '/logos/telegram.png', handle: 'telegram' }
+    { id: 'fb', platform: 'Facebook', url: '', logo: publicLogo('Facebook.png'), handle: 'facebook' },
+    { id: 'ig', platform: 'Instagram', url: '', logo: publicLogo('instagram.png'), handle: 'instagram' },
+    { id: 'x', platform: 'X', url: '', logo: publicLogo('x.png'), handle: 'x' },
+    { id: 'tg', platform: 'Telegram', url: '', logo: publicLogo('telegram.png'), handle: 'telegram' }
   ]);
   const [customColorInput, setCustomColorInput] = useState('#FF00FF');
   const customColorInputRef = useRef(null);
@@ -471,22 +472,22 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
   // Social Media platforms for "Add more links" feature
   const socialMediaPlatforms = [
-    { id: 'facebook', name: 'Facebook', logo: '/logos/Facebook.png', handle: 'facebook' },
-    { id: 'instagram', name: 'Instagram', logo: '/logos/instagram.png', handle: 'instagram' },
-    { id: 'x', name: 'X', logo: '/logos/x.png', handle: 'x' },
-    { id: 'youtube', name: 'YouTube', logo: '/logos/youtube.png', handle: 'youtube' },
-    { id: 'pinterest', name: 'Pinterest', logo: '/logos/pinterest.png', handle: 'pinterest' },
-    { id: 'tiktok', name: 'TikTok', logo: '/logos/tiktok.png', handle: 'tiktok' },
-    { id: 'venmo', name: 'Venmo', logo: '/logos/venmo.png', handle: 'venmo' },
-    { id: 'reddit', name: 'Reddit', logo: '/logos/reddit.png', handle: 'reddit' },
-    { id: 'telegram', name: 'Telegram', logo: '/logos/telegram.png', handle: 'telegram' },
-    { id: 'github', name: 'GitHub', logo: '/logos/github.png', handle: 'github' },
-    { id: 'linkedin', name: 'LinkedIn', logo: '/logos/linkedin.png', handle: 'linkedin' },
-    { id: 'spotify', name: 'Spotify', logo: '/logos/spotify.png', handle: 'spotify' },
-    { id: 'messenger', name: 'Messenger', logo: '/logos/messenger.png', handle: 'messenger' },
-    { id: 'whatsapp', name: 'WhatsApp', logo: '/logos/whatsapp.png', handle: 'whatsapp' },
-    { id: 'wechat', name: 'WeChat', logo: '/logos/wechat.png', handle: 'wechat' },
-    { id: 'generic', name: 'Generic Link', logo: '/logos/link.png', handle: 'link' },
+    { id: 'facebook', name: 'Facebook', logo: publicLogo('Facebook.png'), handle: 'facebook' },
+    { id: 'instagram', name: 'Instagram', logo: publicLogo('instagram.png'), handle: 'instagram' },
+    { id: 'x', name: 'X', logo: publicLogo('x.png'), handle: 'x' },
+    { id: 'youtube', name: 'YouTube', logo: publicLogo('youtube.png'), handle: 'youtube' },
+    { id: 'pinterest', name: 'Pinterest', logo: publicLogo('pinterest.png'), handle: 'pinterest' },
+    { id: 'tiktok', name: 'TikTok', logo: publicLogo('tiktok.png'), handle: 'tiktok' },
+    { id: 'venmo', name: 'Venmo', logo: publicLogo('venmo.png'), handle: 'venmo' },
+    { id: 'reddit', name: 'Reddit', logo: publicLogo('reddit.png'), handle: 'reddit' },
+    { id: 'telegram', name: 'Telegram', logo: publicLogo('telegram.png'), handle: 'telegram' },
+    { id: 'github', name: 'GitHub', logo: publicLogo('github.png'), handle: 'github' },
+    { id: 'linkedin', name: 'LinkedIn', logo: publicLogo('linkedin.png'), handle: 'linkedin' },
+    { id: 'spotify', name: 'Spotify', logo: publicLogo('spotify.png'), handle: 'spotify' },
+    { id: 'messenger', name: 'Messenger', logo: publicLogo('messenger.png'), handle: 'messenger' },
+    { id: 'whatsapp', name: 'WhatsApp', logo: publicLogo('whatsapp.png'), handle: 'whatsapp' },
+    { id: 'wechat', name: 'WeChat', logo: publicLogo('wechat.png'), handle: 'wechat' },
+    { id: 'generic', name: 'Generic Link', logo: publicLogo('link.png'), handle: 'link' },
   ];
 
   // Helper function to handle social profile updates
@@ -2986,6 +2987,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           backdropFilter: 'blur(5px)',
         }}>
           <div style={{
+            position: 'relative',
             background: 'rgba(20, 20, 40, 0.95)',
             border: '2px solid rgba(0, 217, 255, 0.3)',
             borderRadius: '20px',
@@ -3005,6 +3007,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 <button
                   onClick={() => setShowSocialModal(false)}
                   style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
                     background: 'transparent',
                     border: 'none',
                     color: '#ccc',
@@ -3076,29 +3081,42 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         flex: 1,
                       }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => customColorInputRef.current?.click()}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '8px',
-                        background: customColorInput,
-                        border: '2px solid rgba(0, 217, 255, 0.3)',
-                        cursor: 'pointer',
-                        padding: 0,
-                      }}
-                    />
-                    <input
-                      ref={customColorInputRef}
-                      type="color"
-                      value={customColorInput}
-                      onChange={(e) => {
-                        setCustomColorInput(e.target.value);
-                        setSocialPageColor(e.target.value);
-                      }}
-                      style={{ display: 'none' }}
-                    />
+                    <div style={{ position: 'relative', width: '40px', height: '40px' }}>
+                      <button
+                        type="button"
+                        onClick={() => customColorInputRef.current?.click()}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '8px',
+                          background: customColorInput,
+                          border: '2px solid rgba(0, 217, 255, 0.3)',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      />
+                      <input
+                        ref={customColorInputRef}
+                        type="color"
+                        value={customColorInput}
+                        onChange={(e) => {
+                          setCustomColorInput(e.target.value);
+                          setSocialPageColor(e.target.value);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3124,7 +3142,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     fontWeight: '600',
                   }}
                 />
-                <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#888' }}>Follow me on Social Media</p>
               </div>
 
               <div>
@@ -3295,7 +3312,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     textAlign: 'center',
                     lineHeight: '1.2',
                   }}>
-                    {socialHeadline.split('/').map((line, index) => (
+                    {(socialHeadline.includes('Social Media') ? [socialHeadline.replace('Social Media', '').trim(), 'Social Media'] : [socialHeadline]).map((line, index) => (
                       <span key={index} style={{ display: 'block' }}>{line.trim()}</span>
                     ))}
                   </h3>
