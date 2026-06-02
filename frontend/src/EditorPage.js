@@ -106,6 +106,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // PDF file state
   const [pdfFile, setPdfFile] = useState(null);
   
+  // Social Media QR Code state
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [showPlatformPicker, setShowPlatformPicker] = useState(false);
+  const [socialPageColor, setSocialPageColor] = useState('#FF00FF');
+  const [socialHeadline, setSocialHeadline] = useState('Follow me on these Social Media');
+  const [socialProfiles, setSocialProfiles] = useState([
+    { id: 'fb', platform: 'Facebook', url: '', logo: '📘', handle: 'facebook' },
+    { id: 'ig', platform: 'Instagram', url: '', logo: '📸', handle: 'instagram' },
+    { id: 'x', platform: 'X', url: '', logo: '𝕏', handle: 'x' },
+    { id: 'tw', platform: 'Twitter', url: '', logo: '🐦', handle: 'twitter' }
+  ]);
+  const [customColorInput, setCustomColorInput] = useState('#FF00FF');
+  
   // Local subscription state - fetched directly from backend to ensure accuracy
   const [isPro, setIsPro] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState(null);
@@ -448,6 +461,81 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     { id: 'social', label: 'Social Media' },
     { id: 'event', label: 'Event' },
   ];
+
+  // Social Media platforms for "Add more links" feature
+  const socialMediaPlatforms = [
+    { id: 'facebook', name: 'Facebook', logo: '📘', handle: 'facebook' },
+    { id: 'instagram', name: 'Instagram', logo: '📸', handle: 'instagram' },
+    { id: 'x', name: 'X', logo: '𝕏', handle: 'x' },
+    { id: 'twitter', name: 'Twitter', logo: '🐦', handle: 'twitter' },
+    { id: 'youtube', name: 'YouTube', logo: '▶️', handle: 'youtube' },
+    { id: 'pinterest', name: 'Pinterest', logo: '📌', handle: 'pinterest' },
+    { id: 'tiktok', name: 'TikTok', logo: '🎵', handle: 'tiktok' },
+    { id: 'venmo', name: 'Venmo', logo: '💰', handle: 'venmo' },
+    { id: 'reddit', name: 'Reddit', logo: '🔴', handle: 'reddit' },
+    { id: 'telegram', name: 'Telegram', logo: '✈️', handle: 'telegram' },
+    { id: 'github', name: 'GitHub', logo: '🐙', handle: 'github' },
+    { id: 'linkedin', name: 'LinkedIn', logo: '💼', handle: 'linkedin' },
+    { id: 'spotify', name: 'Spotify', logo: '🎵', handle: 'spotify' },
+    { id: 'messenger', name: 'Messenger', logo: '💬', handle: 'messenger' },
+    { id: 'whatsapp', name: 'WhatsApp', logo: '📱', handle: 'whatsapp' },
+    { id: 'wechat', name: 'WeChat', logo: '🗨️', handle: 'wechat' },
+    { id: 'telegram', name: 'Telegram', logo: '✈️', handle: 'telegram' },
+    { id: 'generic', name: 'Generic Link', logo: '🔗', handle: 'link' },
+  ];
+
+  // Helper function to handle social profile updates
+  const updateSocialProfile = (id, field, value) => {
+    setSocialProfiles(prev =>
+      prev.map(profile =>
+        profile.id === id ? { ...profile, [field]: value } : profile
+      )
+    );
+  };
+
+  // Helper function to add a new social profile
+  const addSocialProfile = (platform) => {
+    const newId = 'social_' + Date.now();
+    setSocialProfiles(prev => [...prev, {
+      id: newId,
+      platform: platform.name,
+      url: '',
+      logo: platform.logo,
+      handle: platform.handle
+    }]);
+    setShowPlatformPicker(false);
+  };
+
+  // Helper function to remove a social profile
+  const removeSocialProfile = (id) => {
+    setSocialProfiles(prev => prev.filter(profile => profile.id !== id));
+  };
+
+  // Helper function to move profile up
+  const moveSocialProfileUp = (id) => {
+    setSocialProfiles(prev => {
+      const index = prev.findIndex(p => p.id === id);
+      if (index > 0) {
+        const newArray = [...prev];
+        [newArray[index - 1], newArray[index]] = [newArray[index], newArray[index - 1]];
+        return newArray;
+      }
+      return prev;
+    });
+  };
+
+  // Helper function to move profile down
+  const moveSocialProfileDown = (id) => {
+    setSocialProfiles(prev => {
+      const index = prev.findIndex(p => p.id === id);
+      if (index < prev.length - 1) {
+        const newArray = [...prev];
+        [newArray[index], newArray[index + 1]] = [newArray[index + 1], newArray[index]];
+        return newArray;
+      }
+      return prev;
+    });
+  };
 
   useEffect(() => {
     const generateQRCode = async () => {
@@ -1541,6 +1629,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               ) : selectedType === 'social' || selectedType === 'event' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <button
+                    onClick={() => setShowSocialModal(true)}
                     style={{
                       padding: '14px',
                       background: 'linear-gradient(135deg, #FF00FF 0%, #00D9FF 100%)',
@@ -1562,7 +1651,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     color: '#00D9FF',
                     textAlign: 'center',
                   }}>
-                    This feature will be implemented soon
+                    {socialProfiles.filter(p => p.url.trim().length > 0).length} profile(s) configured
                   </div>
                 </div>
               ) : (
@@ -2970,6 +3059,465 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
       {editorContent}
       {stickerPicker}
+
+      {/* Social Media Editor Modal */}
+      {showSocialModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(5px)',
+        }}>
+          <div style={{
+            background: 'rgba(20, 20, 40, 0.95)',
+            border: '2px solid rgba(0, 217, 255, 0.3)',
+            borderRadius: '20px',
+            padding: '40px',
+            maxWidth: '1100px',
+            width: '95%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            display: 'flex',
+            gap: '30px',
+          }}>
+            {/* Left Panel - Editor */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
+                  Social Media QR Code
+                </h2>
+                <button
+                  onClick={() => setShowSocialModal(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ccc',
+                    fontSize: '28px',
+                    cursor: 'pointer',
+                    padding: 0,
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Page Color Selection */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                  Page Color
+                </label>
+                <div style={{ marginBottom: '10px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#aaa' }}>Choose which color your page should have</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {['#FF00FF', '#00D9FF', '#00FF00', '#FFFF00', '#FF9900', '#FF0000', '#9900FF'].map((color) => (
+                      <div
+                        key={color}
+                        onClick={() => setSocialPageColor(color)}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          background: color,
+                          border: socialPageColor === color ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: socialPageColor === color ? '0 0 12px rgba(0,0,0,0.5)' : 'none',
+                        }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Color Picker */}
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={customColorInput}
+                      onChange={(e) => {
+                        setCustomColorInput(e.target.value);
+                        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                          setSocialPageColor(e.target.value);
+                        }
+                      }}
+                      placeholder="#RRGGBB"
+                      style={{
+                        padding: '8px 12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        flex: 1,
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        background: customColorInput,
+                        borderRadius: '6px',
+                        border: '2px solid rgba(0, 217, 255, 0.3)',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic Information */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                  Basic Information
+                </label>
+                <input
+                  type="text"
+                  value={socialHeadline}
+                  onChange={(e) => setSocialHeadline(e.target.value)}
+                  placeholder="Enter headline"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'rgba(0, 217, 255, 0.05)',
+                    border: '1px solid rgba(0, 217, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    fontWeight: '600',
+                  }}
+                />
+                <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#888' }}>Follow me on Social Media</p>
+              </div>
+
+              {/* Social Media Profiles */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                  Social Media Profiles
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '8px' }}>
+                  {socialProfiles.map((profile, index) => (
+                    <div
+                      key={profile.id}
+                      style={{
+                        display: 'flex',
+                        gap: '10px',
+                        padding: '12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <span style={{ fontSize: '20px' }}>{profile.logo}</span>
+                        <span style={{ fontSize: '9px', color: '#aaa', textAlign: 'center', maxWidth: '35px', wordBreak: 'break-word' }}>
+                          {profile.platform}
+                        </span>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="text"
+                          value={profile.url}
+                          onChange={(e) => updateSocialProfile(profile.id, 'url', e.target.value)}
+                          placeholder="https://"
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            background: 'rgba(0, 217, 255, 0.05)',
+                            border: '1px solid rgba(0, 217, 255, 0.2)',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                        <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#666' }}>https:// preview</p>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <button
+                          onClick={() => moveSocialProfileUp(profile.id)}
+                          disabled={index === 0}
+                          style={{
+                            padding: '4px 8px',
+                            background: index === 0 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
+                            border: '1px solid rgba(0, 217, 255, 0.3)',
+                            borderRadius: '4px',
+                            color: index === 0 ? '#666' : '#00D9FF',
+                            cursor: index === 0 ? 'not-allowed' : 'pointer',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => moveSocialProfileDown(profile.id)}
+                          disabled={index === socialProfiles.length - 1}
+                          style={{
+                            padding: '4px 8px',
+                            background: index === socialProfiles.length - 1 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
+                            border: '1px solid rgba(0, 217, 255, 0.3)',
+                            borderRadius: '4px',
+                            color: index === socialProfiles.length - 1 ? '#666' : '#00D9FF',
+                            cursor: index === socialProfiles.length - 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          ↓
+                        </button>
+                        <button
+                          onClick={() => removeSocialProfile(profile.id)}
+                          style={{
+                            padding: '4px 8px',
+                            background: 'rgba(255, 0, 0, 0.2)',
+                            border: '1px solid rgba(255, 0, 0, 0.3)',
+                            borderRadius: '4px',
+                            color: '#ff6b6b',
+                            cursor: 'pointer',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add More Links Button */}
+                <button
+                  onClick={() => setShowPlatformPicker(true)}
+                  style={{
+                    marginTop: '12px',
+                    width: '100%',
+                    padding: '10px',
+                    background: 'rgba(0, 217, 255, 0.2)',
+                    border: '1px solid rgba(0, 217, 255, 0.5)',
+                    borderRadius: '8px',
+                    color: '#00D9FF',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                  }}
+                >
+                  + Add more links
+                </button>
+              </div>
+            </div>
+
+            {/* Right Panel - Phone Preview */}
+            <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Phone Frame */}
+              <div style={{
+                position: 'relative',
+                width: '280px',
+                height: '560px',
+                background: 'radial-gradient(ellipse at top, #333, #000)',
+                borderRadius: '40px',
+                border: '12px solid #1a1a1a',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(255,255,255,0.1)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                {/* Notch */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '150px',
+                  height: '25px',
+                  background: '#000',
+                  borderRadius: '0 0 20px 20px',
+                  zIndex: 10,
+                }}></div>
+
+                {/* Screen Content */}
+                <div style={{
+                  flex: 1,
+                  background: socialPageColor,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '40px 20px',
+                  gap: '15px',
+                  marginTop: '5px',
+                }}>
+                  {/* Headline */}
+                  <h3 style={{
+                    margin: 0,
+                    color: '#000',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                    lineHeight: '1.2',
+                  }}>
+                    {socialHeadline}
+                  </h3>
+
+                  {/* Social Links Preview */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    width: '100%',
+                  }}>
+                    {socialProfiles.filter(p => p.url.trim().length > 0).slice(0, 4).map((profile) => (
+                      <div
+                        key={profile.id}
+                        style={{
+                          padding: '10px',
+                          background: 'rgba(255, 255, 255, 0.2)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                          <span style={{ fontSize: '16px' }}>{profile.logo}</span>
+                          <span style={{ fontSize: '11px', color: '#000', fontWeight: '600' }}>
+                            {profile.platform}
+                          </span>
+                        </div>
+                        <button style={{
+                          padding: '4px 10px',
+                          background: 'rgba(0, 0, 0, 0.2)',
+                          border: 'none',
+                          borderRadius: '4px',
+                          color: '#000',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                        }}>
+                          Visit
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Platform Picker Modal */}
+      {showPlatformPicker && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          backdropFilter: 'blur(5px)',
+        }}>
+          <div style={{
+            background: 'rgba(20, 20, 40, 0.95)',
+            border: '2px solid rgba(0, 217, 255, 0.3)',
+            borderRadius: '20px',
+            padding: '40px',
+            maxWidth: '600px',
+            width: '95%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+              <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
+                Add more links
+              </h2>
+              <button
+                onClick={() => setShowPlatformPicker(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ccc',
+                  fontSize: '28px',
+                  cursor: 'pointer',
+                  padding: 0,
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: '0 0 20px 0', fontSize: '12px', color: '#aaa' }}>
+              Click on each icon to add a social media link
+            </p>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+              gap: '12px',
+            }}>
+              {socialMediaPlatforms.map((platform) => (
+                <button
+                  key={platform.id}
+                  onClick={() => addSocialProfile(platform)}
+                  style={{
+                    padding: '16px',
+                    background: 'rgba(0, 217, 255, 0.1)',
+                    border: '2px solid rgba(0, 217, 255, 0.3)',
+                    borderRadius: '12px',
+                    color: '#00D9FF',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 217, 255, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.6)';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 217, 255, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <span style={{ fontSize: '28px' }}>{platform.logo}</span>
+                  <span>{platform.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
