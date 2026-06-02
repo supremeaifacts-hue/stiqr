@@ -11,19 +11,17 @@ import paypalLogo from './assets/logos/paypal.png';
 import linkLogo from './assets/logos/link.png';
 import tiktokLogo from './assets/logos/tiktok.png';
 import bitcoinLogo from './assets/logos/bitcoin.png';
-
-// Public logos (served from `public/logos`) — use import.meta URL to get a stable href
-const facebookLogoPublic = new URL('/logos/Facebook.png', import.meta.url).href;
-const xLogoPublic = new URL('/logos/x.png', import.meta.url).href;
-const youtubeLogoPublic = new URL('/logos/youtube.png', import.meta.url).href;
-const pinterestLogoPublic = new URL('/logos/pinterest.png', import.meta.url).href;
-const venmoLogoPublic = new URL('/logos/venmo.png', import.meta.url).href;
-const redditLogoPublic = new URL('/logos/reddit.png', import.meta.url).href;
-const githubLogoPublic = new URL('/logos/github.png', import.meta.url).href;
-const linkedinLogoPublic = new URL('/logos/linkedin.png', import.meta.url).href;
-const spotifyLogoPublic = new URL('/logos/spotify.png', import.meta.url).href;
-const messengerLogoPublic = new URL('/logos/messenger.png', import.meta.url).href;
-const telegramLogoPublic = new URL('/logos/telegram.png', import.meta.url).href;
+import facebookLogo from './assets/logos/facebook.png';
+import xLogo from './assets/logos/x.png';
+import youtubeLogo from './assets/logos/youtube.png';
+import pinterestLogo from './assets/logos/pinterest.png';
+import venmoLogo from './assets/logos/venmo.png';
+import redditLogo from './assets/logos/reddit.png';
+import githubLogo from './assets/logos/github.png';
+import linkedinLogo from './assets/logos/linkedin.png';
+import spotifyLogo from './assets/logos/spotify.png';
+import messengerLogo from './assets/logos/messenger.png';
+import telegramLogo from './assets/logos/telegram.png';
 
 const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, qrCodeToEdit, onClearQrCodeToEdit }) => {
   const [selectedType, setSelectedType] = useState('url');
@@ -124,12 +122,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [socialPageColor, setSocialPageColor] = useState('#FF00FF');
   const [socialHeadline, setSocialHeadline] = useState('Follow me on these Social Media');
-  const publicLogo = (filename) => `/logos/${filename}`;
   const [socialProfiles, setSocialProfiles] = useState([
-    { id: 'fb', platform: 'Facebook', url: '', logo: facebookLogoPublic, handle: 'facebook' },
+    { id: 'fb', platform: 'Facebook', url: '', logo: facebookLogo, handle: 'facebook' },
     { id: 'ig', platform: 'Instagram', url: '', logo: instagramLogo, handle: 'instagram' },
-    { id: 'x', platform: 'X', url: '', logo: xLogoPublic, handle: 'x' },
-    { id: 'tg', platform: 'Telegram', url: '', logo: telegramLogoPublic || publicLogo('telegram.png'), handle: 'telegram' }
+    { id: 'x', platform: 'X', url: '', logo: xLogo, handle: 'x' },
+    { id: 'tg', platform: 'Telegram', url: '', logo: telegramLogo, handle: 'telegram' }
   ]);
   const [customColorInput, setCustomColorInput] = useState('#FF00FF');
   const customColorInputRef = useRef(null);
@@ -485,19 +482,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
   // Social Media platforms for "Add more links" feature
   const socialMediaPlatforms = [
-    { id: 'facebook', name: 'Facebook', logo: facebookLogoPublic, handle: 'facebook' },
+    { id: 'facebook', name: 'Facebook', logo: facebookLogo, handle: 'facebook' },
     { id: 'instagram', name: 'Instagram', logo: instagramLogo, handle: 'instagram' },
-    { id: 'x', name: 'X', logo: xLogoPublic, handle: 'x' },
-    { id: 'youtube', name: 'YouTube', logo: youtubeLogoPublic, handle: 'youtube' },
-    { id: 'pinterest', name: 'Pinterest', logo: pinterestLogoPublic, handle: 'pinterest' },
+    { id: 'x', name: 'X', logo: xLogo, handle: 'x' },
+    { id: 'youtube', name: 'YouTube', logo: youtubeLogo, handle: 'youtube' },
+    { id: 'pinterest', name: 'Pinterest', logo: pinterestLogo, handle: 'pinterest' },
     { id: 'tiktok', name: 'TikTok', logo: tiktokLogo, handle: 'tiktok' },
-    { id: 'venmo', name: 'Venmo', logo: venmoLogoPublic, handle: 'venmo' },
-    { id: 'reddit', name: 'Reddit', logo: redditLogoPublic, handle: 'reddit' },
-    { id: 'telegram', name: 'Telegram', logo: telegramLogoPublic, handle: 'telegram' },
-    { id: 'github', name: 'GitHub', logo: githubLogoPublic, handle: 'github' },
-    { id: 'linkedin', name: 'LinkedIn', logo: linkedinLogoPublic, handle: 'linkedin' },
-    { id: 'spotify', name: 'Spotify', logo: spotifyLogoPublic, handle: 'spotify' },
-    { id: 'messenger', name: 'Messenger', logo: messengerLogoPublic, handle: 'messenger' },
+    { id: 'venmo', name: 'Venmo', logo: venmoLogo, handle: 'venmo' },
+    { id: 'reddit', name: 'Reddit', logo: redditLogo, handle: 'reddit' },
+    { id: 'telegram', name: 'Telegram', logo: telegramLogo, handle: 'telegram' },
+    { id: 'github', name: 'GitHub', logo: githubLogo, handle: 'github' },
+    { id: 'linkedin', name: 'LinkedIn', logo: linkedinLogo, handle: 'linkedin' },
+    { id: 'spotify', name: 'Spotify', logo: spotifyLogo, handle: 'spotify' },
+    { id: 'messenger', name: 'Messenger', logo: messengerLogo, handle: 'messenger' },
     { id: 'whatsapp', name: 'WhatsApp', logo: whatsappLogo, handle: 'whatsapp' },
     { id: 'wechat', name: 'WeChat', logo: wechatLogo, handle: 'wechat' },
     { id: 'generic', name: 'Generic Link', logo: linkLogo, handle: 'link' },
