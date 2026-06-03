@@ -1698,8 +1698,10 @@ async function handleRequest(req, res) {
         // Generate HTML with buttons
         const buttonsHtml = page.buttons.map(btn => {
           const buttonColor = getPlatformColor(btn.platform);
-          const label = escapeHtml(btn.label || btn.platform || 'Visit');
-          const url = escapeHtml(btn.url || '#');
+          // Use label if available, otherwise use platform name, fallback to 'Visit'
+          const label = btn.label || btn.platform || 'Visit';
+          // Use the exact URL the user provided - only escape HTML special chars in the URL
+          const url = (btn.url || '#').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           const platform = (btn.platform || '').toLowerCase();
           // For TikTok, add a border to make it visible on black
           const borderStyle = platform === 'tiktok' ? 'border: 2px solid #00f2ea;' : '';
@@ -1712,8 +1714,8 @@ async function handleRequest(req, res) {
           `;
         }).join('');
 
-        const safeTitle = escapeHtml(page.title || 'My Social Links');
-        const safeHeadline = escapeHtml(page.headline || 'Connect with me');
+        const safeTitle = page.title || 'My Social Links';
+        const safeHeadline = page.headline || 'Connect with me';
         const bgColor = page.pageColor || '#0a0a2e';
 
         const html = `<!DOCTYPE html>
