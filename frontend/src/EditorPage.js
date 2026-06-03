@@ -151,6 +151,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     { id: 'x', platform: 'X', url: '', logo: xLogo, handle: 'x' },
     { id: 'tg', platform: 'Telegram', url: '', logo: telegramLogo, handle: 'telegram' }
   ]);
+  // Use a ref to always have access to the latest socialProfiles (avoids stale closures)
+  const socialProfilesRef = useRef(socialProfiles);
+  useEffect(() => {
+    socialProfilesRef.current = socialProfiles;
+  }, [socialProfiles]);
   const [customColorInput, setCustomColorInput] = useState('#e5e9ec');
   const customColorInputRef = useRef(null);
   const [socialPageId, setSocialPageId] = useState(null);
@@ -178,8 +183,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
   // Handle saving social media configuration
   const handleSaveSocialConfig = async () => {
+    // Use the ref to get the latest socialProfiles (avoids stale closures)
+    const currentProfiles = socialProfilesRef.current;
+    
     // Validate that at least one profile has a URL
-    const validProfiles = socialProfiles.filter(p => p.url && p.url.trim().length > 0);
+    const validProfiles = currentProfiles.filter(p => p.url && p.url.trim().length > 0);
     if (validProfiles.length === 0) {
       alert('Please add at least one social media profile with a URL.');
       return;
