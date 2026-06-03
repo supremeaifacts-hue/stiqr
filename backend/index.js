@@ -1669,90 +1669,79 @@ async function handleRequest(req, res) {
         }
 
         // ── Use ONLY saved data from the document ──────────────────────────
-        // Button colors: use btn.color if saved, otherwise fallback to platform default
-        function getPlatformColor(platform) {
-          const colors = {
-            'instagram': '#E4405F',
-            'youtube': '#FF0000',
-            'tiktok': '#000000',
-            'facebook': '#1877F2',
-            'x': '#000000',
-            'twitter': '#1DA1F2',
-            'linkedin': '#0077B5',
-            'whatsapp': '#25D366',
-            'telegram': '#26A5E4',
-            'messenger': '#00B2FF',
-            'snapchat': '#FFFC00',
-            'pinterest': '#E60023',
-            'reddit': '#FF4500',
-            'github': '#333333',
-            'spotify': '#1DB954',
-            'venmo': '#008CFF',
-            'wechat': '#07C160',
-            'paypal': '#00457C',
-            'bitcoin': '#F7931A',
-            'link': '#00D9FF',
-            'generic': '#555'
+        // Extract saved data
+        const pageColor = page.pageColor || '#e5e9ec';
+        const headline = page.headline || page.title || 'Follow me';
+        const buttons = page.buttons || [];
+
+        // Platform logo URL mapping (uses public logos from Cloudflare Pages)
+        // The logos are stored in frontend/public/logos/ and served at /logos/[name].png
+        function getLogoUrl(platform) {
+          const platformLower = (platform || '').toLowerCase();
+          // Map platform names to actual filename in public/logos/
+          // All filenames are lowercase for consistency
+          const filenameMap = {
+            'facebook': 'facebook.png',
+            'instagram': 'instagram.png',
+            'youtube': 'youtube.png',
+            'tiktok': 'tiktok.png',
+            'x': 'x.png',
+            'twitter': 'x.png',
+            'linkedin': 'linkedin.png',
+            'whatsapp': 'whatsapp.png',
+            'telegram': 'telegram.png',
+            'messenger': 'messenger.png',
+            'snapchat': 'snapchat.png',
+            'pinterest': 'pinterest.png',
+            'reddit': 'reddit.png',
+            'github': 'github.png',
+            'spotify': 'spotify.png',
+            'venmo': 'venmo.png',
+            'wechat': 'wechat.png',
+            'paypal': 'paypal.png',
+            'bitcoin': 'bitcoin.png',
+            'link': 'link.png',
+            'mail': 'mail.png',
+            'wifi': 'wifi.png',
+            'generic': 'link.png'
           };
-          return colors[platform?.toLowerCase()] || '#555';
+          const filename = filenameMap[platformLower] || 'link.png';
+          // Use relative path so it works on any domain (localhost, stiqr.top, etc.)
+          return `/logos/${filename}`;
         }
 
-        // Extract saved design data (or use defaults from the document)
-        const savedDesign = page.design || {};
-        const savedBgColor = page.pageColor || savedDesign.backgroundColor || '#0a0a2e';
-        const savedButtonStyle = savedDesign.buttonStyle || 'rounded';
-        const savedFontFamily = savedDesign.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-        const savedTitle = page.title || 'My Social Links';
-        const savedHeadline = page.headline || 'Connect with me';
-
-        // Determine button border-radius from saved style
-        let buttonRadius = '50px';
-        if (savedButtonStyle === 'square') buttonRadius = '4px';
-        else if (savedButtonStyle === 'slightly-rounded') buttonRadius = '12px';
-        else if (savedButtonStyle === 'pill') buttonRadius = '50px';
-
-        // Determine text color based on background brightness
-        function getTextColor(hexColor) {
-          if (!hexColor) return '#ffffff';
-          const hex = hexColor.replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          if (isNaN(r) || isNaN(g) || isNaN(b)) return '#ffffff';
-          const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-          return luminance > 0.5 ? '#000000' : '#ffffff';
-        }
-
-        // Generate buttons using ONLY saved data
-        const buttonsHtml = page.buttons.map(btn => {
-          // Use saved button color if available, otherwise platform default
-          const buttonColor = btn.color || getPlatformColor(btn.platform);
-          // Use saved label, otherwise platform name, fallback to 'Visit'
+        // Generate buttons HTML matching the modal preview EXACTLY
+        const buttonsHtml = buttons.map(btn => {
           const label = btn.label || btn.platform || 'Visit';
-          // Escape URL for safe HTML attribute embedding
-          const url = (btn.url || '#').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const textColor = getTextColor(buttonColor);
+          const buttonUrl = escapeHtml(btn.url || '#');
+          const logoUrl = getLogoUrl(btn.platform);
           
           return `
-            <a href="${url}" target="_blank" rel="noopener noreferrer" class="social-button" style="background: ${buttonColor}; border-radius: ${buttonRadius}; color: ${textColor};">
-              <span class="btn-label">${label}</span>
-              <span class="btn-arrow">→</span>
+            <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" class="social-button">
+              <div class="btn-left">
+                <img src="${logoUrl}" alt="${label}" class="btn-icon" />
+                <span class="btn-label">${label}</span>
+              </div>
+              <span class="btn-visit">Visit</span>
             </a>
           `;
         }).join('');
+
+        // Split headline into lines (matching modal preview behavior)
+        const headlineLines = headline.split('\n').filter(l => l.trim());
 
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${savedTitle}</title>
+  <title>${escapeHtml(page.title || 'Social Links')}</title>
   <meta name="description" content="Connect with me on social media">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: ${savedFontFamily};
-      background: ${savedBgColor};
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: ${pageColor};
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -1760,35 +1749,37 @@ async function handleRequest(req, res) {
       padding: 20px;
     }
     .container {
-      max-width: 500px;
+      max-width: 400px;
       width: 100%;
-      background: rgba(255,255,255,0.08);
-      border-radius: 20px;
-      padding: 40px 24px;
-      backdrop-filter: blur(10px);
       text-align: center;
     }
-    h1 {
-      color: white;
-      font-size: 24px;
+    .headline {
+      color: #000;
+      font-size: 16px;
       font-weight: 700;
-      margin-bottom: 30px;
+      margin-bottom: 15px;
       word-break: break-word;
-      line-height: 1.3;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .headline span {
+      display: block;
     }
     .social-button {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin: 12px auto;
-      padding: 14px 20px;
+      margin: 8px auto;
+      padding: 10px 14px;
       width: 100%;
       max-width: 320px;
       text-decoration: none;
       font-weight: 600;
-      font-size: 15px;
+      font-size: 14px;
       transition: transform 0.2s ease, opacity 0.2s ease;
-      text-align: center;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #000;
     }
     .social-button:hover {
       transform: scale(1.03);
@@ -1797,30 +1788,54 @@ async function handleRequest(req, res) {
     .social-button:active {
       transform: scale(0.98);
     }
-    .btn-label {
+    .btn-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       flex: 1;
-      text-align: left;
     }
-    .btn-arrow {
-      font-size: 18px;
-      opacity: 0.8;
+    .btn-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      object-fit: contain;
+    }
+    .btn-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #000;
+    }
+    .btn-visit {
+      padding: 4px 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border: none;
+      border-radius: 4px;
+      color: #000;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
     }
     .footer {
       margin-top: 30px;
-      color: rgba(255,255,255,0.4);
+      color: rgba(0,0,0,0.4);
       font-size: 12px;
     }
     @media (max-width: 480px) {
       body { padding: 16px; }
       .container { padding: 30px 16px; }
-      h1 { font-size: 20px; }
-      .social-button { padding: 12px 16px; font-size: 14px; }
+      .headline { font-size: 14px; }
+      .social-button { padding: 8px 12px; font-size: 12px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>${savedHeadline}</h1>
+    <div class="headline">
+      ${headlineLines.map(line => `<span>${escapeHtml(line.trim())}</span>`).join('\n      ')}
+    </div>
     ${buttonsHtml}
     <div class="footer">Powered by StiQR</div>
   </div>
