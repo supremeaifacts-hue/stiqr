@@ -227,6 +227,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         };
       });
 
+      // DEBUG: Log what we're about to send
+      console.log('🔍 DEBUG handleSaveSocialConfig:');
+      console.log('   socialProfiles state:', JSON.stringify(socialProfiles));
+      console.log('   validProfiles:', JSON.stringify(validProfiles));
+      console.log('   buttons to send:', JSON.stringify(buttons));
+      console.log('   socialHeadline:', socialHeadline);
+      console.log('   socialPageColor:', socialPageColor);
+
       // Build design object from modal state
       const design = {
         backgroundColor: socialPageColor,
@@ -244,17 +252,20 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      const requestBody = JSON.stringify({
+        id: newSocialPageId,
+        buttons: buttons,
+        title: socialHeadline || 'My Social Links',
+        pageColor: socialPageColor,
+        headline: socialHeadline,
+        design: design
+      });
+      console.log('🔍 DEBUG request body:', requestBody);
+
       const response = await fetch(`${baseUrl}/api/social-pages`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          id: newSocialPageId,
-          buttons: buttons,
-          title: socialHeadline || 'My Social Links',
-          pageColor: socialPageColor,
-          headline: socialHeadline,
-          design: design
-        })
+        body: requestBody
       });
 
       if (!response.ok) {
