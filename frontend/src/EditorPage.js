@@ -227,9 +227,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // Prepare buttons array for the backend with color and all metadata
       const buttons = validProfiles.map(p => {
         const handle = p.handle || p.platform.toLowerCase();
+        // Normalize URL: ensure it has a protocol (add https:// if missing)
+        let normalizedUrl = p.url.trim();
+        if (normalizedUrl && !normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+          normalizedUrl = 'https://' + normalizedUrl;
+        }
         return {
           platform: handle,
-          url: p.url.trim(),
+          url: normalizedUrl,
           label: p.platform,
           color: platformColorMap[handle] || '#555'
         };

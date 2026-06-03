@@ -1713,7 +1713,12 @@ async function handleRequest(req, res) {
         // Generate buttons HTML matching the modal preview EXACTLY
         const buttonsHtml = buttons.map(btn => {
           const label = btn.label || btn.platform || 'Visit';
-          const buttonUrl = escapeHtml(btn.url || '#');
+          // Ensure URL has a protocol (add https:// if missing)
+          let rawUrl = (btn.url || '#').trim();
+          if (rawUrl !== '#' && !rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+            rawUrl = 'https://' + rawUrl;
+          }
+          const buttonUrl = escapeHtml(rawUrl);
           const logoUrl = getLogoUrl(btn.platform);
           
           return `
