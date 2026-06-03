@@ -129,6 +129,16 @@ function getTextColorForBg(hexColor) {
   return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
+// ─── Helper: Escape HTML to prevent XSS ───────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
 // ─── QR Type Detection ────────────────────────────────────────────────────────
 function detectQrType(destination) {
   if (!destination) return 'url';
@@ -1633,126 +1643,136 @@ async function handleRequest(req, res) {
       const { id } = socialLandingMatch;
       console.log(`📱 Serving social landing page: ${id}`);
 
-      // Try in-memory first
-      const socialPages = globalThis._socialPages || {};
-      let page = socialPages[id];
+      try {
+        // Try in-memory first
+        const socialPages = globalThis._socialPages || {};
+        let page = socialPages[id];
 
-      // Fallback to MongoDB
-      if (!page && db) {
-        try {
-          page = await db.collection('social_pages').findOne({ id: id });
-          if (page) {
-            // Cache in memory for fast subsequent access
-            socialPages[id] = page;
-            globalThis._socialPages = socialPages;
+        // Fallback to MongoDB
+        if (!page && db) {
+          try {
+            page = await db.collection('social_pages').findOne({ id: id });
+            if (page) {
+              // Cache in memory for fast subsequent access
+              socialPages[id] = page;
+              globalThis._socialPages = socialPages;
+            }
+          } catch (mongoError) {
+            console.error(`❌ MongoDB social page fetch error: ${mongoError.message}`);
           }
-        } catch (mongoError) {
-          console.error(`❌ MongoDB social page fetch error: ${mongoError.message}`);
         }
-      }
 
-      if (!page) {
-        return sendJSON(res, 404, { error: 'Page not found' });
-      }
-
-      // Generate HTML with buttons
-      const buttonsHtml = page.buttons.map(btn => {
-        const platform = (btn.platform || '').toLowerCase();
-        let bgColor = '#333';
-        let textColor = '#fff';
-        
-        // Platform-specific colors
-        const platformColors = {
-          'instagram': '#E4405F',
-          'youtube': '#FF0000',
-          'tiktok': '#000000',
-          'facebook': '#1877F2',
-          'x': '#000000',
-          'twitter': '#1DA1F2',
-          'linkedin': '#0A66C2',
-          'whatsapp': '#25D366',
-          'telegram': '#0088CC',
-          'messenger': '#00B2FF',
-          'snapchat': '#FFFC00',
-          'pinterest': '#E60023',
-          'reddit': '#FF4500',
-          'github': '#333333',
-          'spotify': '#1DB954',
-          'venmo': '#008CFF',
-          'wechat': '#07C160',
-          'paypal': '#00457C',
-          'bitcoin': '#F7931A',
-          'link': '#00D9FF',
-          'generic': '#00D9FF'
-        };
-        
-        if (platformColors[platform]) {
-          bgColor = platformColors[platform];
+        if (!page) {
+          res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+          return res.end('<h1>Page not found</h1>');
         }
-        
-        // For TikTok, add a border to make it visible on black
-        const borderStyle = platform === 'tiktok' ? 'border: 2px solid #00f2ea;' : '';
-        
-        return `
-          <a href="${btn.url}" target="_blank" rel="noopener noreferrer" class="social-button" style="background: ${bgColor}; color: ${textColor}; ${borderStyle}">
-            <span class="btn-label">${btn.label || btn.platform}</span>
-            <span class="btn-arrow">→</span>
-          </a>
-        `;
-      }).join('');
 
-      const html = `<!DOCTYPE html>
+        // Determine platform-specific color
+        function getPlatformColor(platform) {
+          const colors = {
+            'instagram': '#E4405F',
+            'youtube': '#FF0000',
+            'tiktok': '#000000',
+            'facebook': '#1877F2',
+            'x': '#000000',
+            'twitter': '#1DA1F2',
+            'linkedin': '#0077B5',
+            'whatsapp': '#25D366',
+            'telegram': '#26A5E4',
+            'messenger': '#00B2FF',
+            'snapchat': '#FFFC00',
+            'pinterest': '#E60023',
+            'reddit': '#FF4500',
+            'github': '#333333',
+            'spotify': '#1DB954',
+            'venmo': '#008CFF',
+            'wechat': '#07C160',
+            'paypal': '#00457C',
+            'bitcoin': '#F7931A',
+            'link': '#00D9FF',
+            'generic': '#555'
+          };
+          return colors[platform?.toLowerCase()] || '#555';
+        }
+
+        // Generate HTML with buttons
+        const buttonsHtml = page.buttons.map(btn => {
+          const buttonColor = getPlatformColor(btn.platform);
+          const label = escapeHtml(btn.label || btn.platform || 'Visit');
+          const url = escapeHtml(btn.url || '#');
+          const platform = (btn.platform || '').toLowerCase();
+          // For TikTok, add a border to make it visible on black
+          const borderStyle = platform === 'tiktok' ? 'border: 2px solid #00f2ea;' : '';
+          
+          return `
+            <a href="${url}" target="_blank" rel="noopener noreferrer" class="social-button" style="background: ${buttonColor}; ${borderStyle}">
+              <span class="btn-label">${label}</span>
+              <span class="btn-arrow">→</span>
+            </a>
+          `;
+        }).join('');
+
+        const safeTitle = escapeHtml(page.title || 'My Social Links');
+        const safeHeadline = escapeHtml(page.headline || 'Connect with me');
+        const bgColor = page.pageColor || '#0a0a2e';
+
+        const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${page.title}</title>
+  <title>${safeTitle}</title>
   <meta name="description" content="Connect with me on social media">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: ${page.pageColor || '#e5e9ec'};
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a2e 0%, #1a0a2e 100%);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      padding: 40px 20px;
+      align-items: center;
+      padding: 20px;
     }
     .container {
+      max-width: 500px;
       width: 100%;
-      max-width: 400px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 40px 24px;
+      backdrop-filter: blur(10px);
       text-align: center;
     }
     h1 {
+      color: white;
       font-size: 24px;
       font-weight: 700;
-      color: ${getTextColorForBg(page.pageColor || '#e5e9ec')};
       margin-bottom: 30px;
+      word-break: break-word;
       line-height: 1.3;
     }
     .social-button {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin: 10px auto;
-      padding: 16px 20px;
+      margin: 12px auto;
+      padding: 14px 20px;
       width: 100%;
-      max-width: 340px;
+      max-width: 320px;
       text-decoration: none;
-      border-radius: 12px;
+      color: white;
       font-weight: 600;
       font-size: 15px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 50px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      text-align: center;
     }
     .social-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      transform: scale(1.03);
+      opacity: 0.9;
     }
     .social-button:active {
-      transform: translateY(0);
+      transform: scale(0.98);
     }
     .btn-label {
       flex: 1;
@@ -1763,33 +1783,38 @@ async function handleRequest(req, res) {
       opacity: 0.8;
     }
     .footer {
-      margin-top: 40px;
+      margin-top: 30px;
+      color: rgba(255,255,255,0.4);
       font-size: 12px;
-      color: ${getTextColorForBg(page.pageColor || '#e5e9ec')};
-      opacity: 0.5;
     }
     @media (max-width: 480px) {
-      body { padding: 20px 16px; }
+      body { padding: 16px; }
+      .container { padding: 30px 16px; }
       h1 { font-size: 20px; }
-      .social-button { padding: 14px 16px; font-size: 14px; }
+      .social-button { padding: 12px 16px; font-size: 14px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>${page.headline || page.title}</h1>
+    <h1>${safeHeadline}</h1>
     ${buttonsHtml}
-    <div class="footer">Powered by stiQR.top</div>
+    <div class="footer">Powered by StiQR</div>
   </div>
 </body>
 </html>`;
 
-      res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      });
-      return res.end(html);
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        });
+        return res.end(html);
+      } catch (error) {
+        console.error('❌ Social page error:', error);
+        res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end('<h1>Internal server error</h1>');
+      }
     }
 
     // ── 404 ──────────────────────────────────────────────────────────────────
