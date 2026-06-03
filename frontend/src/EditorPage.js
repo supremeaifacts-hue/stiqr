@@ -191,12 +191,48 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // Generate a unique ID for this social page
       const newSocialPageId = generateId();
       
-      // Prepare buttons array for the backend
-      const buttons = validProfiles.map(p => ({
-        platform: p.handle || p.platform.toLowerCase(),
-        url: p.url.trim(),
-        label: p.platform
-      }));
+      // Platform color map (matches backend getPlatformColor)
+      const platformColorMap = {
+        'facebook': '#1877F2',
+        'instagram': '#E4405F',
+        'youtube': '#FF0000',
+        'tiktok': '#000000',
+        'x': '#000000',
+        'twitter': '#1DA1F2',
+        'linkedin': '#0077B5',
+        'whatsapp': '#25D366',
+        'telegram': '#26A5E4',
+        'messenger': '#00B2FF',
+        'snapchat': '#FFFC00',
+        'pinterest': '#E60023',
+        'reddit': '#FF4500',
+        'github': '#333333',
+        'spotify': '#1DB954',
+        'venmo': '#008CFF',
+        'wechat': '#07C160',
+        'paypal': '#00457C',
+        'bitcoin': '#F7931A',
+        'link': '#00D9FF',
+        'generic': '#555'
+      };
+
+      // Prepare buttons array for the backend with color and all metadata
+      const buttons = validProfiles.map(p => {
+        const handle = p.handle || p.platform.toLowerCase();
+        return {
+          platform: handle,
+          url: p.url.trim(),
+          label: p.platform,
+          color: platformColorMap[handle] || '#555'
+        };
+      });
+
+      // Build design object from modal state
+      const design = {
+        backgroundColor: socialPageColor,
+        buttonStyle: 'rounded',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+      };
 
       // Save to backend
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -216,7 +252,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           buttons: buttons,
           title: socialHeadline || 'My Social Links',
           pageColor: socialPageColor,
-          headline: socialHeadline
+          headline: socialHeadline,
+          design: design
         })
       });
 

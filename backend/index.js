@@ -1570,7 +1570,7 @@ async function handleRequest(req, res) {
     // ── Social Pages: Save configuration ─────────────────────────────────────
     if (method === 'POST' && pathname === '/api/social-pages') {
       const body = await parseBody(req);
-      const { id, buttons, title, pageColor, headline } = body;
+      const { id, buttons, title, pageColor, headline, design } = body;
       const userId = req.user?.id || req.user?._id || null;
 
       if (!id || !buttons) {
@@ -1584,6 +1584,7 @@ async function handleRequest(req, res) {
         headline: headline || 'Follow me on these Social Media',
         pageColor: pageColor || '#e5e9ec',
         buttons: buttons,
+        design: design || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -1667,7 +1668,8 @@ async function handleRequest(req, res) {
           return res.end('<h1>Page not found</h1>');
         }
 
-        // Determine platform-specific color
+        // ── Use ONLY saved data from the document ──────────────────────────
+        // Button colors: use btn.color if saved, otherwise fallback to platform default
         function getPlatformColor(platform) {
           const colors = {
             'instagram': '#E4405F',
@@ -1695,41 +1697,62 @@ async function handleRequest(req, res) {
           return colors[platform?.toLowerCase()] || '#555';
         }
 
-        // Generate HTML with buttons
+        // Extract saved design data (or use defaults from the document)
+        const savedDesign = page.design || {};
+        const savedBgColor = page.pageColor || savedDesign.backgroundColor || '#0a0a2e';
+        const savedButtonStyle = savedDesign.buttonStyle || 'rounded';
+        const savedFontFamily = savedDesign.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        const savedTitle = page.title || 'My Social Links';
+        const savedHeadline = page.headline || 'Connect with me';
+
+        // Determine button border-radius from saved style
+        let buttonRadius = '50px';
+        if (savedButtonStyle === 'square') buttonRadius = '4px';
+        else if (savedButtonStyle === 'slightly-rounded') buttonRadius = '12px';
+        else if (savedButtonStyle === 'pill') buttonRadius = '50px';
+
+        // Determine text color based on background brightness
+        function getTextColor(hexColor) {
+          if (!hexColor) return '#ffffff';
+          const hex = hexColor.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          if (isNaN(r) || isNaN(g) || isNaN(b)) return '#ffffff';
+          const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          return luminance > 0.5 ? '#000000' : '#ffffff';
+        }
+
+        // Generate buttons using ONLY saved data
         const buttonsHtml = page.buttons.map(btn => {
-          const buttonColor = getPlatformColor(btn.platform);
-          // Use label if available, otherwise use platform name, fallback to 'Visit'
+          // Use saved button color if available, otherwise platform default
+          const buttonColor = btn.color || getPlatformColor(btn.platform);
+          // Use saved label, otherwise platform name, fallback to 'Visit'
           const label = btn.label || btn.platform || 'Visit';
-          // Use the exact URL the user provided - only escape HTML special chars in the URL
+          // Escape URL for safe HTML attribute embedding
           const url = (btn.url || '#').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const platform = (btn.platform || '').toLowerCase();
-          // For TikTok, add a border to make it visible on black
-          const borderStyle = platform === 'tiktok' ? 'border: 2px solid #00f2ea;' : '';
+          const textColor = getTextColor(buttonColor);
           
           return `
-            <a href="${url}" target="_blank" rel="noopener noreferrer" class="social-button" style="background: ${buttonColor}; ${borderStyle}">
+            <a href="${url}" target="_blank" rel="noopener noreferrer" class="social-button" style="background: ${buttonColor}; border-radius: ${buttonRadius}; color: ${textColor};">
               <span class="btn-label">${label}</span>
               <span class="btn-arrow">→</span>
             </a>
           `;
         }).join('');
 
-        const safeTitle = page.title || 'My Social Links';
-        const safeHeadline = page.headline || 'Connect with me';
-        const bgColor = page.pageColor || '#0a0a2e';
-
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${safeTitle}</title>
+  <title>${savedTitle}</title>
   <meta name="description" content="Connect with me on social media">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #0a0a2e 0%, #1a0a2e 100%);
+      font-family: ${savedFontFamily};
+      background: ${savedBgColor};
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -1762,10 +1785,8 @@ async function handleRequest(req, res) {
       width: 100%;
       max-width: 320px;
       text-decoration: none;
-      color: white;
       font-weight: 600;
       font-size: 15px;
-      border-radius: 50px;
       transition: transform 0.2s ease, opacity 0.2s ease;
       text-align: center;
     }
@@ -1799,7 +1820,7 @@ async function handleRequest(req, res) {
 </head>
 <body>
   <div class="container">
-    <h1>${safeHeadline}</h1>
+    <h1>${savedHeadline}</h1>
     ${buttonsHtml}
     <div class="footer">Powered by StiQR</div>
   </div>
