@@ -106,6 +106,29 @@ function getUserFromAuthHeader(req) {
   }
 }
 
+// ─── Helper: Get text color based on background brightness ────────────────────
+function getTextColorForBg(hexColor) {
+  // Default to dark text if we can't parse
+  if (!hexColor) return '#000000';
+  
+  // Remove # if present
+  const hex = hexColor.replace('#', '');
+  
+  // Parse RGB
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  // If any value is NaN, return default
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '#000000';
+  
+  // Calculate luminance (relative brightness)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return dark text for light backgrounds, white text for dark backgrounds
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
 // ─── QR Type Detection ────────────────────────────────────────────────────────
 function detectQrType(destination) {
   if (!destination) return 'url';
@@ -114,6 +137,7 @@ function detectQrType(destination) {
   if (destination.startsWith('mailto:')) return 'email';
   if (destination.startsWith('sms:')) return 'sms';
   if (destination.startsWith('https://wa.me/')) return 'whatsapp';
+  if (destination && destination.includes('/social/')) return 'social';
   return 'url';
 }
 
@@ -149,7 +173,9 @@ async function handleRequest(req, res) {
     pathname === '/auth/login' ||
     pathname.startsWith('/track/') ||
     pathname.startsWith('/qrcodes/') ||
-    pathname === '/api/qrcodes/all';
+    pathname === '/api/qrcodes/all' ||
+    pathname.startsWith('/social/') ||
+    pathname.startsWith('/api/social-pages/');
 
 
 
@@ -1529,6 +1555,241 @@ async function handleRequest(req, res) {
         'Cache-Control': 'public, max-age=31536000',
       });
       return res.end(content);
+    }
+
+    // ── Social Pages: Save configuration ─────────────────────────────────────
+    if (method === 'POST' && pathname === '/api/social-pages') {
+      const body = await parseBody(req);
+      const { id, buttons, title, pageColor, headline } = body;
+      const userId = req.user?.id || req.user?._id || null;
+
+      if (!id || !buttons) {
+        return sendJSON(res, 400, { error: 'Missing id or buttons' });
+      }
+
+      const socialPage = {
+        id: id,
+        userId: userId,
+        title: title || 'My Social Links',
+        headline: headline || 'Follow me on these Social Media',
+        pageColor: pageColor || '#e5e9ec',
+        buttons: buttons,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // Save to in-memory
+      const socialPages = globalThis._socialPages || {};
+      socialPages[id] = socialPage;
+      globalThis._socialPages = socialPages;
+
+      // Also save to MongoDB
+      if (db) {
+        try {
+          const collection = db.collection('social_pages');
+          await collection.updateOne(
+            { id: id },
+            { $set: socialPage },
+            { upsert: true }
+          );
+          console.log(`✅ Social page saved to MongoDB: ${id}`);
+        } catch (mongoError) {
+          console.error(`❌ MongoDB social page save error: ${mongoError.message}`);
+        }
+      }
+
+      console.log(`✅ Social page saved: ${id} with ${buttons.length} buttons`);
+      return sendJSON(res, 200, { success: true, id });
+    }
+
+    // ── Social Pages: Get configuration ──────────────────────────────────────
+    const getSocialPageMatch = matchPath('/api/social-pages/:id', pathname);
+    if (method === 'GET' && getSocialPageMatch) {
+      const { id } = getSocialPageMatch;
+      
+      // Try in-memory first
+      const socialPages = globalThis._socialPages || {};
+      let page = socialPages[id];
+
+      // Fallback to MongoDB
+      if (!page && db) {
+        try {
+          page = await db.collection('social_pages').findOne({ id: id });
+        } catch (mongoError) {
+          console.error(`❌ MongoDB social page fetch error: ${mongoError.message}`);
+        }
+      }
+
+      if (!page) {
+        return sendJSON(res, 404, { error: 'Social page not found' });
+      }
+
+      return sendJSON(res, 200, page);
+    }
+
+    // ── Social Pages: Public landing page ────────────────────────────────────
+    const socialLandingMatch = matchPath('/social/:id', pathname);
+    if (method === 'GET' && socialLandingMatch) {
+      const { id } = socialLandingMatch;
+      console.log(`📱 Serving social landing page: ${id}`);
+
+      // Try in-memory first
+      const socialPages = globalThis._socialPages || {};
+      let page = socialPages[id];
+
+      // Fallback to MongoDB
+      if (!page && db) {
+        try {
+          page = await db.collection('social_pages').findOne({ id: id });
+          if (page) {
+            // Cache in memory for fast subsequent access
+            socialPages[id] = page;
+            globalThis._socialPages = socialPages;
+          }
+        } catch (mongoError) {
+          console.error(`❌ MongoDB social page fetch error: ${mongoError.message}`);
+        }
+      }
+
+      if (!page) {
+        return sendJSON(res, 404, { error: 'Page not found' });
+      }
+
+      // Generate HTML with buttons
+      const buttonsHtml = page.buttons.map(btn => {
+        const platform = (btn.platform || '').toLowerCase();
+        let bgColor = '#333';
+        let textColor = '#fff';
+        
+        // Platform-specific colors
+        const platformColors = {
+          'instagram': '#E4405F',
+          'youtube': '#FF0000',
+          'tiktok': '#000000',
+          'facebook': '#1877F2',
+          'x': '#000000',
+          'twitter': '#1DA1F2',
+          'linkedin': '#0A66C2',
+          'whatsapp': '#25D366',
+          'telegram': '#0088CC',
+          'messenger': '#00B2FF',
+          'snapchat': '#FFFC00',
+          'pinterest': '#E60023',
+          'reddit': '#FF4500',
+          'github': '#333333',
+          'spotify': '#1DB954',
+          'venmo': '#008CFF',
+          'wechat': '#07C160',
+          'paypal': '#00457C',
+          'bitcoin': '#F7931A',
+          'link': '#00D9FF',
+          'generic': '#00D9FF'
+        };
+        
+        if (platformColors[platform]) {
+          bgColor = platformColors[platform];
+        }
+        
+        // For TikTok, add a border to make it visible on black
+        const borderStyle = platform === 'tiktok' ? 'border: 2px solid #00f2ea;' : '';
+        
+        return `
+          <a href="${btn.url}" target="_blank" rel="noopener noreferrer" class="social-button" style="background: ${bgColor}; color: ${textColor}; ${borderStyle}">
+            <span class="btn-label">${btn.label || btn.platform}</span>
+            <span class="btn-arrow">→</span>
+          </a>
+        `;
+      }).join('');
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>${page.title}</title>
+  <meta name="description" content="Connect with me on social media">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: ${page.pageColor || '#e5e9ec'};
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: ${getTextColorForBg(page.pageColor || '#e5e9ec')};
+      margin-bottom: 30px;
+      line-height: 1.3;
+    }
+    .social-button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px auto;
+      padding: 16px 20px;
+      width: 100%;
+      max-width: 340px;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .social-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .social-button:active {
+      transform: translateY(0);
+    }
+    .btn-label {
+      flex: 1;
+      text-align: left;
+    }
+    .btn-arrow {
+      font-size: 18px;
+      opacity: 0.8;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: ${getTextColorForBg(page.pageColor || '#e5e9ec')};
+      opacity: 0.5;
+    }
+    @media (max-width: 480px) {
+      body { padding: 20px 16px; }
+      h1 { font-size: 20px; }
+      .social-button { padding: 14px 16px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>${page.headline || page.title}</h1>
+    ${buttonsHtml}
+    <div class="footer">Powered by stiQR.top</div>
+  </div>
+</body>
+</html>`;
+
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      });
+      return res.end(html);
     }
 
     // ── 404 ──────────────────────────────────────────────────────────────────

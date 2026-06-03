@@ -143,7 +143,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // Social Media QR Code state
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
-  const [socialPageColor, setSocialPageColor] = useState('#FF00FF');
+  const [socialPageColor, setSocialPageColor] = useState('#e5e9ec');
   const [socialHeadline, setSocialHeadline] = useState('Follow me on these Social Media');
   const [socialProfiles, setSocialProfiles] = useState([
     { id: 'fb', platform: 'Facebook', url: '', logo: facebookLogo, handle: 'facebook' },
@@ -151,13 +151,104 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     { id: 'x', platform: 'X', url: '', logo: xLogo, handle: 'x' },
     { id: 'tg', platform: 'Telegram', url: '', logo: telegramLogo, handle: 'telegram' }
   ]);
-  const [customColorInput, setCustomColorInput] = useState('#FF00FF');
+  const [customColorInput, setCustomColorInput] = useState('#e5e9ec');
   const customColorInputRef = useRef(null);
+  const [socialPageId, setSocialPageId] = useState(null);
+  const [socialConfigSaved, setSocialConfigSaved] = useState(false);
+  const [savingSocial, setSavingSocial] = useState(false);
 
   // Open social modal (separate handler for easier debugging)
   const openSocialModal = () => {
     console.log('Opening Social Media modal');
     setShowSocialModal(true);
+  };
+
+  // Get the social landing page URL
+  const getSocialLandingUrl = (pageId) => {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+      return `http://localhost:3000/social/${pageId}`;
+    } else {
+      const protocol = window.location.protocol;
+      return `${protocol}//${hostname}/social/${pageId}`;
+    }
+  };
+
+  // Handle saving social media configuration
+  const handleSaveSocialConfig = async () => {
+    // Validate that at least one profile has a URL
+    const validProfiles = socialProfiles.filter(p => p.url && p.url.trim().length > 0);
+    if (validProfiles.length === 0) {
+      alert('Please add at least one social media profile with a URL.');
+      return;
+    }
+
+    setSavingSocial(true);
+
+    try {
+      // Generate a unique ID for this social page
+      const newSocialPageId = generateId();
+      
+      // Prepare buttons array for the backend
+      const buttons = validProfiles.map(p => ({
+        platform: p.handle || p.platform.toLowerCase(),
+        url: p.url.trim(),
+        label: p.platform
+      }));
+
+      // Save to backend
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const token = localStorage.getItem('jwtToken');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${baseUrl}/api/social-pages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          id: newSocialPageId,
+          buttons: buttons,
+          title: socialHeadline || 'My Social Links',
+          pageColor: socialPageColor,
+          headline: socialHeadline
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save social page:', errorText);
+        throw new Error('Failed to save social media configuration');
+      }
+
+      const result = await response.json();
+      console.log('✅ Social page saved:', result);
+
+      // Store the social page ID
+      setSocialPageId(newSocialPageId);
+      setSocialConfigSaved(true);
+
+      // Generate the social landing page URL and set it as the QR data
+      const socialUrl = getSocialLandingUrl(newSocialPageId);
+      setQrData(socialUrl);
+      
+      // Close the modal
+      setShowSocialModal(false);
+
+      // Show success message
+      alert(`✅ Social Media page created successfully!\n\nYour landing page URL: ${socialUrl}\n\nThe QR code will now encode this URL. You can customize the QR code design (frames, colors, logos) and then save it to your collection.`);
+
+    } catch (error) {
+      console.error('Error saving social configuration:', error);
+      alert('Failed to save social media configuration. Please try again.');
+    } finally {
+      setSavingSocial(false);
+    }
   };
   
   // Local subscription state - fetched directly from backend to ensure accuracy
@@ -3291,7 +3382,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
               <div style={{
                 position: 'relative',
                 width: '280px',
@@ -3386,6 +3477,28 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   </div>
                 </div>
               </div>
+              
+              {/* Save Configuration Button */}
+              <button
+                onClick={handleSaveSocialConfig}
+                disabled={savingSocial}
+                style={{
+                  width: '100%',
+                  maxWidth: '280px',
+                  padding: '14px 20px',
+                  background: savingSocial ? 'rgba(0, 217, 255, 0.3)' : 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: savingSocial ? '#888' : '#000',
+                  fontWeight: '700',
+                  cursor: savingSocial ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  boxShadow: savingSocial ? 'none' : '0 0 20px rgba(0, 217, 255, 0.4)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {savingSocial ? '⏳ Saving...' : '💾 Save Configuration'}
+              </button>
             </div>
           </div>
         </div>
