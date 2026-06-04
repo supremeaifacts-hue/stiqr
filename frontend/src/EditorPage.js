@@ -3435,6 +3435,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     scrollbarWidth: 'thin',
                     scrollbarColor: '#00D9FF rgba(0, 217, 255, 0.1)',
                     WebkitOverflowScrolling: 'touch',
+                    maxWidth: '100%',
                   }}>
                     {socialMediaPlatforms.map((platform) => (
                       <div
