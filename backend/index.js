@@ -1712,10 +1712,10 @@ async function handleRequest(req, res) {
         const buttons = page.buttons || [];
 
         // Platform logo URL mapping (uses Cloudflare Pages CDN)
-        // The logos are deployed at https://www.stiqr.top/assets/logos/[name].png
+        // The logos are deployed at https://www.stiqr.top/logos/[name].png
         function getLogoUrl(platform) {
           const platformLower = (platform || '').toLowerCase();
-          // Map platform names to actual filename in frontend/src/assets/logos/
+          // Map platform names to actual filename in frontend/public/logos/
           // All filenames are lowercase for consistency
           const filenameMap = {
             'facebook': 'facebook.png',
@@ -1744,7 +1744,7 @@ async function handleRequest(req, res) {
           };
           const filename = filenameMap[platformLower] || 'link.png';
           // Use Cloudflare Pages CDN URL for the deployed frontend assets
-          return `https://www.stiqr.top/assets/logos/${filename}`;
+          return `https://www.stiqr.top/logos/${filename}`;
         }
 
         // Generate buttons HTML matching the modal preview EXACTLY
