@@ -1787,14 +1787,13 @@ async function handleRequest(req, res) {
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 10px 20px;
+      align-items: center;
+      padding: 20px;
     }
     .container {
       max-width: 400px;
       width: 100%;
       text-align: center;
-      margin-top: 10px;
     }
     .headline {
       color: #000;

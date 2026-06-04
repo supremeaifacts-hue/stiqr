@@ -3343,7 +3343,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         ) : (
                           <span style={{ fontSize: '20px' }}>{profile.logo}</span>
                         )}
-                        <span style={{ fontSize: '9px', color: '#aaa', textAlign: 'center', maxWidth: '35px', wordBreak: 'break-word' }}>
+                        <span style={{ fontSize: '9px', color: '#aaa', textAlign: 'center', maxWidth: '60px', wordBreak: 'break-word' }}>
                           {profile.platform}
                         </span>
                       </div>
@@ -3422,24 +3422,64 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   ))}
                 </div>
 
-                <button
-                  onClick={() => setShowPlatformPicker(true)}
-                  style={{
-                    marginTop: '12px',
-                    marginBottom: '12px',
-                    width: '100%',
-                    padding: '10px',
-                    background: 'rgba(0, 217, 255, 0.2)',
-                    border: '1px solid rgba(0, 217, 255, 0.5)',
-                    borderRadius: '8px',
-                    color: '#00D9FF',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                  }}
-                >
-                  + Add more links
-                </button>
+                {/* Inline horizontally scrollable platform picker bar */}
+                <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px', color: '#aaa', fontWeight: '600', marginBottom: '8px' }}>
+                    Add more links:
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    overflowX: 'auto',
+                    paddingBottom: '8px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#00D9FF rgba(0, 217, 255, 0.1)',
+                    WebkitOverflowScrolling: 'touch',
+                  }}>
+                    {socialMediaPlatforms.map((platform) => (
+                      <div
+                        key={platform.id}
+                        onClick={() => addSocialProfile(platform)}
+                        style={{
+                          flex: '0 0 auto',
+                          width: '64px',
+                          height: '64px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '3px',
+                          background: 'rgba(0, 217, 255, 0.1)',
+                          border: '1px solid rgba(0, 217, 255, 0.3)',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          padding: '4px',
+                        }}
+                        title={platform.name}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 217, 255, 0.2)';
+                          e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.6)';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 217, 255, 0.1)';
+                          e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <img
+                          src={platform.logo}
+                          alt={platform.name}
+                          style={{ width: '22px', height: '22px', display: 'block' }}
+                        />
+                        <span style={{ fontSize: '8px', color: '#00D9FF', fontWeight: '600', textAlign: 'center', lineHeight: '1.1' }}>
+                          {platform.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
