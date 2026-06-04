@@ -1531,6 +1531,43 @@ async function handleRequest(req, res) {
       });
     }
 
+    // ── Serve Logos (Static) ─────────────────────────────────────────────────────
+    const logosMatch = pathname.startsWith('/logos/');
+    if (method === 'GET' && logosMatch) {
+      const relativePath = pathname.replace('/logos/', '');
+      // Look for logos in frontend/public/logos/ directory
+      const logosDir = path.join(__dirname, '..', 'frontend', 'public', 'logos');
+      const filePath = path.join(logosDir, relativePath);
+
+      // Security: prevent directory traversal
+      if (!filePath.startsWith(logosDir)) {
+        return sendJSON(res, 403, { error: 'Forbidden' });
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return sendJSON(res, 404, { error: 'Logo not found' });
+      }
+
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+      };
+      const contentType = mimeTypes[ext] || 'image/png';
+
+      const content = fs.readFileSync(filePath);
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Content-Length': content.length,
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=31536000',
+      });
+      return res.end(content);
+    }
+
     // ── Serve Uploaded Files (Static) ─────────────────────────────────────────────
     const uploadsMatch = pathname.startsWith('/uploads/');
     if (method === 'GET' && uploadsMatch) {
@@ -1674,11 +1711,11 @@ async function handleRequest(req, res) {
         const headline = page.headline || page.title || 'Follow me';
         const buttons = page.buttons || [];
 
-        // Platform logo URL mapping (uses public logos from Cloudflare Pages)
-        // The logos are stored in frontend/public/logos/ and served at /logos/[name].png
+        // Platform logo URL mapping (uses Cloudflare Pages CDN)
+        // The logos are deployed at https://www.stiqr.top/assets/logos/[name].png
         function getLogoUrl(platform) {
           const platformLower = (platform || '').toLowerCase();
-          // Map platform names to actual filename in public/logos/
+          // Map platform names to actual filename in frontend/src/assets/logos/
           // All filenames are lowercase for consistency
           const filenameMap = {
             'facebook': 'facebook.png',
@@ -1706,8 +1743,8 @@ async function handleRequest(req, res) {
             'generic': 'link.png'
           };
           const filename = filenameMap[platformLower] || 'link.png';
-          // Use relative path so it works on any domain (localhost, stiqr.top, etc.)
-          return `/logos/${filename}`;
+          // Use Cloudflare Pages CDN URL for the deployed frontend assets
+          return `https://www.stiqr.top/assets/logos/${filename}`;
         }
 
         // Generate buttons HTML matching the modal preview EXACTLY
