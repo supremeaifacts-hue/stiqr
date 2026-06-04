@@ -3319,7 +3319,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 />
               </div>
 
-              <div>
+              <div style={{ maxWidth: '520px' }}>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
                   Social Media Profiles
                 </label>
