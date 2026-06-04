@@ -3202,126 +3202,127 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 </button>
               </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
-                  Page Color
-                </label>
-                <div style={{ marginBottom: '10px' }}>
-                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#aaa' }}>Choose which color your page should have</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {['#e5e9ec', '#edcbc0', '#fff5cd', '#8cd7ff', '#dad0f0', '#305971', '#25501a'].map((color) => (
-                      <div
-                        key={color}
-                        onClick={() => {
-                          setSocialPageColor(color);
-                          setCustomColorInput(color);
-                        }}
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
-                          background: color,
-                          border: socialPageColor === color ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: socialPageColor === color ? '0 0 12px rgba(0,0,0,0.5)' : 'none',
-                        }}
-                        title={color}
-                      />
-                    ))}
+              <div style={{ maxWidth: '520px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                    Page Color
+                  </label>
+                  <div style={{ marginBottom: '10px' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#aaa' }}>Choose which color your page should have</p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {['#e5e9ec', '#edcbc0', '#fff5cd', '#8cd7ff', '#dad0f0', '#305971', '#25501a'].map((color) => (
+                        <div
+                          key={color}
+                          onClick={() => {
+                            setSocialPageColor(color);
+                            setCustomColorInput(color);
+                          }}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '8px',
+                            background: color,
+                            border: socialPageColor === color ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: socialPageColor === color ? '0 0 12px rgba(0,0,0,0.5)' : 'none',
+                          }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ marginTop: '12px' }}>
-                  <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      value={customColorInput}
-                      onChange={(e) => {
-                        setCustomColorInput(e.target.value);
-                        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                          setSocialPageColor(e.target.value);
-                        }
-                      }}
-                      placeholder="#RRGGBB"
-                      style={{
-                        padding: '8px 12px',
-                        background: 'rgba(0, 217, 255, 0.05)',
-                        border: '1px solid rgba(0, 217, 255, 0.2)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '12px',
-                        fontFamily: 'monospace',
-                        flex: 1,
-                      }}
-                    />
-                    <div style={{ position: 'relative', width: '40px', height: '40px' }}>
-                      <button
-                        type="button"
-                        onClick={() => customColorInputRef.current?.click()}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: '8px',
-                          background: customColorInput,
-                          border: '2px solid rgba(0, 217, 255, 0.3)',
-                          cursor: 'pointer',
-                          padding: 0,
-                        }}
-                      />
+                  <div style={{ marginTop: '12px' }}>
+                    <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input
-                        ref={customColorInputRef}
-                        type="color"
+                        type="text"
                         value={customColorInput}
                         onChange={(e) => {
                           setCustomColorInput(e.target.value);
-                          setSocialPageColor(e.target.value);
+                          if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                            setSocialPageColor(e.target.value);
+                          }
                         }}
+                        placeholder="#RRGGBB"
                         style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          opacity: 0,
-                          border: 'none',
-                          padding: 0,
-                          margin: 0,
-                          cursor: 'pointer',
+                          padding: '8px 12px',
+                          background: 'rgba(0, 217, 255, 0.05)',
+                          border: '1px solid rgba(0, 217, 255, 0.2)',
+                          borderRadius: '6px',
+                          color: '#fff',
+                          fontSize: '12px',
+                          fontFamily: 'monospace',
+                          flex: 1,
                         }}
                       />
+                      <div style={{ position: 'relative', width: '40px', height: '40px' }}>
+                        <button
+                          type="button"
+                          onClick={() => customColorInputRef.current?.click()}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: '8px',
+                            background: customColorInput,
+                            border: '2px solid rgba(0, 217, 255, 0.3)',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                        />
+                        <input
+                          ref={customColorInputRef}
+                          type="color"
+                          value={customColorInput}
+                          onChange={(e) => {
+                            setCustomColorInput(e.target.value);
+                            setSocialPageColor(e.target.value);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            opacity: 0,
+                            border: 'none',
+                            padding: 0,
+                            margin: 0,
+                            cursor: 'pointer',
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
-                  Headline
-                </label>
-                <input
-                  type="text"
-                  value={socialHeadline}
-                  onChange={(e) => setSocialHeadline(e.target.value)}
-                  placeholder="Enter headline"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'rgba(0, 217, 255, 0.05)',
-                    border: '1px solid rgba(0, 217, 255, 0.2)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '13px',
-                    boxSizing: 'border-box',
-                    fontWeight: '600',
-                  }}
-                />
-              </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                    Headline
+                  </label>
+                  <input
+                    type="text"
+                    value={socialHeadline}
+                    onChange={(e) => setSocialHeadline(e.target.value)}
+                    placeholder="Enter headline"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '8px',
+                      color: '#fff',
+                      fontSize: '13px',
+                      boxSizing: 'border-box',
+                      fontWeight: '600',
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
-                  Social Media Profiles
+                <div>
+                  <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                    Social Media Profiles
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '8px' }}>
                   {socialProfiles.map((profile, index) => (
