@@ -1787,17 +1787,18 @@ async function handleRequest(req, res) {
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
-      padding: 20px;
+      align-items: flex-start;
+      padding: 10px 20px;
     }
     .container {
       max-width: 400px;
       width: 100%;
       text-align: center;
+      margin-top: 10px;
     }
     .headline {
       color: #000;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 700;
       margin-bottom: 15px;
       word-break: break-word;
@@ -1817,7 +1818,7 @@ async function handleRequest(req, res) {
       max-width: 320px;
       text-decoration: none;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 15px;
       transition: transform 0.2s ease, opacity 0.2s ease;
       background: rgba(255, 255, 255, 0.2);
       border-radius: 8px;
@@ -1837,39 +1838,39 @@ async function handleRequest(req, res) {
       flex: 1;
     }
     .btn-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
       object-fit: contain;
     }
     .btn-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: #000;
     }
     .btn-visit {
-      padding: 4px 10px;
+      padding: 5px 11px;
       background: rgba(0, 0, 0, 0.2);
       border: none;
       border-radius: 4px;
       color: #000;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
     }
     .footer {
-      margin-top: 30px;
+      margin-top: 20px;
       color: rgba(0,0,0,0.4);
       font-size: 12px;
     }
     @media (max-width: 480px) {
-      body { padding: 16px; }
-      .container { padding: 30px 16px; }
-      .headline { font-size: 14px; }
-      .social-button { padding: 8px 12px; font-size: 12px; }
+      body { padding: 8px 16px; }
+      .container { padding: 20px 16px; margin-top: 5px; }
+      .headline { font-size: 16px; }
+      .social-button { padding: 8px 12px; font-size: 13px; }
     }
   </style>
 </head>
