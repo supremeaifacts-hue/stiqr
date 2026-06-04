@@ -3298,7 +3298,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
               <div>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
-                  Basic Information
+                  Headline
                 </label>
                 <input
                   type="text"
@@ -3319,7 +3319,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 />
               </div>
 
-              <div style={{ maxWidth: '520px' }}>
+              <div>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
                   Social Media Profiles
                 </label>
