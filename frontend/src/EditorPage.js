@@ -3144,10 +3144,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     />
   ) : null;
 
-  const socialMediaModals = (
-    <div>
-      {/* Social Media Editor Modal */}
-      {showSocialModal && (
+  const renderSocialModal = (() => {
+    if (!showSocialModal) return null;
+    return (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -3605,127 +3604,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             </div>
           </div>
         </div>
-      )}
-
-      {showPlatformPicker && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          backdropFilter: 'blur(5px)',
-        }}>
-          <div style={{
-            background: 'rgba(20, 20, 40, 0.95)',
-            border: '2px solid rgba(0, 217, 255, 0.3)',
-            borderRadius: '20px',
-            padding: '40px',
-            maxWidth: '600px',
-            width: '95%',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-              <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
-                Add more links
-              </h2>
-              <button
-                onClick={() => setShowPlatformPicker(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#ccc',
-                  fontSize: '28px',
-                  cursor: 'pointer',
-                  padding: 0,
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p style={{ margin: '0 0 20px 0', fontSize: '12px', color: '#aaa' }}>
-              Click on each icon to add a social media link
-            </p>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-              gap: '12px',
-            }}>
-              {socialMediaPlatforms.map((platform) => (
-                <button
-                  key={platform.id}
-                  onClick={() => addSocialProfile(platform)}
-                  style={{
-                    padding: '16px',
-                    background: 'rgba(0, 217, 255, 0.1)',
-                    border: '2px solid rgba(0, 217, 255, 0.3)',
-                    borderRadius: '12px',
-                    color: '#00D9FF',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 217, 255, 0.2)';
-                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.6)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 217, 255, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  <img
-                    src={platform.logo}
-                    alt={platform.name}
-                    style={{ width: '28px', height: '28px', display: 'block' }}
-                  />
-                  <span>{platform.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  if (embedded) {
-    return (
-      <div style={{
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '60px 20px',
-        boxSizing: 'border-box',
-      }}>
-        <div style={{ width: '100%', maxWidth: '1200px' }}>
-          {editorContent}
-          {stickerPicker}
-          {socialMediaModals}
-        </div>
       </div>
     );
-  }
+  })();
 
   return (
     <div style={{
@@ -3796,7 +3677,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
       {editorContent}
       {stickerPicker}
-      {socialMediaModals}
+      {renderSocialModal}
     </div>
   );
 };
