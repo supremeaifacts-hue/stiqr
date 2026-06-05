@@ -3145,7 +3145,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   ) : null;
 
   const socialMediaModals = (
-    <>
+    <div>
       {/* Social Media Editor Modal */}
       {showSocialModal && (
         <div style={{
@@ -3706,7 +3706,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 
   if (embedded) {
