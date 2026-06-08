@@ -3171,11 +3171,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             minWidth: '900px',
             maxHeight: '90vh',
             overflowY: 'auto',
-            display: 'grid',
-            gridTemplateColumns: 'minmax(520px, 1fr) 320px',
-            gridAutoRows: 'minmax(0, auto)',
-            gap: '20px',
-            alignItems: 'start',
+            display: 'block',
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '520px', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -3488,7 +3484,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', minWidth: '0', alignSelf: 'flex-start' }}>
+            <div style={{ position: 'absolute', top: '250px', left: '750px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', width: '280px', zIndex: 20 }}>
               <div style={{
                 position: 'relative',
                 width: '100%',
