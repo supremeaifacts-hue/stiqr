@@ -3487,7 +3487,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ flex: '0 0 320px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', minWidth: '0' }}>
+            <div style={{ flex: '0 0 320px', alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', minWidth: '0' }}>
               <div style={{
                 position: 'relative',
                 width: '100%',
