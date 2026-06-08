@@ -3485,10 +3485,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+            <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', minWidth: '0' }}>
               <div style={{
                 position: 'relative',
-                width: '280px',
+                width: '100%',
+                maxWidth: '280px',
                 height: '560px',
                 background: 'radial-gradient(ellipse at top, #333, #000)',
                 borderRadius: '40px',
