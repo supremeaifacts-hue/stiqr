@@ -3169,12 +3169,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             maxWidth: '1100px',
             width: '95%',
             maxHeight: '85vh',
-            overflowY: 'auto',
-            display: 'flex',
-            gap: '30px',
-            flexWrap: 'nowrap',
+            overflow: 'hidden',
           }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '0' }}>
+            <div style={{
+              display: 'flex',
+              gap: '30px',
+              flexWrap: 'nowrap',
+              height: '100%',
+              alignItems: 'flex-start',
+            }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '0', overflowY: 'auto', maxHeight: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
                   Social Media QR Code
@@ -3606,6 +3610,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
         </div>
       </div>
+    </div>
     );
   })();
 
