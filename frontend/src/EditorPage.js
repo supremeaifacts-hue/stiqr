@@ -3170,13 +3170,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             width: '95%',
             maxHeight: '90vh',
             overflowY: 'auto',
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) 320px',
             gap: '20px',
-            flexWrap: 'nowrap',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
+            alignItems: 'start',
           }}>
-            <div style={{ flex: '1 1 60%', display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '0', maxWidth: '760px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
                   Social Media QR Code
@@ -3487,7 +3486,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ flex: '0 0 320px', alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', minWidth: '0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', minWidth: '0' }}>
               <div style={{
                 position: 'relative',
                 width: '100%',
