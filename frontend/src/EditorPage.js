@@ -3165,13 +3165,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             background: 'rgba(20, 20, 40, 0.95)',
             border: '2px solid rgba(0, 217, 255, 0.3)',
             borderRadius: '20px',
-            padding: '40px',
-            maxWidth: '1100px',
+            padding: '30px',
+            maxWidth: '1300px',
             width: '95%',
-            maxHeight: '85vh',
+            maxHeight: '90vh',
             overflowY: 'auto',
             display: 'flex',
-            gap: '30px',
+            gap: '20px',
             flexWrap: 'nowrap',
           }}>
             <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '0' }}>
@@ -3619,63 +3619,64 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       flexDirection: 'column',
       fontFamily: '"Inter", "Segoe UI", sans-serif',
     }}>
-      {/* Top Navigation Bar */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        padding: '20px 40px',
-        borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
-        background: 'rgba(0, 0, 0, 0.5)',
-      }}>
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <button
-            onClick={onBack}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid #00D9FF',
-              borderRadius: '8px',
-              color: '#00D9FF',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-            }}
-          >
-            Homepage
-          </button>
-          <button
-            onClick={onGoToDashboard}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid #FF00FF',
-              borderRadius: '8px',
-              color: '#FF00FF',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-            }}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={onGoToProfile}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid #888',
-              borderRadius: '8px',
-              color: '#888',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-            }}
-          >
-            Profile
-          </button>
-        </div>
-      </header>
+      {!embedded && (
+        <header style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          padding: '20px 40px',
+          borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
+          background: 'rgba(0, 0, 0, 0.5)',
+        }}>
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <button
+              onClick={onBack}
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid #00D9FF',
+                borderRadius: '8px',
+                color: '#00D9FF',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}
+            >
+              Homepage
+            </button>
+            <button
+              onClick={onGoToDashboard}
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid #FF00FF',
+                borderRadius: '8px',
+                color: '#FF00FF',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={onGoToProfile}
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid #888',
+                borderRadius: '8px',
+                color: '#888',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}
+            >
+              Profile
+            </button>
+          </div>
+        </header>
+      )}
 
       {editorContent}
       {stickerPicker}
