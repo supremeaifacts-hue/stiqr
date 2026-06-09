@@ -1,14 +1,14 @@
-# Task Progress - MongoDB Persistence Fixes
+# Event QR Code Feature - Task Progress
 
-- [x] Analyze codebase and identify all issues
-- [x] Fix DELETE endpoint to properly remove from MongoDB and in-memory
-- [x] Fix `/api/scan/log` to save scans to MongoDB
-- [x] Fix `/api/analytics/:qrCodeId` to read from MongoDB instead of in-memory
-- [x] Fix `/api/analytics/:qrCodeId/timeline` to read from MongoDB
-- [x] Fix `/api/analytics/:qrCodeId/summary` to read from MongoDB
-- [x] Fix Dashboard scan count display to use `scan_count` from MongoDB
-- [x] Fix `/track/:id` to properly persist scan data to MongoDB
-- [x] Fix `/api/assets/qrcodes` to return `scan_count` field
-- [x] Fix `/api/qrcodes/all` to return `scan_count` field
-- [x] Ensure all endpoints properly sync between in-memory and MongoDB
-- [x] Verify the backend starts without errors
+- [ ] Add event modal state variables in EditorPage.js
+- [ ] Add openEventModal function and update "Create Now" button
+- [ ] Add getEventLandingUrl and getEventPageIdFromUrl helper functions
+- [ ] Add handleSaveEventConfig function
+- [ ] Create renderEventModal with all sections (Page Color, Event, Details, Address, Contact)
+- [ ] Add renderEventModal to the JSX return
+- [ ] Add backend /api/event-pages POST endpoint
+- [ ] Add backend /api/event-pages/:id GET endpoint
+- [ ] Add backend /event/:id public landing page endpoint
+- [ ] Add /event/ to public endpoints and detectQrType
+- [ ] Add /event/* to _routes.json exclude list
+- [ ] Build and verify

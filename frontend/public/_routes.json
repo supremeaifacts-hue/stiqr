@@ -6,6 +6,7 @@
     "/api/*",
     "/track/*",
     "/assets/*",
-    "/social/*"
+    "/social/*",
+    "/event/*"
   ]
 }

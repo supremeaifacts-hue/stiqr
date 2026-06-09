@@ -183,11 +183,155 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [socialConfigSaved, setSocialConfigSaved] = useState(false);
   const [savingSocial, setSavingSocial] = useState(false);
 
+  // Event QR Code state
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [eventPageColor, setEventPageColor] = useState('#e5e9ec');
+  const [eventCustomColorInput, setEventCustomColorInput] = useState('#e5e9ec');
+  const eventCustomColorInputRef = useRef(null);
+  const [eventData, setEventData] = useState({
+    title: '',
+    summary: '',
+    image: null,
+    imagePreview: null,
+    dateFrom: '',
+    dateTo: '',
+    services: {
+      wifi: false,
+      bathroom: false,
+      handicapped: false,
+      babies: false,
+      dogs: false,
+      parking: false,
+      food: false,
+    },
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    contactName: '',
+    contactPhone: '',
+    contactEmail: '',
+    contactWebsite: '',
+  });
+  const [savingEvent, setSavingEvent] = useState(false);
+  const [eventPageId, setEventPageId] = useState(null);
+  const [eventConfigSaved, setEventConfigSaved] = useState(false);
+  const eventImageInputRef = useRef(null);
+
+
   // Open social modal (separate handler for easier debugging)
   const openSocialModal = () => {
     console.log('Opening Social Media modal');
     setShowSocialModal(true);
   };
+
+  // Open event modal
+  const openEventModal = () => {
+    console.log('Opening Event modal');
+    setShowEventModal(true);
+  };
+
+  // Get the event landing page URL
+  const getEventLandingUrl = (pageId) => {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+      return `http://localhost:3000/event/${pageId}`;
+    } else {
+      const protocol = window.location.protocol;
+      return `${protocol}//${hostname}/event/${pageId}`;
+    }
+  };
+
+  // Handle saving event configuration
+  const handleSaveEventConfig = async () => {
+    // Validate required fields
+    if (!eventData.title.trim()) {
+      alert('Please enter an event title.');
+      return;
+    }
+
+    setSavingEvent(true);
+
+    try {
+      const newEventPageId = eventPageId || generateId();
+
+      // Build the event data payload
+      const eventPayload = {
+        id: newEventPageId,
+        title: eventData.title,
+        summary: eventData.summary,
+        image: eventData.imagePreview,
+        dateFrom: eventData.dateFrom,
+        dateTo: eventData.dateTo,
+        services: eventData.services,
+        address: {
+          street: eventData.street,
+          city: eventData.city,
+          state: eventData.state,
+          zip: eventData.zip,
+          country: eventData.country,
+        },
+        contact: {
+          name: eventData.contactName,
+          phone: eventData.contactPhone,
+          email: eventData.contactEmail,
+          website: eventData.contactWebsite,
+        },
+        pageColor: eventPageColor,
+      };
+
+      // Save to backend
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const token = localStorage.getItem('jwtToken');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🔍 Saving event page:', JSON.stringify(eventPayload));
+
+      const response = await fetch(`${baseUrl}/api/event-pages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(eventPayload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save event page:', errorText);
+        throw new Error('Failed to save event configuration');
+      }
+
+      const result = await response.json();
+      console.log('✅ Event page saved:', result);
+
+      // Store the event page ID
+      setEventPageId(newEventPageId);
+      setEventConfigSaved(true);
+
+      // Generate the event landing page URL and set it as the QR data
+      const eventUrl = getEventLandingUrl(newEventPageId);
+      setQrData(eventUrl);
+      
+      // Close the modal
+      setShowEventModal(false);
+
+      // Show success message
+      alert(`✅ Event page created successfully!\n\nYour landing page URL: ${eventUrl}\n\nThe QR code will now encode this URL. You can customize the QR code design (frames, colors, logos) and then save it to your collection.`);
+
+    } catch (error) {
+      console.error('Error saving event configuration:', error);
+      alert('Failed to save event configuration. Please try again.');
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
 
   // Get the social landing page URL
   const getSocialLandingUrl = (pageId) => {
@@ -1898,7 +2042,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               ) : selectedType === 'social' || selectedType === 'event' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <button
-                    onClick={openSocialModal}
+                    onClick={selectedType === 'social' ? openSocialModal : openEventModal}
                     style={{
                       padding: '14px',
                       background: 'linear-gradient(135deg, #FF00FF 0%, #00D9FF 100%)',
@@ -1913,6 +2057,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     Create Now
                   </button>
                 </div>
+
               ) : (
                 <input
                   type="text"
@@ -3687,6 +3832,573 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     );
   })();
 
+  const renderEventModal = (() => {
+    if (!showEventModal) return null;
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        backdropFilter: 'blur(5px)',
+      }}>
+        <div style={{
+          position: 'relative',
+          background: 'rgba(20, 20, 40, 0.95)',
+          border: '2px solid rgba(0, 217, 255, 0.3)',
+          borderRadius: '20px',
+          padding: '30px',
+          maxWidth: '1100px',
+          width: '100%',
+          minWidth: '900px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          display: 'block',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '520px', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
+                Event QR Code
+              </h2>
+              <button
+                onClick={() => setShowEventModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ccc',
+                  fontSize: '28px',
+                  cursor: 'pointer',
+                  padding: 0,
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ maxWidth: '520px' }}>
+              {/* Page Color */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                  Page Color
+                </label>
+                <div style={{ marginBottom: '10px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#aaa' }}>Choose which color your page should have</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {['#e5e9ec', '#edcbc0', '#fff5cd', '#8cd7ff', '#dad0f0', '#305971', '#25501a'].map((color) => (
+                      <div
+                        key={color}
+                        onClick={() => {
+                          setEventPageColor(color);
+                          setEventCustomColorInput(color);
+                        }}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          background: color,
+                          border: eventPageColor === color ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: eventPageColor === color ? '0 0 12px rgba(0,0,0,0.5)' : 'none',
+                        }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={eventCustomColorInput}
+                      onChange={(e) => {
+                        setEventCustomColorInput(e.target.value);
+                        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                          setEventPageColor(e.target.value);
+                        }
+                      }}
+                      placeholder="#RRGGBB"
+                      style={{
+                        padding: '8px 12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        flex: 1,
+                      }}
+                    />
+                    <div style={{ position: 'relative', width: '40px', height: '40px' }}>
+                      <button
+                        type="button"
+                        onClick={() => eventCustomColorInputRef.current?.click()}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '8px',
+                          background: eventCustomColorInput,
+                          border: '2px solid rgba(0, 217, 255, 0.3)',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      />
+                      <input
+                        ref={eventCustomColorInputRef}
+                        type="color"
+                        value={eventCustomColorInput}
+                        onChange={(e) => {
+                          setEventCustomColorInput(e.target.value);
+                          setEventPageColor(e.target.value);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Event Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Event
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Event Title
+                    </label>
+                    <input
+                      type="text"
+                      value={eventData.title}
+                      onChange={(e) => setEventData({...eventData, title: e.target.value})}
+                      placeholder="Enter event title"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '16px',
+                        fontWeight: '700',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Summary
+                    </label>
+                    <textarea
+                      value={eventData.summary}
+                      onChange={(e) => setEventData({...eventData, summary: e.target.value})}
+                      placeholder="Brief summary of the event"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        minHeight: '60px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Event Image
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        ref={eventImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setEventData(prev => ({
+                                ...prev,
+                                image: file,
+                                imagePreview: ev.target.result,
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => eventImageInputRef.current?.click()}
+                        style={{
+                          padding: '8px 16px',
+                          background: 'rgba(0, 217, 255, 0.2)',
+                          border: '1px solid rgba(0, 217, 255, 0.3)',
+                          borderRadius: '6px',
+                          color: '#00D9FF',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        📁 Browse
+                      </button>
+                      {eventData.imagePreview && (
+                        <button
+                          onClick={() => setEventData(prev => ({...prev, image: null, imagePreview: null}))}
+                          style={{
+                            padding: '8px 16px',
+                            background: 'rgba(255, 0, 0, 0.2)',
+                            border: '1px solid rgba(255, 0, 0, 0.3)',
+                            borderRadius: '6px',
+                            color: '#ff6b6b',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          🗑 Delete
+                        </button>
+                      )}
+                    </div>
+                    {eventData.imagePreview && (
+                      <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={eventData.imagePreview} alt="Event preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                        <span style={{ fontSize: '11px', color: '#aaa' }}>Image uploaded</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Details
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Date of the event
+                    </label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', color: '#888' }}>From</label>
+                        <input
+                          type="date"
+                          value={eventData.dateFrom}
+                          onChange={(e) => setEventData({...eventData, dateFrom: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            background: 'rgba(0, 217, 255, 0.05)',
+                            border: '1px solid rgba(0, 217, 255, 0.2)',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            boxSizing: 'border-box',
+                            colorScheme: 'dark',
+                          }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', color: '#888' }}>To</label>
+                        <input
+                          type="date"
+                          value={eventData.dateTo}
+                          onChange={(e) => setEventData({...eventData, dateTo: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            background: 'rgba(0, 217, 255, 0.05)',
+                            border: '1px solid rgba(0, 217, 255, 0.2)',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            boxSizing: 'border-box',
+                            colorScheme: 'dark',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Choose the services available at the event
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                      {[
+                        { key: 'wifi', label: 'Wi-Fi', emoji: '📶' },
+                        { key: 'bathroom', label: 'Bathroom', emoji: '🚻' },
+                        { key: 'handicapped', label: 'Handicapped Facilities', emoji: '♿' },
+                        { key: 'babies', label: 'Babies Allowed', emoji: '👶' },
+                        { key: 'dogs', label: 'Dogs Allowed', emoji: '🐕' },
+                        { key: 'parking', label: 'Parking', emoji: '🅿️' },
+                        { key: 'food', label: 'Food', emoji: '🍽️' },
+                      ].map((service) => (
+                        <label
+                          key={service.key}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            background: eventData.services[service.key] ? 'rgba(0, 217, 255, 0.15)' : 'rgba(0, 217, 255, 0.05)',
+                            border: eventData.services[service.key] ? '1px solid rgba(0, 217, 255, 0.5)' : '1px solid rgba(0, 217, 255, 0.15)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            color: eventData.services[service.key] ? '#00D9FF' : '#ccc',
+                            fontWeight: eventData.services[service.key] ? '600' : '400',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={eventData.services[service.key]}
+                            onChange={(e) => setEventData({
+                              ...eventData,
+                              services: {...eventData.services, [service.key]: e.target.checked}
+                            })}
+                            style={{ accentColor: '#00D9FF' }}
+                          />
+                          <span>{service.emoji}</span>
+                          <span>{service.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Address
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    type="text"
+                    value={eventData.street}
+                    onChange={(e) => setEventData({...eventData, street: e.target.value})}
+                    placeholder="Street address"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={eventData.city}
+                      onChange={(e) => setEventData({...eventData, city: e.target.value})}
+                      placeholder="City"
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={eventData.state}
+                      onChange={(e) => setEventData({...eventData, state: e.target.value})}
+                      placeholder="State"
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={eventData.zip}
+                      onChange={(e) => setEventData({...eventData, zip: e.target.value})}
+                      placeholder="ZIP"
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={eventData.country}
+                      onChange={(e) => setEventData({...eventData, country: e.target.value})}
+                      placeholder="Country"
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contacts Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Contacts
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    type="text"
+                    value={eventData.contactName}
+                    onChange={(e) => setEventData({...eventData, contactName: e.target.value})}
+                    placeholder="Name"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <input
+                    type="tel"
+                    value={eventData.contactPhone}
+                    onChange={(e) => setEventData({...eventData, contactPhone: e.target.value})}
+                    placeholder="Phone"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <input
+                    type="email"
+                    value={eventData.contactEmail}
+                    onChange={(e) => setEventData({...eventData, contactEmail: e.target.value})}
+                    placeholder="Email"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <input
+                    type="url"
+                    value={eventData.contactWebsite}
+                    onChange={(e) => setEventData({...eventData, contactWebsite: e.target.value})}
+                    placeholder="Website"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Save Configuration Button */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+              <button
+                onClick={handleSaveEventConfig}
+                disabled={savingEvent}
+                style={{
+                  width: '100%',
+                  maxWidth: '280px',
+                  padding: '14px 20px',
+                  background: savingEvent ? 'rgba(0, 217, 255, 0.3)' : 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: savingEvent ? '#888' : '#000',
+                  fontWeight: '700',
+                  cursor: savingEvent ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  boxShadow: savingEvent ? 'none' : '0 0 20px rgba(0, 217, 255, 0.4)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {savingEvent ? '⏳ Saving...' : '💾 Save Configuration'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })();
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -3758,8 +4470,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       {editorContent}
       {stickerPicker}
       {renderSocialModal}
+      {renderEventModal}
     </div>
   );
 };
 
 export default EditorPage;
+
