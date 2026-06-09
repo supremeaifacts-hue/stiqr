@@ -4370,8 +4370,168 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            {/* Save Configuration Button */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+            {/* Phone Mockup Preview */}
+            <div style={{ position: 'absolute', top: '150px', left: '750px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', width: '280px', zIndex: 20 }}>
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '280px',
+                height: '560px',
+                background: 'radial-gradient(ellipse at top, #333, #000)',
+                borderRadius: '40px',
+                border: '12px solid #1a1a1a',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(255,255,255,0.1)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '150px',
+                  height: '25px',
+                  background: '#000',
+                  borderRadius: '0 0 20px 20px',
+                  zIndex: 10,
+                }}></div>
+
+                <div style={{
+                  flex: 1,
+                  background: eventPageColor,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '40px 20px',
+                  gap: '12px',
+                  marginTop: '5px',
+                  overflowY: 'auto',
+                }}>
+                  {/* Event Image */}
+                  {eventData.imagePreview && (
+                    <div style={{
+                      width: '100%',
+                      height: '140px',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                    }}>
+                      <img src={eventData.imagePreview} alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+
+                  {/* Event Title */}
+                  {eventData.title && (
+                    <h3 style={{
+                      margin: 0,
+                      color: '#000',
+                      fontSize: '18px',
+                      fontWeight: '700',
+                      textAlign: 'left',
+                      lineHeight: '1.2',
+                    }}>
+                      {eventData.title}
+                    </h3>
+                  )}
+
+                  {/* Summary */}
+                  {eventData.summary && (
+                    <p style={{
+                      margin: 0,
+                      color: '#333',
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      lineHeight: '1.4',
+                    }}>
+                      {eventData.summary}
+                    </p>
+                  )}
+
+                  {/* Date */}
+                  {(eventData.dateFrom || eventData.dateTo) && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '11px',
+                      color: '#000',
+                      fontWeight: '600',
+                    }}>
+                      <span>📅</span>
+                      <span>
+                        {eventData.dateFrom ? new Date(eventData.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                        {eventData.dateFrom && eventData.dateTo ? ' - ' : ''}
+                        {eventData.dateTo ? new Date(eventData.dateTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Services */}
+                  {Object.values(eventData.services).some(v => v) && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '6px',
+                      flexWrap: 'wrap',
+                    }}>
+                      {eventData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '18px' }}>📶</span>}
+                      {eventData.services.bathroom && <span title="Bathroom" style={{ fontSize: '18px' }}>🚻</span>}
+                      {eventData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '18px' }}>♿</span>}
+                      {eventData.services.babies && <span title="Babies Allowed" style={{ fontSize: '18px' }}>👶</span>}
+                      {eventData.services.dogs && <span title="Dogs Allowed" style={{ fontSize: '18px' }}>🐕</span>}
+                      {eventData.services.parking && <span title="Parking" style={{ fontSize: '18px' }}>🅿️</span>}
+                      {eventData.services.food && <span title="Food" style={{ fontSize: '18px' }}>🍽️</span>}
+                    </div>
+                  )}
+
+                  {/* Address */}
+                  {(eventData.street || eventData.city || eventData.state || eventData.zip || eventData.country) && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '6px',
+                      fontSize: '11px',
+                      color: '#000',
+                    }}>
+                      <span>📍</span>
+                      <span>
+                        {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Contact */}
+                  {(eventData.contactName || eventData.contactPhone || eventData.contactEmail || eventData.contactWebsite) && (
+                    <div style={{
+                      borderTop: '1px solid rgba(0,0,0,0.15)',
+                      paddingTop: '10px',
+                      marginTop: '4px',
+                    }}>
+                      {eventData.contactName && (
+                        <div style={{ fontSize: '11px', color: '#000', fontWeight: '600', marginBottom: '4px' }}>
+                          {eventData.contactName}
+                        </div>
+                      )}
+                      {eventData.contactPhone && (
+                        <div style={{ fontSize: '10px', color: '#333', marginBottom: '2px' }}>
+                          📞 {eventData.contactPhone}
+                        </div>
+                      )}
+                      {eventData.contactEmail && (
+                        <div style={{ fontSize: '10px', color: '#333', marginBottom: '2px' }}>
+                          ✉️ {eventData.contactEmail}
+                        </div>
+                      )}
+                      {eventData.contactWebsite && (
+                        <div style={{ fontSize: '10px', color: '#333' }}>
+                          🌐 {eventData.contactWebsite}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Save Configuration Button */}
               <button
                 onClick={handleSaveEventConfig}
                 disabled={savingEvent}
@@ -4398,6 +4558,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       </div>
     );
   })();
+
 
   return (
     <div style={{
