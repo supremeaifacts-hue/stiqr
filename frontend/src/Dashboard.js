@@ -1373,6 +1373,11 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
               qrCodes: updatedQrCodes
             });
           }}
+          onOpenSocialEditor={(qrCode) => {
+            if (onEditQrCode) {
+              onEditQrCode(qrCode, { openSocialModal: true });
+            }
+          }}
         />
       )}
     </div>

@@ -9,6 +9,7 @@ const detectQrType = (data) => {
   if (data.startsWith('https://wa.me/')) return 'whatsapp';
   if (data.startsWith('WIFI:S:')) return 'wifi';
   if (data.startsWith('PDF:')) return 'pdf';
+  if (data.includes('/social/')) return 'social';
   // Check if it's a PDF URL (uploaded PDF)
   if (data.includes('/uploads/') && data.toLowerCase().endsWith('.pdf')) return 'pdf';
   return 'url';
@@ -89,6 +90,11 @@ const parseDestinationData = (data) => {
     return { type: 'pdf', fields: { pdfName } };
   }
 
+  const type = detectQrType(data);
+  if (type === 'social') {
+    return { type: 'social', fields: { destination: data } };
+  }
+
   return { type: 'url', fields: { destination: data } };
 };
 
@@ -118,7 +124,7 @@ const formatDestinationData = (type, fields) => {
   }
 };
 
-const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
+const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor }) => {
   const [destination, setDestination] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -315,6 +321,7 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
       whatsapp: 'WhatsApp',
       wifi: 'Wi-Fi',
       pdf: 'PDF',
+      social: 'Social Media',
     };
     return labels[qrType] || 'URL';
   };
@@ -619,6 +626,68 @@ const EditMetadataModal = ({ qrCode, onClose, onSave }) => {
             )}
             <div style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>
               Upload a new PDF to update the destination for this dynamic QR code.
+            </div>
+          </div>
+        );
+
+      case 'social':
+        return (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '13px',
+              color: '#aaa',
+              marginBottom: '6px',
+              fontWeight: '600',
+            }}>
+              Destination URL <span style={{ color: '#FF00FF' }}>*</span>
+            </label>
+            <input
+              type="url"
+              value={destination}
+              readOnly
+              placeholder="https://example.com"
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: '#bbb',
+                fontSize: '14px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s',
+                cursor: 'not-allowed',
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+            />
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenSocialEditor) {
+                    onOpenSocialEditor(qrCode);
+                  }
+                  onClose();
+                }}
+                style={{
+                  width: 'fit-content',
+                  padding: '10px 16px',
+                  background: '#00D9FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#000',
+                  fontWeight: '700',
+                  cursor: onOpenSocialEditor ? 'pointer' : 'not-allowed',
+                }}
+              >
+                🎛️ Open Social Media Page Editor
+              </button>
+              <div style={{ fontSize: '12px', color: '#888', lineHeight: '1.4' }}>
+                The Social Media landing page is managed separately. Open the page editor to update the saved styles, headline, and links.
+              </div>
             </div>
           </div>
         );

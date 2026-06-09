@@ -1614,6 +1614,8 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Missing id or buttons' });
       }
 
+      const socialPages = globalThis._socialPages || {};
+      const existingSocialPage = socialPages[id];
       const socialPage = {
         id: id,
         userId: userId,
@@ -1622,12 +1624,11 @@ async function handleRequest(req, res) {
         pageColor: pageColor || '#e5e9ec',
         buttons: buttons,
         design: design || null,
-        createdAt: new Date().toISOString(),
+        createdAt: existingSocialPage?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
       // Save to in-memory
-      const socialPages = globalThis._socialPages || {};
       socialPages[id] = socialPage;
       globalThis._socialPages = socialPages;
 

@@ -46,6 +46,27 @@ const commonLogos = [
   { id: 'telegram', label: 'Telegram', src: telegramLogo },
 ];
 
+const getLogoForHandle = (handle) => {
+  if (!handle) return linkLogo;
+  const normalized = handle.toLowerCase();
+  const match = commonLogos.find(item => item.id === normalized || item.label.toLowerCase() === normalized);
+  return match ? match.src : linkLogo;
+};
+
+const getSocialPageIdFromUrl = (url) => {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    return segments.length ? segments[segments.length - 1] : null;
+  } catch {
+    const marker = '/social/';
+    const index = url.indexOf(marker);
+    if (index === -1) return null;
+    return url.substring(index + marker.length).split(/[/?#]/)[0] || null;
+  }
+};
+
 const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, qrCodeToEdit, onClearQrCodeToEdit }) => {
   const [selectedType, setSelectedType] = useState('url');
   const [qrData, setQrData] = useState('');
@@ -196,8 +217,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     setSavingSocial(true);
 
     try {
-      // Generate a unique ID for this social page
-      const newSocialPageId = generateId();
+      // Reuse an existing social page ID when editing an existing Social Media QR code
+      const existingSocialPageId = socialPageId || getSocialPageIdFromUrl(qrData);
+      const newSocialPageId = existingSocialPageId || generateId();
       
       // Platform color map (matches backend getPlatformColor)
       const platformColorMap = {
@@ -546,6 +568,62 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       // Set QR code name as frame phrase if available
       if (qrCodeToEdit.name) {
         setFramePhrase(qrCodeToEdit.name);
+      }
+
+      const socialUrl = qrCodeToEdit.data || qrCodeToEdit.destination || '';
+      if (socialUrl.includes('/social/')) {
+        const pageId = getSocialPageIdFromUrl(socialUrl);
+        if (pageId) {
+          setSocialPageId(pageId);
+          setSelectedType('social');
+
+          const loadSocialPage = async () => {
+            try {
+              const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+              const response = await fetch(`${baseUrl}/api/social-pages/${pageId}`);
+              if (!response.ok) {
+                throw new Error(`Unable to load social page ${pageId}`);
+              }
+              const page = await response.json();
+              setSocialPageColor(page.pageColor || '#e5e9ec');
+              setSocialHeadline(page.headline || page.title || 'Follow me on these Social Media');
+              setSocialConfigSaved(true);
+
+              const matchedProfiles = socialProfilesRef.current.map(profile => {
+                const buttonMatch = (page.buttons || []).find(btn => {
+                  const handle = String(btn.platform || btn.label || '').toLowerCase();
+                  return handle === profile.handle?.toLowerCase() || handle === profile.platform.toLowerCase();
+                });
+                return {
+                  ...profile,
+                  url: buttonMatch?.url || profile.url,
+                };
+              });
+
+              const extraProfiles = (page.buttons || [])
+                .filter(btn => !matchedProfiles.some(profile => profile.handle?.toLowerCase() === String(btn.platform || btn.label || '').toLowerCase()))
+                .map(btn => {
+                  const handle = String(btn.platform || btn.label || 'link').toLowerCase();
+                  return {
+                    id: handle,
+                    platform: btn.label || btn.platform || 'Link',
+                    logo: getLogoForHandle(handle),
+                    handle,
+                    url: btn.url || '',
+                  };
+                });
+
+              setSocialProfiles([...matchedProfiles, ...extraProfiles]);
+
+              if (qrCodeToEdit.openSocialModal) {
+                setShowSocialModal(true);
+              }
+            } catch (error) {
+              console.error('Failed to load social page config:', error);
+            }
+          };
+          loadSocialPage();
+        }
       }
       
       // Try to get design characteristics from qrCodeToEdit.design first

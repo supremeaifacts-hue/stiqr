@@ -25,8 +25,8 @@ function AppContent() {
           onCreate={() => navigate('/')}
           onViewPricing={() => navigate('/pricing')}
           onBack={() => navigate('/')}
-          onEditQrCode={(qrCode) => {
-            setQrCodeToEdit(qrCode);
+          onEditQrCode={(qrCode, options = {}) => {
+            setQrCodeToEdit({ ...qrCode, openSocialModal: !!options.openSocialModal });
             navigate('/');
           }}
         />
