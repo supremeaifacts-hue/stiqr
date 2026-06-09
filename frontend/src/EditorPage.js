@@ -3166,7 +3166,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             border: '2px solid rgba(0, 217, 255, 0.3)',
             borderRadius: '20px',
             padding: '30px',
-            maxWidth: '1300px',
+            maxWidth: '1100px',
             width: '100%',
             minWidth: '900px',
             maxHeight: '90vh',
@@ -3484,7 +3484,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ position: 'absolute', top: '250px', left: '750px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', width: '280px', zIndex: 20 }}>
+            <div style={{ position: 'absolute', top: '180px', left: '750px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', width: '280px', zIndex: 20 }}>
               <div style={{
                 position: 'relative',
                 width: '100%',
