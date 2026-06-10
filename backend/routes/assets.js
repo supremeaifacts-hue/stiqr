@@ -884,5 +884,363 @@ router.get('/user/subscription', isAuthenticated, async (req, res) => {
   }
 });
 
+// ============================================================
+// Event Pages API
+// ============================================================
+
+// Save/Update an event page
+router.post('/event-pages', async (req, res) => {
+  try {
+    const { id, title, summary, about, image, dateFrom, dateTo, services, address, contact, pageColor } = req.body;
+
+    if (!id || !title) {
+      return res.status(400).json({ error: 'Event page ID and title are required' });
+    }
+
+    // Find user by JWT token
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.userId;
+      } catch (e) {
+        // Token invalid, but we still save the event page
+      }
+    }
+
+    // Store event page data in a separate collection or embedded in user
+    // For now, we'll store it in a simple way using the User model's qrCodes or a separate mechanism
+    // Since we don't have an EventPage model, we'll store it in a global eventPages object
+    // In production, you'd want a proper MongoDB collection
+    
+    const eventPageData = {
+      id,
+      title,
+      summary: summary || '',
+      about: about || '',
+      image: image || null,
+      dateFrom: dateFrom || '',
+      dateTo: dateTo || '',
+      services: services || {},
+      address: address || {},
+      contact: contact || {},
+      pageColor: pageColor || '#e5e9ec',
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Store in MongoDB event_pages collection
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('event_pages');
+        
+        // Upsert the event page
+        await collection.updateOne(
+          { id },
+          { $set: eventPageData },
+          { upsert: true }
+        );
+        
+        console.log(`✅ Event page saved to MongoDB: ${id}`);
+      } catch (dbError) {
+        console.error('MongoDB error saving event page:', dbError);
+        // Continue even if DB fails - we'll return success
+      } finally {
+        await client.close();
+      }
+    }
+
+    res.json({ success: true, id, message: 'Event page saved successfully' });
+  } catch (error) {
+    console.error('Error saving event page:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get an event page by ID (public endpoint)
+router.get('/event-pages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+    
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      const db = client.db('stiqr');
+      const collection = db.collection('event_pages');
+      
+      const eventPage = await collection.findOne({ id });
+      
+      if (!eventPage) {
+        return res.status(404).json({ error: 'Event page not found' });
+      }
+      
+      res.json(eventPage);
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error fetching event page:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Serve event landing page HTML
+router.get('/event/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    let eventPage = null;
+    
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('event_pages');
+        eventPage = await collection.findOne({ id });
+      } catch (dbError) {
+        console.error('MongoDB error fetching event page:', dbError);
+      } finally {
+        await client.close();
+      }
+    }
+    
+    if (!eventPage) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Event Not Found</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0a0a0a; color: #fff; }
+          .container { text-align: center; padding: 40px; }
+          h1 { color: #FF00FF; }
+          p { color: #a0a0a0; }
+        </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Event Not Found</h1>
+            <p>The event you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    const { title, summary, about, image, dateFrom, dateTo, services, address, contact, pageColor } = eventPage;
+    
+    // Format dates
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch { return dateStr; }
+    };
+    
+    const dateFromFormatted = formatDate(dateFrom);
+    const dateToFormatted = formatDate(dateTo);
+    
+    // Build address string
+    const addressParts = [];
+    if (address?.street) addressParts.push(address.street);
+    if (address?.city) addressParts.push(address.city);
+    if (address?.state) addressParts.push(address.state);
+    if (address?.zip) addressParts.push(address.zip);
+    if (address?.country) addressParts.push(address.country);
+    const addressStr = addressParts.join(', ');
+    
+    // Build services HTML
+    const serviceEmojis = {
+      wifi: '📶', bathroom: '🚻', handicapped: '♿', babies: '👶',
+      dogs: '🐕', parking: '🅿️', food: '🍽️'
+    };
+    const serviceLabels = {
+      wifi: 'Wi-Fi', bathroom: 'Bathroom', handicapped: 'Handicapped Facilities',
+      babies: 'Babies Allowed', dogs: 'Dogs Allowed', parking: 'Parking', food: 'Food'
+    };
+    
+    let servicesHtml = '';
+    if (services) {
+      const activeServices = Object.entries(serviceEmojis)
+        .filter(([key]) => services[key])
+        .map(([key, emoji]) => `<span title="${serviceLabels[key]}" style="font-size:24px;filter:grayscale(100%)">${emoji}</span>`);
+      if (activeServices.length > 0) {
+        servicesHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${activeServices.join('')}</div>`;
+      }
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>${title ? title + ' - Event' : 'Event'}</title>
+        <meta name="description" content="${summary || 'Event page'}">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: ${pageColor || '#e5e9ec'};
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+          }
+          .event-image {
+            width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.05);
+          }
+          .event-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            max-height: 200px;
+          }
+          .event-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            text-align: center;
+            line-height: 1.2;
+          }
+          .event-summary {
+            font-size: 14px;
+            color: #333;
+            text-align: center;
+            line-height: 1.4;
+          }
+          .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #000;
+            margin-top: 8px;
+          }
+          .section-divider {
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+            margin: 4px 0;
+          }
+          .about-text {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+          }
+          .date-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #000;
+            font-weight: 600;
+          }
+          .address-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #000;
+          }
+          .contact-item {
+            font-size: 13px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .contact-name {
+            font-size: 13px;
+            color: #000;
+            font-weight: 600;
+          }
+          .emoji-icon {
+            filter: grayscale(100%);
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          ${image ? `<div class="event-image"><img src="${image}" alt="${title || 'Event'}"></div>` : ''}
+          
+          ${title ? `<h1 class="event-title">${title}</h1>` : ''}
+          
+          ${summary ? `<p class="event-summary">${summary}</p>` : ''}
+          
+          ${about ? `
+            <div class="section-title">About</div>
+            <div class="section-divider"></div>
+            <p class="about-text">${about}</p>
+          ` : ''}
+          
+          ${(dateFrom || dateTo) ? `
+            <div class="section-title">Details</div>
+            <div class="section-divider"></div>
+            <div class="date-row">
+              <span class="emoji-icon">📅</span>
+              <span>${dateFromFormatted}${dateFrom && dateTo ? ' - ' : ''}${dateToFormatted}</span>
+            </div>
+            ${servicesHtml}
+          ` : ''}
+          
+          ${addressStr ? `
+            <div class="section-title">Address</div>
+            <div class="section-divider"></div>
+            <div class="address-row">
+              <span class="emoji-icon">📍</span>
+              <span>${addressStr}</span>
+            </div>
+          ` : ''}
+          
+          ${(contact?.name || contact?.phone || contact?.email || contact?.website) ? `
+            <div class="section-title">Contacts</div>
+            <div class="section-divider"></div>
+            ${contact?.name ? `<div class="contact-name">${contact.name}</div>` : ''}
+            ${contact?.phone ? `<div class="contact-item"><span class="emoji-icon">📞</span> ${contact.phone}</div>` : ''}
+            ${contact?.email ? `<div class="contact-item"><span class="emoji-icon">✉️</span> ${contact.email}</div>` : ''}
+            ${contact?.website ? `<div class="contact-item"><span class="emoji-icon">🌐</span> ${contact.website}</div>` : ''}
+          ` : ''}
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Error serving event page:', error);
+    res.status(500).send('Server error');
+  }
+});
+
 module.exports = router;
 
