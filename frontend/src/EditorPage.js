@@ -191,6 +191,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [eventData, setEventData] = useState({
     title: '',
     summary: '',
+    about: '',
     image: null,
     imagePreview: null,
     dateFrom: '',
@@ -214,6 +215,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     contactEmail: '',
     contactWebsite: '',
   });
+
   const [savingEvent, setSavingEvent] = useState(false);
   const [eventPageId, setEventPageId] = useState(null);
   const [eventConfigSaved, setEventConfigSaved] = useState(false);
@@ -3993,50 +3995,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
-                      Event Title
-                    </label>
-                    <input
-                      type="text"
-                      value={eventData.title}
-                      onChange={(e) => setEventData({...eventData, title: e.target.value})}
-                      placeholder="Enter event title"
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        background: 'rgba(0, 217, 255, 0.05)',
-                        border: '1px solid rgba(0, 217, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontSize: '16px',
-                        fontWeight: '700',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
-                      Summary
-                    </label>
-                    <textarea
-                      value={eventData.summary}
-                      onChange={(e) => setEventData({...eventData, summary: e.target.value})}
-                      placeholder="Brief summary of the event"
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: 'rgba(0, 217, 255, 0.05)',
-                        border: '1px solid rgba(0, 217, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontSize: '13px',
-                        boxSizing: 'border-box',
-                        minHeight: '60px',
-                        resize: 'vertical',
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
                       Event Image
                     </label>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -4095,13 +4053,80 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                     {eventData.imagePreview && (
                       <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={eventData.imagePreview} alt="Event preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                        <img src={eventData.imagePreview} alt="Event preview" style={{ width: '60px', height: '60px', objectFit: 'contain', borderRadius: '6px' }} />
                         <span style={{ fontSize: '11px', color: '#aaa' }}>Image uploaded</span>
                       </div>
                     )}
                   </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Event Title
+                    </label>
+                    <input
+                      type="text"
+                      value={eventData.title}
+                      onChange={(e) => setEventData({...eventData, title: e.target.value})}
+                      placeholder="Enter event title"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '16px',
+                        fontWeight: '700',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Summary
+                    </label>
+                    <textarea
+                      value={eventData.summary}
+                      onChange={(e) => setEventData({...eventData, summary: e.target.value})}
+                      placeholder="Brief summary of the event"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        minHeight: '60px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      About
+                    </label>
+                    <textarea
+                      value={eventData.about}
+                      onChange={(e) => setEventData({...eventData, about: e.target.value})}
+                      placeholder="Tell more about the event"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        minHeight: '80px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
+
 
               {/* Details Section */}
               <div style={{ marginTop: '24px' }}>
@@ -4427,7 +4452,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       color: '#000',
                       fontSize: '18px',
                       fontWeight: '700',
-                      textAlign: 'left',
+                      textAlign: 'center',
                       lineHeight: '1.2',
                     }}>
                       {eventData.title}
@@ -4440,12 +4465,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       margin: 0,
                       color: '#333',
                       fontSize: '12px',
-                      textAlign: 'left',
+                      textAlign: 'center',
                       lineHeight: '1.4',
                     }}>
                       {eventData.summary}
                     </p>
                   )}
+
 
                   {/* Date */}
                   {(eventData.dateFrom || eventData.dateTo) && (
@@ -4473,15 +4499,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       gap: '6px',
                       flexWrap: 'wrap',
                     }}>
-                      {eventData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '18px' }}>📶</span>}
-                      {eventData.services.bathroom && <span title="Bathroom" style={{ fontSize: '18px' }}>🚻</span>}
-                      {eventData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '18px' }}>♿</span>}
-                      {eventData.services.babies && <span title="Babies Allowed" style={{ fontSize: '18px' }}>👶</span>}
-                      {eventData.services.dogs && <span title="Dogs Allowed" style={{ fontSize: '18px' }}>🐕</span>}
-                      {eventData.services.parking && <span title="Parking" style={{ fontSize: '18px' }}>🅿️</span>}
-                      {eventData.services.food && <span title="Food" style={{ fontSize: '18px' }}>🍽️</span>}
+                      {eventData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>📶</span>}
+                      {eventData.services.bathroom && <span title="Bathroom" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>🚻</span>}
+                      {eventData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>♿</span>}
+                      {eventData.services.babies && <span title="Babies Allowed" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>👶</span>}
+                      {eventData.services.dogs && <span title="Dogs Allowed" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>🐕</span>}
+                      {eventData.services.parking && <span title="Parking" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>🅿️</span>}
+                      {eventData.services.food && <span title="Food" style={{ fontSize: '18px', filter: 'grayscale(100%)' }}>🍽️</span>}
                     </div>
                   )}
+
 
                   {/* Address */}
                   {(eventData.street || eventData.city || eventData.state || eventData.zip || eventData.country) && (
