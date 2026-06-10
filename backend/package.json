@@ -22,5 +22,11 @@
   },
   "overrides": {
     "debug": "4.3.4"
-  }
+  },
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
