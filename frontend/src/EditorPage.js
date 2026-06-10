@@ -4431,6 +4431,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   gap: '12px',
                   marginTop: '5px',
                   overflowY: 'auto',
+                  fontFamily: '"Inter", "Segoe UI", sans-serif',
                 }}>
                   {/* Event Image */}
                   {eventData.imagePreview && (
@@ -4440,8 +4441,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       borderRadius: '12px',
                       overflow: 'hidden',
                       flexShrink: 0,
+                      background: 'rgba(0,0,0,0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}>
-                      <img src={eventData.imagePreview} alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={eventData.imagePreview} alt="Event" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   )}
 
@@ -4454,6 +4459,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       fontWeight: '700',
                       textAlign: 'center',
                       lineHeight: '1.2',
+                      fontFamily: '"Inter", "Segoe UI", sans-serif',
                     }}>
                       {eventData.title}
                     </h3>
@@ -4467,11 +4473,35 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       fontSize: '12px',
                       textAlign: 'center',
                       lineHeight: '1.4',
+                      fontFamily: '"Inter", "Segoe UI", sans-serif',
                     }}>
                       {eventData.summary}
                     </p>
                   )}
 
+                  {/* About Section */}
+                  {eventData.about && (
+                    <>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        color: '#000',
+                        marginTop: '4px',
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      }}>
+                        About
+                      </div>
+                      <p style={{
+                        margin: 0,
+                        color: '#333',
+                        fontSize: '11px',
+                        lineHeight: '1.4',
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      }}>
+                        {eventData.about}
+                      </p>
+                    </>
+                  )}
 
                   {/* Date */}
                   {(eventData.dateFrom || eventData.dateTo) && (
@@ -4482,8 +4512,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       fontSize: '11px',
                       color: '#000',
                       fontWeight: '600',
+                      fontFamily: '"Inter", "Segoe UI", sans-serif',
                     }}>
-                      <span>📅</span>
+                      <span style={{ filter: 'grayscale(100%)' }}>📅</span>
                       <span>
                         {eventData.dateFrom ? new Date(eventData.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                         {eventData.dateFrom && eventData.dateTo ? ' - ' : ''}
@@ -4509,53 +4540,76 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   )}
 
-
-                  {/* Address */}
+                  {/* Address Section */}
                   {(eventData.street || eventData.city || eventData.state || eventData.zip || eventData.country) && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '6px',
-                      fontSize: '11px',
-                      color: '#000',
-                    }}>
-                      <span>📍</span>
-                      <span>
-                        {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
-                      </span>
-                    </div>
+                    <>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        color: '#000',
+                        marginTop: '4px',
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      }}>
+                        Address
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px',
+                        fontSize: '11px',
+                        color: '#000',
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      }}>
+                        <span style={{ filter: 'grayscale(100%)' }}>📍</span>
+                        <span>
+                          {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    </>
                   )}
 
-                  {/* Contact */}
+                  {/* Contacts Section */}
                   {(eventData.contactName || eventData.contactPhone || eventData.contactEmail || eventData.contactWebsite) && (
-                    <div style={{
-                      borderTop: '1px solid rgba(0,0,0,0.15)',
-                      paddingTop: '10px',
-                      marginTop: '4px',
-                    }}>
-                      {eventData.contactName && (
-                        <div style={{ fontSize: '11px', color: '#000', fontWeight: '600', marginBottom: '4px' }}>
-                          {eventData.contactName}
-                        </div>
-                      )}
-                      {eventData.contactPhone && (
-                        <div style={{ fontSize: '10px', color: '#333', marginBottom: '2px' }}>
-                          📞 {eventData.contactPhone}
-                        </div>
-                      )}
-                      {eventData.contactEmail && (
-                        <div style={{ fontSize: '10px', color: '#333', marginBottom: '2px' }}>
-                          ✉️ {eventData.contactEmail}
-                        </div>
-                      )}
-                      {eventData.contactWebsite && (
-                        <div style={{ fontSize: '10px', color: '#333' }}>
-                          🌐 {eventData.contactWebsite}
-                        </div>
-                      )}
-                    </div>
+                    <>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        color: '#000',
+                        marginTop: '4px',
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      }}>
+                        Contacts
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}>
+                        {eventData.contactName && (
+                          <div style={{ fontSize: '11px', color: '#000', fontWeight: '600', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
+                            {eventData.contactName}
+                          </div>
+                        )}
+                        {eventData.contactPhone && (
+                          <div style={{ fontSize: '11px', color: '#333', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
+                            <span style={{ filter: 'grayscale(100%)' }}>📞</span> {eventData.contactPhone}
+                          </div>
+                        )}
+                        {eventData.contactEmail && (
+                          <div style={{ fontSize: '11px', color: '#333', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
+                            <span style={{ filter: 'grayscale(100%)' }}>✉️</span> {eventData.contactEmail}
+                          </div>
+                        )}
+                        {eventData.contactWebsite && (
+                          <div style={{ fontSize: '11px', color: '#333', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
+                            <span style={{ filter: 'grayscale(100%)' }}>🌐</span> {eventData.contactWebsite}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
+
               </div>
               
               {/* Save Configuration Button */}
