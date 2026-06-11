@@ -53,11 +53,13 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const assetsRoutes = require('./routes/assets');
 const stripeRoutes = require('./routes/stripe');
+const eventRoutes = require('./routes/event');
 
 // Use routes
 app.use('/auth', authRoutes);
 app.use('/api', assetsRoutes);
 app.use('/api', stripeRoutes);
+app.use('/', eventRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
