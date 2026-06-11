@@ -235,9 +235,11 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if user is using local auth
-    if (user.authProvider !== 'local') {
+    // If authProvider is missing/undefined, treat as 'local' for backward compatibility
+    const authProvider = user.authProvider || 'local';
+    if (authProvider !== 'local') {
       return res.status(401).json({ 
-        error: `Account uses ${user.authProvider} authentication. Please use ${user.authProvider} sign-in.` 
+        error: `Account uses ${authProvider} authentication. Please use ${authProvider} sign-in.` 
       });
     }
 
