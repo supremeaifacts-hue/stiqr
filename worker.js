@@ -62,10 +62,12 @@ export default {
       }
     }
 
-    // 1. Forward API requests to your Render backend
+    // 1. Forward API and landing page requests to your Render backend
     if (pathname.startsWith('/auth/') ||
         pathname.startsWith('/api/') ||
-        pathname.startsWith('/track/')) {
+        pathname.startsWith('/track/') ||
+        pathname.startsWith('/social/') ||
+        pathname.startsWith('/event/')) {
       
       const backendUrl = `https://stiqr-backend.onrender.com${pathname}${url.search}`;
       const backendRequest = new Request(backendUrl, {
