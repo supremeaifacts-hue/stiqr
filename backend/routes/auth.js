@@ -5,12 +5,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated via JWT token
 const isAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
   }
-  res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.userId;
+    req.userEmail = decoded.email;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
 };
 
 // Helper function to generate JWT token
@@ -97,12 +105,25 @@ router.get('/failure', (req, res) => {
   res.redirect(`${redirectUrl}?auth=failed`);
 });
 
-// Get current user
-router.get('/user', isAuthenticated, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user.getPublicProfile()
-  });
+// Get current user (JWT-based)
+router.get('/user', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({
+      success: true,
+      user: user.getPublicProfile()
+    });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
 });
 
 // Logout
@@ -123,23 +144,46 @@ router.get('/logout', (req, res) => {
   });
 });
 
-// Check authentication status
-router.get('/status', (req, res) => {
-  if (req.isAuthenticated()) {
+// Check authentication status (JWT-based)
+router.get('/status', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.json({ authenticated: false, user: null });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.json({ authenticated: false, user: null });
+    }
     res.json({
       authenticated: true,
-      user: req.user.getPublicProfile()
+      user: user.getPublicProfile()
     });
-  } else {
-    res.json({
-      authenticated: false,
-      user: null
-    });
+  } catch (error) {
+    res.json({ authenticated: false, user: null });
   }
 });
 
 // Debug endpoint to check environment and configuration
-router.get('/debug', (req, res) => {
+router.get('/debug', async (req, res) => {
+  // Check JWT auth status
+  let authenticated = false;
+  let userEmail = null;
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+      if (user) {
+        authenticated = true;
+        userEmail = user.email;
+      }
+    }
+  } catch (e) {
+    // Not authenticated
+  }
+
   const debugInfo = {
     environment: {
       NODE_ENV: process.env.NODE_ENV,
@@ -152,8 +196,8 @@ router.get('/debug', (req, res) => {
     },
     session: {
       sessionID: req.sessionID,
-      authenticated: req.isAuthenticated(),
-      user: req.user ? req.user.email : null
+      authenticated,
+      user: userEmail
     },
     server: {
       time: new Date().toISOString(),
