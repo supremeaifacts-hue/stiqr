@@ -1242,5 +1242,105 @@ router.get('/event/:id', async (req, res) => {
   }
 });
 
+// Save/Update a social media page
+router.post('/social-pages', async (req, res) => {
+  try {
+    const { id, buttons, title, pageColor, headline, design } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: 'ID is required' });
+    }
+
+    // Find user by JWT token
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.userId;
+      } catch (e) {
+        // Token invalid, but we still save the social page
+      }
+    }
+
+    const socialPageData = {
+      id,
+      buttons: buttons || [],
+      title: title || 'My Social Links',
+      headline: headline || '',
+      pageColor: pageColor || '#e5e9ec',
+      design: design || {},
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Store in MongoDB social_pages collection
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('social_pages');
+        
+        // Upsert the social page
+        await collection.updateOne(
+          { id },
+          { $set: socialPageData },
+          { upsert: true }
+        );
+        
+        console.log(`✅ Social page saved to MongoDB: ${id}`);
+      } catch (dbError) {
+        console.error('MongoDB error saving social page:', dbError);
+      } finally {
+        await client.close();
+      }
+    }
+
+    res.json({ success: true, id, message: 'Social page saved successfully' });
+  } catch (error) {
+    console.error('Error saving social page:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a social page by ID (public endpoint)
+router.get('/social-pages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+    
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      const db = client.db('stiqr');
+      const collection = db.collection('social_pages');
+      
+      const socialPage = await collection.findOne({ id });
+      
+      if (!socialPage) {
+        return res.status(404).json({ error: 'Social page not found' });
+      }
+      
+      res.json(socialPage);
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error fetching social page:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
 
