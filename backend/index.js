@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 
 dotenv.config();
 
@@ -18,7 +18,6 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // MongoDB connection
 let db;
-let client;
 
 async function connectDB() {
   const uri = process.env.MONGODB_URI;
@@ -26,9 +25,8 @@ async function connectDB() {
     console.error('MONGODB_URI not set');
     return;
   }
-  client = new MongoClient(uri);
-  await client.connect();
-  db = client.db('stiqr');
+  await mongoose.connect(uri);
+  db = mongoose.connection.db;
   console.log('✅ Connected to MongoDB database: stiqr');
   return db;
 }
