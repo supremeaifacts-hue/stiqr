@@ -181,9 +181,9 @@ app.get('/social/:id', async (req, res) => {
         return `
           <a href="${esc(btn.url)}"
              class="social-button"
-             style="background-color: ${btnColor}; border-radius: 50px;"
              target="_blank"
-             rel="noopener noreferrer">
+             rel="noopener noreferrer"
+             style="border-radius: 16px; --platform-color: ${btnColor};">
             <div class="button-left">
               ${logoUrl ? `<img src="${logoUrl}" alt="${esc(btn.label || btn.platform)}" class="platform-logo" />` : `<span class="platform-letter">${(btn.label || btn.platform || '?').charAt(0).toUpperCase()}</span>`}
               <span class="platform-name">${esc(btn.label || btn.platform)}</span>
@@ -204,30 +204,47 @@ app.get('/social/:id', async (req, res) => {
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
               font-family: ${fontFamily};
-              background-color: ${pageColor};
               min-height: 100vh;
               display: flex;
               justify-content: center;
               align-items: center;
-              padding: 20px;
+              padding: 24px;
+              background: #f4f6f9;
+              color: #000;
             }
             .container {
-              max-width: 500px;
               width: 100%;
-              text-align: center;
+              max-width: 520px;
               animation: fadeIn 0.5s ease-in;
             }
             @keyframes fadeIn {
               from { opacity: 0; transform: translateY(20px); }
               to { opacity: 1; transform: translateY(0); }
             }
+            .page-card {
+              width: 100%;
+              border-radius: 40px;
+              overflow: hidden;
+              box-shadow: 0 30px 80px rgba(0,0,0,0.14);
+              background: ${pageColor};
+            }
+            .phone-top {
+              width: 140px;
+              height: 24px;
+              margin: 0 auto;
+              border-radius: 0 0 18px 18px;
+              background: #000;
+            }
+            .page-content {
+              padding: 40px 20px 32px;
+            }
             .headline {
-              font-size: 16px;
+              font-size: 18px;
               font-weight: 700;
               color: #000;
               text-align: center;
               line-height: 1.2;
-              margin-bottom: 15px;
+              margin-bottom: 20px;
             }
             .headline span {
               display: block;
@@ -235,80 +252,91 @@ app.get('/social/:id', async (req, res) => {
             .buttons {
               display: flex;
               flex-direction: column;
-              gap: 8px;
+              gap: 12px;
               width: 100%;
             }
             .social-button {
               display: flex;
               align-items: center;
               justify-content: space-between;
-              padding: 10px 16px;
+              padding: 12px 16px;
               text-decoration: none;
               transition: transform 0.2s, box-shadow 0.2s;
               cursor: pointer;
-              border: none;
+              border-radius: 16px;
+              background: rgba(255,255,255,0.25);
+              color: #000;
+              border: 1px solid rgba(255,255,255,0.4);
             }
             .social-button:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            }
-            .social-button:active {
-              transform: translateY(0);
+              transform: translateY(-1px);
+              box-shadow: 0 12px 30px rgba(0,0,0,0.12);
             }
             .button-left {
               display: flex;
               align-items: center;
               gap: 10px;
               flex: 1;
+              min-width: 0;
             }
             .platform-logo {
               width: 24px;
               height: 24px;
               object-fit: contain;
-              filter: brightness(0) invert(1);
             }
             .platform-letter {
-              width: 24px;
-              height: 24px;
-              display: flex;
+              min-width: 24px;
+              min-height: 24px;
+              display: inline-flex;
               align-items: center;
               justify-content: center;
-              color: #fff;
-              font-size: 14px;
+              padding: 4px;
+              background: rgba(255,255,255,0.5);
+              border-radius: 8px;
+              color: #000;
+              font-size: 12px;
               font-weight: 700;
             }
             .platform-name {
               font-size: 14px;
-              color: #fff;
-              font-weight: 600;
+              color: #000;
+              font-weight: 700;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
             .visit-btn {
-              padding: 6px 14px;
-              background: rgba(255, 255, 255, 0.25);
-              border: none;
-              border-radius: 20px;
-              color: #fff;
+              padding: 8px 14px;
+              background: rgba(0,0,0,0.12);
+              border-radius: 999px;
+              color: #000;
               font-size: 12px;
-              font-weight: 600;
-              cursor: pointer;
+              font-weight: 700;
+              white-space: nowrap;
             }
             .footer {
-              margin-top: 40px;
-              font-size: 12px;
-              color: #999;
+              margin-top: 26px;
+              font-size: 13px;
+              color: #555;
+              text-align: center;
             }
           </style>
         </head>
         <body>
           <div class="container">
-            <div class="headline">
-              ${headlineParts.map(part => `<span>${esc(part.trim())}</span>`).join('')}
-            </div>
-            <div class="buttons">
-              ${buttonsHtml}
-            </div>
-            <div class="footer">
-              <p>Scan to connect</p>
+            <div class="page-card">
+              <div class="phone-top"></div>
+              <div class="page-content">
+                <div class="headline">
+                  ${headlineParts.map(part => `<span>${esc(part.trim())}</span>`).join('')}
+                </div>
+                <div class="buttons">
+                  ${buttonsHtml}
+                </div>
+                <div class="footer">
+                  <p>Scan to connect</p>
+                </div>
+              </div>
             </div>
           </div>
         </body>
