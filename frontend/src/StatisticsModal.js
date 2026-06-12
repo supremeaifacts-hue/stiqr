@@ -42,10 +42,19 @@ const StatisticsModal = ({ qrCode, onClose }) => {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const response = await fetch(`${baseUrl}/api/assets/qrcodes/${qrCodeInfo.id}/statistics`, {
+        // Try the analytics endpoint first (richer data), fall back to statistics endpoint
+        let response = await fetch(`${baseUrl}/api/qrcodes/${qrCodeInfo.id}/analytics`, {
           headers,
           credentials: 'include',
         });
+        
+        if (!response.ok) {
+          // Fall back to the statistics endpoint
+          response = await fetch(`${baseUrl}/api/assets/qrcodes/${qrCodeInfo.id}/statistics`, {
+            headers,
+            credentials: 'include',
+          });
+        }
         
         if (!response.ok) {
           throw new Error(`API returned ${response.status}`);
@@ -53,21 +62,37 @@ const StatisticsModal = ({ qrCode, onClose }) => {
         
         const data = await response.json();
         
-        // Handle the response format from /api/assets/qrcodes/:id/statistics
-        // The API returns { success, qrCode, statistics: { totalScans, scanHistory, ... } }
-        const scanHistory = data.statistics?.scanHistory || [];
+        let scans = [];
         
-        // Transform the scan history into the format expected by the UI
-        const scans = scanHistory.map((scan, index) => ({
-          id: index + 1,
-          timestamp: scan.timestamp || new Date().toISOString(),
-          city: scan.location?.city || 'Unknown',
-          country: scan.location?.country || 'Unknown',
-          countryCode: scan.location?.countryCode || '',
-          os: scan.device?.os?.name || 'Unknown',
-          deviceType: scan.device?.type || 'unknown',
-          browser: scan.device?.browser?.name || 'Unknown',
-        }));
+        // Handle analytics endpoint response format
+        if (data.analytics) {
+          // Format: { success, analytics: { totalScans, recentScans, ... } }
+          const recentScans = data.analytics.recentScans || [];
+          scans = recentScans.map((scan, index) => ({
+            id: index + 1,
+            timestamp: scan.timestamp || new Date().toISOString(),
+            city: scan.city || 'Unknown',
+            country: scan.country || 'Unknown',
+            countryCode: scan.countryCode || '',
+            os: scan.os || 'Unknown',
+            deviceType: scan.deviceType || 'unknown',
+            browser: scan.browser || 'Unknown',
+          }));
+        } else if (data.statistics) {
+          // Handle statistics endpoint response format
+          // Format: { success, qrCode, statistics: { totalScans, scanHistory, ... } }
+          const scanHistory = data.statistics?.scanHistory || [];
+          scans = scanHistory.map((scan, index) => ({
+            id: index + 1,
+            timestamp: scan.timestamp || new Date().toISOString(),
+            city: scan.location?.city || 'Unknown',
+            country: scan.location?.country || 'Unknown',
+            countryCode: scan.location?.countryCode || '',
+            os: scan.device?.os?.name || 'Unknown',
+            deviceType: scan.device?.type || 'unknown',
+            browser: scan.device?.browser?.name || 'Unknown',
+          }));
+        }
         
         // Sort by timestamp descending
         scans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

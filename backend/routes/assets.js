@@ -1378,5 +1378,190 @@ router.get('/social-pages/:id', async (req, res) => {
   }
 });
 
+// ============================================================
+// GET /api/assets/qrcodes - Get all QR codes for authenticated user
+// ============================================================
+router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Also fetch scan counts from the qrcodes collection
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    let scanCounts = {};
+    
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('qrcodes');
+        
+        for (const qr of user.qrCodes) {
+          const qrDoc = await collection.findOne({ id: qr.id });
+          if (qrDoc && qrDoc.scan_count) {
+            scanCounts[qr.id] = qrDoc.scan_count;
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching scan counts:', err);
+      } finally {
+        await client.close();
+      }
+    }
+    
+    // Merge scan counts into QR codes
+    const qrCodesWithScans = user.qrCodes.map(qr => ({
+      ...qr.toObject(),
+      scans: scanCounts[qr.id] || qr.scans || 0
+    }));
+    
+    res.json({
+      success: true,
+      qrCodes: qrCodesWithScans
+    });
+  } catch (error) {
+    console.error('Error fetching QR codes:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ============================================================
+// GET /api/qrcodes/:id/analytics - Get detailed analytics for a QR code
+// ============================================================
+router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify the user owns this QR code
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const qrCode = user.qrCodes.find(qr => qr.id === id);
+    if (!qrCode) {
+      return res.status(404).json({ error: 'QR code not found' });
+    }
+    
+    // Get analytics from the scans collection
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    let analytics = {
+      totalScans: qrCode.scans || 0,
+      deviceTypes: {},
+      browsers: {},
+      operatingSystems: {},
+      locations: {},
+      scansOverTime: [],
+      recentScans: []
+    };
+    
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('scans');
+        
+        // Get all scans for this QR code
+        const scans = await collection.find({ qrCodeId: id }).sort({ timestamp: -1 }).limit(100).toArray();
+        
+        analytics.totalScans = scans.length;
+        analytics.recentScans = scans.slice(0, 10);
+        
+        // Process statistics
+        for (const scan of scans) {
+          // Device types
+          const device = scan.deviceType || 'unknown';
+          analytics.deviceTypes[device] = (analytics.deviceTypes[device] || 0) + 1;
+          
+          // Browsers
+          const browser = scan.browser || 'unknown';
+          analytics.browsers[browser] = (analytics.browsers[browser] || 0) + 1;
+          
+          // Operating Systems
+          const os = scan.os || 'unknown';
+          analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
+          
+          // Locations
+          if (scan.country) {
+            const location = scan.city ? `${scan.city}, ${scan.country}` : scan.country;
+            analytics.locations[location] = (analytics.locations[location] || 0) + 1;
+          }
+          
+          // Scans over time (last 7 days)
+          const date = new Date(scan.timestamp).toISOString().split('T')[0];
+          const existing = analytics.scansOverTime.find(item => item.date === date);
+          if (existing) {
+            existing.count++;
+          } else {
+            analytics.scansOverTime.push({ date, count: 1 });
+          }
+        }
+        
+        // Sort scans over time by date
+        analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
+        
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+      } finally {
+        await client.close();
+      }
+    }
+    
+    res.json({
+      success: true,
+      analytics
+    });
+  } catch (error) {
+    console.error('Error getting analytics:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ============================================================
+// POST /api/scan/log - Save scan analytics
+// ============================================================
+router.post('/scan/log', async (req, res) => {
+  try {
+    const scanData = req.body;
+    
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('scans');
+        
+        // Add the scan record
+        await collection.insertOne({
+          ...scanData,
+          timestamp: new Date(scanData.timestamp || new Date()),
+          createdAt: new Date()
+        });
+        
+        console.log(`✅ Scan recorded for QR: ${scanData.qrCodeId}`);
+      } catch (err) {
+        console.error('Error saving scan:', err);
+      } finally {
+        await client.close();
+      }
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error logging scan:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
 
