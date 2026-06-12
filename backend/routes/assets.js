@@ -802,6 +802,62 @@ router.get('/track/:id', async (req, res) => {
   }
 });
 
+// POST /api/qrcodes/:id/increment - Increment scan count
+router.post('/qrcodes/:id/increment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First try to update in the standalone qrcodes collection
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    if (uri) {
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db('stiqr');
+        const collection = db.collection('qrcodes');
+        
+        // Increment scan count in qrcodes collection
+        await collection.updateOne(
+          { id },
+          { 
+            $inc: { scan_count: 1 },
+            $set: { lastScanned: new Date() }
+          }
+        );
+        console.log(`✅ Incremented scan count for ${id} in qrcodes collection`);
+      } catch (dbError) {
+        console.error('MongoDB error incrementing scan count:', dbError);
+      } finally {
+        await client.close();
+      }
+    }
+    
+    // Also update in user's qrCodes array if possible
+    try {
+      const User = require('../models/User');
+      const user = await User.findOne({ 'qrCodes.id': id });
+      if (user) {
+        const qrCode = user.qrCodes.find(qr => qr.id === id);
+        if (qrCode) {
+          qrCode.scans = (qrCode.scans || 0) + 1;
+          qrCode.lastScanned = new Date();
+          await user.save();
+          console.log(`✅ Incremented scan count for ${id} in user collection`);
+        }
+      }
+    } catch (userError) {
+      console.error('Error updating user scan count:', userError);
+    }
+    
+    res.json({ success: true, message: 'Scan count incremented' });
+  } catch (error) {
+    console.error('Error incrementing scan count:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Simple stats endpoint - returns just scan count
 router.get('/qrcodes/:id/stats', isAuthenticated, async (req, res) => {
   try {
