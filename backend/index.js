@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const session = require('express-session');
+const path = require('path');
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve static files from the frontend/public directory (for logos, etc.)
+app.use('/logos', express.static(path.join(__dirname, '..', 'frontend', 'public', 'logos')));
 
 // Session and Passport initialization (required for Google OAuth)
 app.use(session({
@@ -209,7 +213,7 @@ app.get('/social/:id', async (req, res) => {
               justify-content: center;
               align-items: center;
               padding: 24px;
-              background: #f4f6f9;
+              background: ${pageColor};
               color: #000;
             }
             .container {
@@ -334,7 +338,7 @@ app.get('/social/:id', async (req, res) => {
                   ${buttonsHtml}
                 </div>
                 <div class="footer">
-                  <p>Scan to connect</p>
+                  <p>Powered by StiQR</p>
                 </div>
               </div>
             </div>
