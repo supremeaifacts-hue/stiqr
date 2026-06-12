@@ -225,20 +225,6 @@ app.get('/social/:id', async (req, res) => {
               from { opacity: 0; transform: translateY(20px); }
               to { opacity: 1; transform: translateY(0); }
             }
-            .page-card {
-              width: 100%;
-              border-radius: 40px;
-              overflow: hidden;
-              box-shadow: 0 30px 80px rgba(0,0,0,0.14);
-              background: ${pageColor};
-            }
-            .phone-top {
-              width: 140px;
-              height: 24px;
-              margin: 0 auto;
-              border-radius: 0 0 18px 18px;
-              background: #000;
-            }
             .page-content {
               padding: 40px 20px 32px;
             }
@@ -328,18 +314,15 @@ app.get('/social/:id', async (req, res) => {
         </head>
         <body>
           <div class="container">
-            <div class="page-card">
-              <div class="phone-top"></div>
-              <div class="page-content">
-                <div class="headline">
-                  ${headlineParts.map(part => `<span>${esc(part.trim())}</span>`).join('')}
-                </div>
-                <div class="buttons">
-                  ${buttonsHtml}
-                </div>
-                <div class="footer">
-                  <p>Powered by StiQR</p>
-                </div>
+            <div class="page-content">
+              <div class="headline">
+                ${headlineParts.map(part => `<span>${esc(part.trim())}</span>`).join('')}
+              </div>
+              <div class="buttons">
+                ${buttonsHtml}
+              </div>
+              <div class="footer">
+                <p>Powered by StiQR</p>
               </div>
             </div>
           </div>
