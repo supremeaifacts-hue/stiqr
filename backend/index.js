@@ -54,6 +54,225 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
+// Tracking endpoint for QR code scans (before API routes)
+// This must be at /track/:id because QR codes encode this URL
+// ============================================================
+app.get('/track/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`🔍 Tracking QR code scan: ${id}`);
+
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+
+    if (!uri) {
+      return res.status(500).send('Database configuration error');
+    }
+
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      const db = client.db('stiqr');
+      
+      // Find the QR code in the qrcodes collection
+      const qrcodesCollection = db.collection('qrcodes');
+      const qrCode = await qrcodesCollection.findOne({ id });
+      
+      if (!qrCode) {
+        // Also try to find in user's qrCodes array
+        const usersCollection = db.collection('users');
+        const user = await usersCollection.findOne({ 'qrCodes.id': id });
+        if (!user) {
+          return res.status(404).send('QR code not found');
+        }
+        
+        const userQrCode = user.qrCodes.find(qr => qr.id === id);
+        if (!userQrCode) {
+          return res.status(404).send('QR code not found');
+        }
+        
+        // Record scan in user's qrCodes array
+        userQrCode.scans = (userQrCode.scans || 0) + 1;
+        userQrCode.lastScanned = new Date();
+        
+        // Add scan history
+        if (!userQrCode.scanHistory) {
+          userQrCode.scanHistory = [];
+        }
+        userQrCode.scanHistory.push({
+          timestamp: new Date(),
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.headers['user-agent'],
+          location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
+          device: { type: 'other', brand: 'Unknown', model: 'Unknown', os: { name: 'Unknown', version: '' }, browser: { name: 'Unknown', version: '' } }
+        });
+        
+        // Update total scans
+        user.stats = user.stats || {};
+        user.stats.totalScans = (user.stats.totalScans || 0) + 1;
+        
+        await usersCollection.updateOne(
+          { _id: user._id },
+          { $set: { qrCodes: user.qrCodes, stats: user.stats } }
+        );
+        
+        // Redirect to the destination URL
+        let redirectUrl = userQrCode.data;
+        if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
+          redirectUrl = 'https://' + redirectUrl;
+        }
+        return res.redirect(redirectUrl);
+      }
+      
+      // QR code found in qrcodes collection
+      // Record scan
+      qrCode.scans = (qrCode.scans || 0) + 1;
+      qrCode.lastScanned = new Date();
+      
+      // Add scan history
+      if (!qrCode.scanHistory) {
+        qrCode.scanHistory = [];
+      }
+      qrCode.scanHistory.push({
+        timestamp: new Date(),
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'],
+        location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
+        device: { type: 'other', brand: 'Unknown', model: 'Unknown', os: { name: 'Unknown', version: '' }, browser: { name: 'Unknown', version: '' } }
+      });
+      
+      await qrcodesCollection.updateOne(
+        { id },
+        { $set: { scans: qrCode.scans, lastScanned: qrCode.lastScanned, scanHistory: qrCode.scanHistory } }
+      );
+      
+      // Redirect to the destination URL
+      let redirectUrl = qrCode.data;
+      
+      // IMPORTANT: Prevent redirect loops - if the stored data is a tracking URL
+      // pointing back to this server, try to find the actual destination from
+      // the user's qrCodes array instead
+      const host = req.get('host');
+      if (redirectUrl && (redirectUrl.includes(`/track/${id}`) || redirectUrl.includes(`/api/assets/qrcodes/${id}`))) {
+        console.log(`⚠️ Detected redirect loop for ${id}, trying to find actual destination URL`);
+        
+        // Try to find in user's qrCodes array for the actual destination
+        const usersCollection = db.collection('users');
+        const user = await usersCollection.findOne({ 'qrCodes.id': id });
+        if (user) {
+          const userQrCode = user.qrCodes.find(qr => qr.id === id);
+          if (userQrCode && userQrCode.data && 
+              !userQrCode.data.includes(`/track/${id}`) && 
+              !userQrCode.data.includes(`/api/assets/qrcodes/${id}`)) {
+            redirectUrl = userQrCode.data;
+            console.log(`✅ Found actual destination URL from user's qrCodes: ${redirectUrl.substring(0, 100)}`);
+          }
+        }
+        
+        // If still a loop, check if this is a social/event page type
+        if (redirectUrl.includes(`/track/${id}`) || redirectUrl.includes(`/api/assets/qrcodes/${id}`)) {
+          // Check social_pages collection
+          const socialPagesCollection = db.collection('social_pages');
+          const socialPage = await socialPagesCollection.findOne({ id });
+          if (socialPage) {
+            const socialUrl = `${req.protocol}://${host}/social/${id}`;
+            console.log(`✅ Redirecting to social page: ${socialUrl}`);
+            return res.redirect(socialUrl);
+          }
+          
+          // Check event_pages collection
+          const eventPagesCollection = db.collection('event_pages');
+          const eventPage = await eventPagesCollection.findOne({ id });
+          if (eventPage) {
+            const eventUrl = `${req.protocol}://${host}/event/${id}`;
+            console.log(`✅ Redirecting to event page: ${eventUrl}`);
+            return res.redirect(eventUrl);
+          }
+        }
+      }
+      
+      if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
+        redirectUrl = 'https://' + redirectUrl;
+      }
+      return res.redirect(redirectUrl);
+      
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error in tracking endpoint:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+// ============================================================
+// POST /qrcodes - Save QR code data to standalone collection
+// This handles saves from EditorPage.js which posts to /qrcodes
+// (without /api prefix)
+// ============================================================
+app.post('/qrcodes', async (req, res) => {
+  try {
+    const { id, data } = req.body;
+    
+    console.log('=== POST /qrcodes REQUEST RECEIVED ===');
+    console.log('id:', id);
+    console.log('data:', data ? data.substring(0, 100) : 'MISSING');
+    
+    if (!id || !data) {
+      return res.status(400).json({ error: 'Both id and data are required' });
+    }
+    
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+    
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      const db = client.db('stiqr');
+      const collection = db.collection('qrcodes');
+      
+      // Upsert: insert if not exists, update if exists
+      const result = await collection.updateOne(
+        { id: id },
+        { 
+          $set: { 
+            id: id,
+            data: data,
+            updatedAt: new Date()
+          },
+          $setOnInsert: {
+            createdAt: new Date(),
+            scan_count: 0
+          }
+        },
+        { upsert: true }
+      );
+      
+      console.log('✅ QR code saved to qrcodes collection!');
+      console.log('   Matched:', result.matchedCount);
+      console.log('   Modified:', result.modifiedCount);
+      console.log('   Upserted:', result.upsertedCount);
+      
+      res.json({
+        success: true,
+        message: 'QR code saved successfully',
+        id: id,
+        data: data
+      });
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('Error saving QR code to qrcodes collection:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
+
+// ============================================================
 // Serve social media landing page HTML (before API routes)
 // ============================================================
 app.get('/social/:id', async (req, res) => {
