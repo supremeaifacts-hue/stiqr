@@ -62,12 +62,60 @@ export default {
       }
     }
 
-    // 1. Forward API and landing page requests to your Render backend
+    // ============================================================
+    // SOCIAL LANDING PAGES
+    // ============================================================
+    if (pathname.startsWith('/social/')) {
+      const socialId = pathname.substring(8);
+      console.log(`🔗 Social page request: ${socialId}`);
+      
+      // Forward to Render backend - use /social/ not /api/social/
+      const backendUrl = `https://stiqr-backend.onrender.com/social/${socialId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`✅ Social page response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`❌ Social page error: ${error.message}`);
+        return new Response('Social page not found', { status: 404 });
+      }
+    }
+    
+    // ============================================================
+    // EVENT LANDING PAGES
+    // ============================================================
+    if (pathname.startsWith('/event/')) {
+      const eventId = pathname.substring(7);
+      console.log(`🎉 Event page request: ${eventId}`);
+      
+      // Forward to Render backend - use /event/ not /api/event/
+      const backendUrl = `https://stiqr-backend.onrender.com/event/${eventId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`✅ Event page response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`❌ Event page error: ${error.message}`);
+        return new Response('Event page not found', { status: 404 });
+      }
+    }
+    
+    // ============================================================
+    // API, AUTH, TRACKING - Forward to Render backend
+    // ============================================================
     if (pathname.startsWith('/auth/') ||
         pathname.startsWith('/api/') ||
-        pathname.startsWith('/track/') ||
-        pathname.startsWith('/social/') ||
-        pathname.startsWith('/event/')) {
+        pathname.startsWith('/track/')) {
       
       const backendUrl = `https://stiqr-backend.onrender.com${pathname}${url.search}`;
       const backendRequest = new Request(backendUrl, {
