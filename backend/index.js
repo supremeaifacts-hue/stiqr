@@ -56,21 +56,21 @@ app.get('/social/:id', async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`🔍 Fetching social page: ${id}`);
-    
+
     const { MongoClient } = require('mongodb');
     const uri = process.env.MONGODB_URI;
-    
+
     if (!uri) {
       return res.status(500).send('Database configuration error');
     }
-    
+
     const client = new MongoClient(uri);
     try {
       await client.connect();
       const db = client.db('stiqr');
       const collection = db.collection('social_pages');
       const socialPage = await collection.findOne({ id });
-      
+
       if (!socialPage) {
         return res.status(404).send(`
           <!DOCTYPE html>
@@ -98,7 +98,6 @@ app.get('/social/:id', async (req, res) => {
       const pageColor = socialPage.pageColor || '#e5e9ec';
       const headline = socialPage.headline || socialPage.title || 'Follow me';
       const design = socialPage.design || {};
-      const buttonStyle = design.buttonStyle === 'rounded' ? '50px' : '12px';
       const fontFamily = design.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
       // Helper to escape HTML
@@ -112,15 +111,87 @@ app.get('/social/:id', async (req, res) => {
           .replace(/'/g, '&#39;');
       };
 
-      const buttonsHtml = buttons.map(btn => `
-        <a href="${esc(btn.url)}" 
-           class="social-button"
-           style="background-color: ${btn.color}; border-radius: ${buttonStyle}"
-           target="_blank"
-           rel="noopener noreferrer">
-          <span>${esc(btn.label)}</span>
-        </a>
-      `).join('');
+      // Platform logo URL mapping (using actual logo images from /logos/ directory)
+      const getLogoUrl = (platform) => {
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const logos = {
+          'facebook': `${baseUrl}/logos/facebook.png`,
+          'instagram': `${baseUrl}/logos/instagram.png`,
+          'youtube': `${baseUrl}/logos/youtube.png`,
+          'tiktok': `${baseUrl}/logos/tiktok.png`,
+          'x': `${baseUrl}/logos/x.png`,
+          'twitter': `${baseUrl}/logos/x.png`,
+          'linkedin': `${baseUrl}/logos/linkedin.png`,
+          'whatsapp': `${baseUrl}/logos/whatsapp.png`,
+          'telegram': `${baseUrl}/logos/telegram.png`,
+          'messenger': `${baseUrl}/logos/messenger.png`,
+          'snapchat': null,
+          'pinterest': `${baseUrl}/logos/pinterest.png`,
+          'reddit': `${baseUrl}/logos/reddit.png`,
+          'github': `${baseUrl}/logos/github.png`,
+          'spotify': `${baseUrl}/logos/spotify.png`,
+          'venmo': `${baseUrl}/logos/venmo.png`,
+          'wechat': `${baseUrl}/logos/wechat.png`,
+          'paypal': `${baseUrl}/logos/paypal.png`,
+          'bitcoin': `${baseUrl}/logos/bitcoin.png`,
+          'link': `${baseUrl}/logos/link.png`,
+          'generic': `${baseUrl}/logos/link.png`
+        };
+        return logos[platform] || null;
+      };
+
+      // Platform color map (matches frontend platformColorMap)
+      const getPlatformColor = (platform) => {
+        const colors = {
+          'facebook': '#1877F2',
+          'instagram': '#E4405F',
+          'youtube': '#FF0000',
+          'tiktok': '#000000',
+          'x': '#000000',
+          'twitter': '#1DA1F2',
+          'linkedin': '#0077B5',
+          'whatsapp': '#25D366',
+          'telegram': '#26A5E4',
+          'messenger': '#00B2FF',
+          'snapchat': '#FFFC00',
+          'pinterest': '#E60023',
+          'reddit': '#FF4500',
+          'github': '#333333',
+          'spotify': '#1DB954',
+          'venmo': '#008CFF',
+          'wechat': '#07C160',
+          'paypal': '#00457C',
+          'bitcoin': '#F7931A',
+          'link': '#00D9FF',
+          'generic': '#555555'
+        };
+        return colors[platform] || '#555555';
+      };
+
+      // Split headline by "Social Media" text (matching preview behavior)
+      const headlineParts = headline.includes('Social Media')
+        ? [headline.replace('Social Media', '').trim(), 'Social Media']
+        : [headline];
+
+      const buttonsHtml = buttons.map(btn => {
+        const platform = (btn.platform || btn.label || '').toLowerCase();
+        const logoUrl = getLogoUrl(platform);
+        const btnColor = btn.color || getPlatformColor(platform);
+
+        return `
+          <a href="${esc(btn.url)}"
+             class="social-button"
+             style="background-color: ${btnColor}; border-radius: 50px;"
+             target="_blank"
+             rel="noopener noreferrer">
+            <div class="button-left">
+              ${logoUrl ? `<img src="${logoUrl}" alt="${esc(btn.label || btn.platform)}" class="platform-logo" />` : `<span class="platform-letter">${(btn.label || btn.platform || '?').charAt(0).toUpperCase()}</span>`}
+              <span class="platform-name">${esc(btn.label || btn.platform)}</span>
+            </div>
+            <span class="visit-btn">Visit</span>
+          </a>
+        `;
+      }).join('');
 
       res.send(`
         <!DOCTYPE html>
@@ -150,28 +221,32 @@ app.get('/social/:id', async (req, res) => {
               from { opacity: 0; transform: translateY(20px); }
               to { opacity: 1; transform: translateY(0); }
             }
-            h1 {
-              font-size: 28px;
-              margin-bottom: 40px;
-              color: #333;
+            .headline {
+              font-size: 16px;
+              font-weight: 700;
+              color: #000;
+              text-align: center;
+              line-height: 1.2;
+              margin-bottom: 15px;
+            }
+            .headline span {
+              display: block;
             }
             .buttons {
               display: flex;
               flex-direction: column;
-              gap: 15px;
+              gap: 8px;
+              width: 100%;
             }
             .social-button {
               display: flex;
               align-items: center;
-              justify-content: center;
-              gap: 12px;
-              padding: 16px 24px;
+              justify-content: space-between;
+              padding: 10px 16px;
               text-decoration: none;
-              color: white;
-              font-weight: 600;
-              font-size: 16px;
               transition: transform 0.2s, box-shadow 0.2s;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              cursor: pointer;
+              border: none;
             }
             .social-button:hover {
               transform: translateY(-2px);
@@ -179,6 +254,43 @@ app.get('/social/:id', async (req, res) => {
             }
             .social-button:active {
               transform: translateY(0);
+            }
+            .button-left {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              flex: 1;
+            }
+            .platform-logo {
+              width: 24px;
+              height: 24px;
+              object-fit: contain;
+              filter: brightness(0) invert(1);
+            }
+            .platform-letter {
+              width: 24px;
+              height: 24px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #fff;
+              font-size: 14px;
+              font-weight: 700;
+            }
+            .platform-name {
+              font-size: 14px;
+              color: #fff;
+              font-weight: 600;
+            }
+            .visit-btn {
+              padding: 6px 14px;
+              background: rgba(255, 255, 255, 0.25);
+              border: none;
+              border-radius: 20px;
+              color: #fff;
+              font-size: 12px;
+              font-weight: 600;
+              cursor: pointer;
             }
             .footer {
               margin-top: 40px;
@@ -189,7 +301,9 @@ app.get('/social/:id', async (req, res) => {
         </head>
         <body>
           <div class="container">
-            <h1>${esc(headline)}</h1>
+            <div class="headline">
+              ${headlineParts.map(part => `<span>${esc(part.trim())}</span>`).join('')}
+            </div>
             <div class="buttons">
               ${buttonsHtml}
             </div>
