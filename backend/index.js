@@ -95,16 +95,38 @@ app.get('/track/:id', async (req, res) => {
         userQrCode.scans = (userQrCode.scans || 0) + 1;
         userQrCode.lastScanned = new Date();
         
-        // Add scan history
+        // Add scan history with parsed device info
         if (!userQrCode.scanHistory) {
           userQrCode.scanHistory = [];
         }
+        
+        // Parse user agent for device info
+        const ua = (req.headers['user-agent'] || '').toLowerCase();
+        let deviceType = 'other';
+        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) deviceType = 'phone';
+        else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'tablet';
+        else if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) deviceType = 'desktop';
+        
+        let osName = 'Unknown';
+        if (ua.includes('windows')) osName = 'Windows';
+        else if (ua.includes('mac os x') || ua.includes('macintosh')) osName = 'macOS';
+        else if (ua.includes('android')) osName = 'Android';
+        else if (ua.includes('iphone') || ua.includes('ipad')) osName = 'iOS';
+        else if (ua.includes('linux')) osName = 'Linux';
+        
+        let browserName = 'Unknown';
+        if (ua.includes('chrome') && !ua.includes('chromium')) browserName = 'Chrome';
+        else if (ua.includes('firefox')) browserName = 'Firefox';
+        else if (ua.includes('safari') && !ua.includes('chrome')) browserName = 'Safari';
+        else if (ua.includes('edge')) browserName = 'Edge';
+        else if (ua.includes('opera')) browserName = 'Opera';
+        
         userQrCode.scanHistory.push({
           timestamp: new Date(),
           ipAddress: req.ip || req.connection.remoteAddress,
           userAgent: req.headers['user-agent'],
           location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
-          device: { type: 'other', brand: 'Unknown', model: 'Unknown', os: { name: 'Unknown', version: '' }, browser: { name: 'Unknown', version: '' } }
+          device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
         });
         
         // Update total scans
@@ -129,16 +151,38 @@ app.get('/track/:id', async (req, res) => {
       qrCode.scans = (qrCode.scans || 0) + 1;
       qrCode.lastScanned = new Date();
       
-      // Add scan history
+      // Add scan history with parsed device info
       if (!qrCode.scanHistory) {
         qrCode.scanHistory = [];
       }
+      
+      // Parse user agent for device info
+      const ua2 = (req.headers['user-agent'] || '').toLowerCase();
+      let deviceType2 = 'other';
+      if (ua2.includes('mobile') || ua2.includes('android') || ua2.includes('iphone')) deviceType2 = 'phone';
+      else if (ua2.includes('tablet') || ua2.includes('ipad')) deviceType2 = 'tablet';
+      else if (ua2.includes('windows') || ua2.includes('macintosh') || ua2.includes('linux')) deviceType2 = 'desktop';
+      
+      let osName2 = 'Unknown';
+      if (ua2.includes('windows')) osName2 = 'Windows';
+      else if (ua2.includes('mac os x') || ua2.includes('macintosh')) osName2 = 'macOS';
+      else if (ua2.includes('android')) osName2 = 'Android';
+      else if (ua2.includes('iphone') || ua2.includes('ipad')) osName2 = 'iOS';
+      else if (ua2.includes('linux')) osName2 = 'Linux';
+      
+      let browserName2 = 'Unknown';
+      if (ua2.includes('chrome') && !ua2.includes('chromium')) browserName2 = 'Chrome';
+      else if (ua2.includes('firefox')) browserName2 = 'Firefox';
+      else if (ua2.includes('safari') && !ua2.includes('chrome')) browserName2 = 'Safari';
+      else if (ua2.includes('edge')) browserName2 = 'Edge';
+      else if (ua2.includes('opera')) browserName2 = 'Opera';
+      
       qrCode.scanHistory.push({
         timestamp: new Date(),
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.headers['user-agent'],
         location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
-        device: { type: 'other', brand: 'Unknown', model: 'Unknown', os: { name: 'Unknown', version: '' }, browser: { name: 'Unknown', version: '' } }
+        device: { type: deviceType2, brand: 'Unknown', model: 'Unknown', os: { name: osName2, version: '' }, browser: { name: browserName2, version: '' } }
       });
       
       await qrcodesCollection.updateOne(

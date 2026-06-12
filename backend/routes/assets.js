@@ -656,14 +656,11 @@ router.get('/assets/qrcodes/:id/redirect', async (req, res) => {
     qrCode.scans = (qrCode.scans || 0) + 1;
     qrCode.lastScanned = new Date();
     
-    // Add to scan history (only for Pro/Ultra users or if subscription allows)
-    if (user.subscription.plan !== 'free') {
-      // Initialize scanHistory if it doesn't exist
-      if (!qrCode.scanHistory) {
-        qrCode.scanHistory = [];
-      }
-      qrCode.scanHistory.push(scanRecord);
+    // Always add to scan history for statistics to work
+    if (!qrCode.scanHistory) {
+      qrCode.scanHistory = [];
     }
+    qrCode.scanHistory.push(scanRecord);
     
     // Update total scans in stats
     user.stats.totalScans = (user.stats.totalScans || 0) + 1;
@@ -697,23 +694,6 @@ router.get('/assets/qrcodes/:id/statistics', isAuthenticated, async (req, res) =
     const qrCode = user.qrCodes.find(qr => qr.id === id);
     if (!qrCode) {
       return res.status(404).json({ error: 'QR code not found' });
-    }
-
-    // Check if user has access to detailed statistics (Pro/Ultra tier)
-    if (user.subscription.plan === 'free') {
-      return res.json({
-        success: true,
-        qrCode: {
-          id: qrCode.id,
-          name: qrCode.name,
-          scans: qrCode.scans || 0,
-          lastScanned: qrCode.lastScanned
-        },
-        statistics: {
-          totalScans: qrCode.scans || 0,
-          message: 'Upgrade to Pro or Ultra plan to view detailed scan statistics'
-        }
-      });
     }
 
     // Get scan history
