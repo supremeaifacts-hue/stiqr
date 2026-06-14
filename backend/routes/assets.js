@@ -1466,10 +1466,40 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
       try {
         await client.connect();
         const db = client.db('stiqr');
-        const collection = db.collection('scans');
         
-        // Get all scans for this QR code
-        const scans = await collection.find({ qrCodeId: id }).sort({ timestamp: -1 }).limit(100).toArray();
+        // Try to get scans from the dedicated scans collection first
+        const scansCollection = db.collection('scans');
+        let scans = await scansCollection.find({ qrCodeId: id }).sort({ timestamp: -1 }).limit(100).toArray();
+        
+        // If no scans found in scans collection, try the qrcodes collection's scanHistory
+        if (scans.length === 0) {
+          const qrcodesCollection = db.collection('qrcodes');
+          const qrDoc = await qrcodesCollection.findOne({ id });
+          if (qrDoc && qrDoc.scanHistory && qrDoc.scanHistory.length > 0) {
+            scans = qrDoc.scanHistory.map((scan, index) => ({
+              timestamp: scan.timestamp,
+              deviceType: scan.device?.type || 'unknown',
+              os: scan.device?.os?.name || 'Unknown',
+              browser: scan.device?.browser?.name || 'Unknown',
+              city: scan.location?.city || 'Unknown',
+              country: scan.location?.country || 'Unknown',
+              countryCode: scan.location?.countryCode || 'XX'
+            })).reverse(); // Reverse so most recent is first
+          }
+        }
+        
+        // Also check user's qrCodes scanHistory as another fallback
+        if (scans.length === 0 && qrCode.scanHistory && qrCode.scanHistory.length > 0) {
+          scans = qrCode.scanHistory.map((scan, index) => ({
+            timestamp: scan.timestamp,
+            deviceType: scan.device?.type || 'unknown',
+            os: scan.device?.os?.name || 'Unknown',
+            browser: scan.device?.browser?.name || 'Unknown',
+            city: scan.location?.city || 'Unknown',
+            country: scan.location?.country || 'Unknown',
+            countryCode: scan.location?.countryCode || 'XX'
+          })).reverse(); // Reverse so most recent is first
+        }
         
         analytics.totalScans = scans.length;
         analytics.recentScans = scans.slice(0, 10);
