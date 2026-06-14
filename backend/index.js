@@ -74,6 +74,49 @@ app.get('/track/:id', async (req, res) => {
       await client.connect();
       const db = client.db('stiqr');
       
+      // Parse user agent for device info (used in both code paths)
+      const ua = (req.headers['user-agent'] || '').toLowerCase();
+      let deviceType = 'other';
+      if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) deviceType = 'phone';
+      else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'tablet';
+      else if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) deviceType = 'desktop';
+      
+      let osName = 'Unknown';
+      if (ua.includes('windows')) osName = 'Windows';
+      else if (ua.includes('mac os x') || ua.includes('macintosh')) osName = 'macOS';
+      else if (ua.includes('android')) osName = 'Android';
+      else if (ua.includes('iphone') || ua.includes('ipad')) osName = 'iOS';
+      else if (ua.includes('linux')) osName = 'Linux';
+      
+      let browserName = 'Unknown';
+      if (ua.includes('chrome') && !ua.includes('chromium')) browserName = 'Chrome';
+      else if (ua.includes('firefox')) browserName = 'Firefox';
+      else if (ua.includes('safari') && !ua.includes('chrome')) browserName = 'Safari';
+      else if (ua.includes('edge')) browserName = 'Edge';
+      else if (ua.includes('opera')) browserName = 'Opera';
+
+      // Helper function to save scan to the scans collection
+      const saveScanToCollection = async () => {
+        try {
+          const scansCollection = db.collection('scans');
+          await scansCollection.insertOne({
+            qrCodeId: id,
+            timestamp: new Date(),
+            deviceType: deviceType,
+            os: osName,
+            browser: browserName,
+            city: 'Unknown',
+            country: 'Unknown',
+            countryCode: 'XX',
+            userAgent: req.headers['user-agent'],
+            ipAddress: req.ip || req.connection.remoteAddress
+          });
+          console.log(`✅ Scan saved to scans collection for QR: ${id}`);
+        } catch (scanErr) {
+          console.error('Error saving to scans collection:', scanErr);
+        }
+      };
+      
       // Find the QR code in the qrcodes collection
       const qrcodesCollection = db.collection('qrcodes');
       const qrCode = await qrcodesCollection.findOne({ id });
@@ -100,27 +143,6 @@ app.get('/track/:id', async (req, res) => {
           userQrCode.scanHistory = [];
         }
         
-        // Parse user agent for device info
-        const ua = (req.headers['user-agent'] || '').toLowerCase();
-        let deviceType = 'other';
-        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) deviceType = 'phone';
-        else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'tablet';
-        else if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) deviceType = 'desktop';
-        
-        let osName = 'Unknown';
-        if (ua.includes('windows')) osName = 'Windows';
-        else if (ua.includes('mac os x') || ua.includes('macintosh')) osName = 'macOS';
-        else if (ua.includes('android')) osName = 'Android';
-        else if (ua.includes('iphone') || ua.includes('ipad')) osName = 'iOS';
-        else if (ua.includes('linux')) osName = 'Linux';
-        
-        let browserName = 'Unknown';
-        if (ua.includes('chrome') && !ua.includes('chromium')) browserName = 'Chrome';
-        else if (ua.includes('firefox')) browserName = 'Firefox';
-        else if (ua.includes('safari') && !ua.includes('chrome')) browserName = 'Safari';
-        else if (ua.includes('edge')) browserName = 'Edge';
-        else if (ua.includes('opera')) browserName = 'Opera';
-        
         userQrCode.scanHistory.push({
           timestamp: new Date(),
           ipAddress: req.ip || req.connection.remoteAddress,
@@ -137,6 +159,9 @@ app.get('/track/:id', async (req, res) => {
           { _id: user._id },
           { $set: { qrCodes: user.qrCodes, stats: user.stats } }
         );
+        
+        // Save to the scans collection for analytics
+        await saveScanToCollection();
         
         // Redirect to the destination URL
         let redirectUrl = userQrCode.data;
@@ -156,39 +181,21 @@ app.get('/track/:id', async (req, res) => {
         qrCode.scanHistory = [];
       }
       
-      // Parse user agent for device info
-      const ua2 = (req.headers['user-agent'] || '').toLowerCase();
-      let deviceType2 = 'other';
-      if (ua2.includes('mobile') || ua2.includes('android') || ua2.includes('iphone')) deviceType2 = 'phone';
-      else if (ua2.includes('tablet') || ua2.includes('ipad')) deviceType2 = 'tablet';
-      else if (ua2.includes('windows') || ua2.includes('macintosh') || ua2.includes('linux')) deviceType2 = 'desktop';
-      
-      let osName2 = 'Unknown';
-      if (ua2.includes('windows')) osName2 = 'Windows';
-      else if (ua2.includes('mac os x') || ua2.includes('macintosh')) osName2 = 'macOS';
-      else if (ua2.includes('android')) osName2 = 'Android';
-      else if (ua2.includes('iphone') || ua2.includes('ipad')) osName2 = 'iOS';
-      else if (ua2.includes('linux')) osName2 = 'Linux';
-      
-      let browserName2 = 'Unknown';
-      if (ua2.includes('chrome') && !ua2.includes('chromium')) browserName2 = 'Chrome';
-      else if (ua2.includes('firefox')) browserName2 = 'Firefox';
-      else if (ua2.includes('safari') && !ua2.includes('chrome')) browserName2 = 'Safari';
-      else if (ua2.includes('edge')) browserName2 = 'Edge';
-      else if (ua2.includes('opera')) browserName2 = 'Opera';
-      
       qrCode.scanHistory.push({
         timestamp: new Date(),
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.headers['user-agent'],
         location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
-        device: { type: deviceType2, brand: 'Unknown', model: 'Unknown', os: { name: osName2, version: '' }, browser: { name: browserName2, version: '' } }
+        device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
       });
       
       await qrcodesCollection.updateOne(
         { id },
         { $set: { scans: qrCode.scans, lastScanned: qrCode.lastScanned, scanHistory: qrCode.scanHistory } }
       );
+      
+      // Save to the scans collection for analytics
+      await saveScanToCollection();
       
       // Redirect to the destination URL
       let redirectUrl = qrCode.data;
@@ -371,10 +378,10 @@ app.get('/social/:id', async (req, res) => {
       const esc = (str) => {
         if (!str) return '';
         return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
+          .replace(/&/g, '&')
+          .replace(/</g, '<')
+          .replace(/>/g, '>')
+          .replace(/"/g, '"')
           .replace(/'/g, '&#39;');
       };
 
