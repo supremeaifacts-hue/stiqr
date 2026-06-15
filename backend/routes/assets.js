@@ -1388,57 +1388,39 @@ router.get('/social-pages/:id', async (req, res) => {
 // ============================================================
 router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
   try {
+    console.log('📊 GET /api/assets/qrcodes called for user:', req.user?._id);
+    
     const user = await User.findById(req.user._id);
     if (!user) {
+      console.log('❌ User not found');
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Also fetch scan counts from the qrcodes collection
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
-    let scanCounts = {};
+    console.log(`✅ Returning ${user.qrCodes?.length || 0} QR codes`);
     
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
-        await client.connect();
-        const db = client.db('stiqr');
-        const collection = db.collection('qrcodes');
-        
-        for (const qr of user.qrCodes) {
-          const qrDoc = await collection.findOne({ id: qr.id });
-          if (qrDoc) {
-            // Use scans field (set by /track/:id endpoint) or scan_count (legacy)
-            const count = qrDoc.scans || qrDoc.scan_count || 0;
-            if (count > 0) {
-              scanCounts[qr.id] = count;
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching scan counts:', err);
-      } finally {
-        await client.close();
-      }
-    }
-    
-    // Merge scan counts into QR codes
-    const qrCodesWithScans = user.qrCodes.map(qr => {
-      // Handle both Mongoose subdocuments and plain objects
-      const qrObj = typeof qr.toObject === 'function' ? qr.toObject() : qr;
-      return {
-        ...qrObj,
-        scans: scanCounts[qr.id] || qr.scans || 0
-      };
-    });
+    // Return QR codes as plain objects (no .toObject() needed)
+    const qrCodes = user.qrCodes || [];
     
     res.json({
       success: true,
-      qrCodes: qrCodesWithScans
+      qrCodes: qrCodes.map(qr => ({
+        id: qr.id,
+        name: qr.name,
+        data: qr.data,
+        imageData: qr.imageData,
+        scans: qr.scans || 0,
+        createdAt: qr.createdAt,
+        lastScanned: qr.lastScanned
+      }))
     });
   } catch (error) {
-    console.error('Error fetching QR codes:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in /api/assets/qrcodes:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Server error', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -1448,23 +1430,24 @@ router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
 router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`📊 GET /api/qrcodes/${id}/analytics called`);
     
-    // Verify the user owns this QR code
     const user = await User.findById(req.user._id);
     if (!user) {
+      console.log('❌ User not found');
       return res.status(404).json({ error: 'User not found' });
     }
     
     const qrCode = user.qrCodes.find(qr => qr.id === id);
     if (!qrCode) {
+      console.log(`❌ QR code ${id} not found`);
       return res.status(404).json({ error: 'QR code not found' });
     }
     
-    // Get analytics from the scans collection
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    console.log(`✅ Found QR code with ${qrCode.scans || 0} scans`);
     
-    let analytics = {
+    // Return basic analytics first (without database lookup)
+    const analytics = {
       totalScans: qrCode.scans || 0,
       deviceTypes: {},
       browsers: {},
@@ -1474,96 +1457,53 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
       recentScans: []
     };
     
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
+    // Try to fetch from scans collection if it exists (optional)
+    try {
+      const { MongoClient } = require('mongodb');
+      const uri = process.env.MONGODB_URI;
+      
+      if (uri) {
+        const client = new MongoClient(uri);
         await client.connect();
         const db = client.db('stiqr');
-        
-        // Try to get scans from the dedicated scans collection first
         const scansCollection = db.collection('scans');
-        let scans = await scansCollection.find({ qrCodeId: id }).sort({ timestamp: -1 }).limit(100).toArray();
         
-        // If no scans found in scans collection, try the qrcodes collection's scanHistory
-        if (scans.length === 0) {
-          const qrcodesCollection = db.collection('qrcodes');
-          const qrDoc = await qrcodesCollection.findOne({ id });
-          if (qrDoc && qrDoc.scanHistory && qrDoc.scanHistory.length > 0) {
-            scans = qrDoc.scanHistory.map((scan, index) => ({
-              timestamp: scan.timestamp,
-              deviceType: scan.device?.type || 'unknown',
-              os: scan.device?.os?.name || 'Unknown',
-              browser: scan.device?.browser?.name || 'Unknown',
-              city: scan.location?.city || 'Unknown',
-              country: scan.location?.country || 'Unknown',
-              countryCode: scan.location?.countryCode || 'XX'
-            })).reverse(); // Reverse so most recent is first
+        const scans = await scansCollection.find({ qrCodeId: id }).limit(50).toArray();
+        console.log(`📊 Found ${scans.length} detailed scans in scans collection`);
+        
+        if (scans.length > 0) {
+          analytics.totalScans = scans.length;
+          analytics.recentScans = scans.slice(0, 10);
+          
+          // Process device types
+          for (const scan of scans) {
+            const device = scan.deviceType || 'unknown';
+            analytics.deviceTypes[device] = (analytics.deviceTypes[device] || 0) + 1;
+            
+            const browser = scan.browser || 'unknown';
+            analytics.browsers[browser] = (analytics.browsers[browser] || 0) + 1;
+            
+            const os = scan.os || 'unknown';
+            analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
           }
         }
         
-        // Also check user's qrCodes scanHistory as another fallback
-        if (scans.length === 0 && qrCode.scanHistory && qrCode.scanHistory.length > 0) {
-          scans = qrCode.scanHistory.map((scan, index) => ({
-            timestamp: scan.timestamp,
-            deviceType: scan.device?.type || 'unknown',
-            os: scan.device?.os?.name || 'Unknown',
-            browser: scan.device?.browser?.name || 'Unknown',
-            city: scan.location?.city || 'Unknown',
-            country: scan.location?.country || 'Unknown',
-            countryCode: scan.location?.countryCode || 'XX'
-          })).reverse(); // Reverse so most recent is first
-        }
-        
-        analytics.totalScans = scans.length;
-        analytics.recentScans = scans.slice(0, 10);
-        
-        // Process statistics
-        for (const scan of scans) {
-          // Device types
-          const device = scan.deviceType || 'unknown';
-          analytics.deviceTypes[device] = (analytics.deviceTypes[device] || 0) + 1;
-          
-          // Browsers
-          const browser = scan.browser || 'unknown';
-          analytics.browsers[browser] = (analytics.browsers[browser] || 0) + 1;
-          
-          // Operating Systems
-          const os = scan.os || 'unknown';
-          analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
-          
-          // Locations
-          if (scan.country) {
-            const location = scan.city ? `${scan.city}, ${scan.country}` : scan.country;
-            analytics.locations[location] = (analytics.locations[location] || 0) + 1;
-          }
-          
-          // Scans over time (last 7 days)
-          const date = new Date(scan.timestamp).toISOString().split('T')[0];
-          const existing = analytics.scansOverTime.find(item => item.date === date);
-          if (existing) {
-            existing.count++;
-          } else {
-            analytics.scansOverTime.push({ date, count: 1 });
-          }
-        }
-        
-        // Sort scans over time by date
-        analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
-        
-      } catch (err) {
-        console.error('Error fetching analytics:', err);
-      } finally {
         await client.close();
       }
+    } catch (dbError) {
+      console.error('Error fetching from scans collection:', dbError.message);
+      // Don't fail the whole request - just return basic analytics
     }
     
-    res.json({
-      success: true,
-      analytics
-    });
+    res.json({ success: true, analytics });
   } catch (error) {
-    console.error('Error getting analytics:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error in /api/qrcodes/:id/analytics:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Server error', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
