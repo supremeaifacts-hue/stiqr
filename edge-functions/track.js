@@ -16,12 +16,20 @@ export async function onRequest(context) {
   console.log(`🔍 EdgeOne track function called for QR: ${id}`);
   
   try {
+    // Get the real client IP from various headers
+    const clientIp = request.headers.get('CF-Connecting-IP') || 
+                     request.headers.get('X-Real-IP') || 
+                     request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() || 
+                     'Unknown';
+    
     // Forward the request to the backend tracking endpoint
     const backendResponse = await fetch(`${BACKEND_URL}/track/${id}`, {
       method: 'GET',
       headers: {
         'User-Agent': request.headers.get('User-Agent') || '',
-        'X-Forwarded-For': request.headers.get('X-Forwarded-For') || request.headers.get('CF-Connecting-IP') || '',
+        'X-Forwarded-For': clientIp,
+        'CF-Connecting-IP': clientIp,
+        'X-Real-IP': clientIp,
       },
       redirect: 'manual', // Don't follow redirects, we'll handle them
     });

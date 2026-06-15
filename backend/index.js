@@ -90,9 +90,44 @@ app.get('/track/:id', async (req, res) => {
     else if (ua.includes('edge')) browserName = 'Edge';
     else if (ua.includes('opera')) browserName = 'Opera';
 
+    // Helper function to get location from IP address using free ip-api.com
+    const getLocationFromIp = async (ipAddress) => {
+      try {
+        // Skip lookup for private/local IPs
+        if (!ipAddress || ipAddress === '127.0.0.1' || ipAddress === '::1' || ipAddress === 'localhost' || ipAddress.startsWith('192.168.') || ipAddress.startsWith('10.') || ipAddress.startsWith('172.')) {
+          return { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' };
+        }
+        
+        const response = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,region,country,countryCode,query`);
+        if (response.ok) {
+          const data = await response.json();
+          return {
+            city: data.city || 'Unknown',
+            region: data.region || 'Unknown',
+            country: data.country || 'Unknown',
+            countryCode: data.countryCode || 'XX'
+          };
+        }
+      } catch (geoErr) {
+        console.error('Error looking up location:', geoErr.message);
+      }
+      return { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' };
+    };
+    
     // Helper function to save scan to the scans collection
     const saveScanToCollection = async () => {
       try {
+        // Get the real IP address from various headers
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+                          req.headers['cf-connecting-ip'] || 
+                          req.headers['x-real-ip'] || 
+                          req.ip || 
+                          req.connection?.remoteAddress || 
+                          'Unknown';
+        
+        // Look up location from IP
+        const location = await getLocationFromIp(ipAddress);
+        
         const scansCollection = db.collection('scans');
         await scansCollection.insertOne({
           qrCodeId: id,
@@ -100,13 +135,14 @@ app.get('/track/:id', async (req, res) => {
           deviceType: deviceType,
           os: osName,
           browser: browserName,
-          city: 'Unknown',
-          country: 'Unknown',
-          countryCode: 'XX',
+          city: location.city,
+          country: location.country,
+          countryCode: location.countryCode,
+          region: location.region,
           userAgent: req.headers['user-agent'],
-          ipAddress: req.ip || req.connection.remoteAddress
+          ipAddress: ipAddress
         });
-        console.log(`✅ Scan saved to scans collection for QR: ${id}`);
+        console.log(`✅ Scan saved to scans collection for QR: ${id} from ${location.city}, ${location.country}`);
       } catch (scanErr) {
         console.error('Error saving to scans collection:', scanErr);
       }
@@ -138,11 +174,20 @@ app.get('/track/:id', async (req, res) => {
         userQrCode.scanHistory = [];
       }
       
+      // Get location for scan history
+      const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+                        req.headers['cf-connecting-ip'] || 
+                        req.headers['x-real-ip'] || 
+                        req.ip || 
+                        req.connection?.remoteAddress || 
+                        'Unknown';
+      const location = await getLocationFromIp(ipAddress);
+      
       userQrCode.scanHistory.push({
         timestamp: new Date(),
-        ipAddress: req.ip || req.connection.remoteAddress,
+        ipAddress: ipAddress,
         userAgent: req.headers['user-agent'],
-        location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
+        location: { city: location.city, region: location.region, country: location.country, countryCode: location.countryCode },
         device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
       });
       
@@ -176,11 +221,20 @@ app.get('/track/:id', async (req, res) => {
       qrCode.scanHistory = [];
     }
     
+    // Get location for scan history
+    const ipAddress = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+                      req.headers['cf-connecting-ip'] || 
+                      req.headers['x-real-ip'] || 
+                      req.ip || 
+                      req.connection?.remoteAddress || 
+                      'Unknown';
+    const location = await getLocationFromIp(ipAddress);
+    
     qrCode.scanHistory.push({
       timestamp: new Date(),
-      ipAddress: req.ip || req.connection.remoteAddress,
+      ipAddress: ipAddress,
       userAgent: req.headers['user-agent'],
-      location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
+      location: { city: location.city, region: location.region, country: location.country, countryCode: location.countryCode },
       device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
     });
     
