@@ -1485,7 +1485,25 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
             
             const os = scan.os || 'unknown';
             analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
+            
+            // Process location data
+            const city = scan.city || 'Unknown';
+            const country = scan.country || 'Unknown';
+            const locationKey = city !== 'Unknown' ? `${city}, ${country}` : country;
+            analytics.locations[locationKey] = (analytics.locations[locationKey] || 0) + 1;
+            
+            // Process scans over time
+            const date = new Date(scan.timestamp).toISOString().split('T')[0];
+            const existing = analytics.scansOverTime.find(item => item.date === date);
+            if (existing) {
+              existing.count++;
+            } else {
+              analytics.scansOverTime.push({ date, count: 1 });
+            }
           }
+          
+          // Sort scans over time by date
+          analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
         }
         
         await client.close();
