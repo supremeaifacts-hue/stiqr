@@ -113,70 +113,32 @@ app.get('/track/:id', async (req, res) => {
     };
     
     // Find the QR code in the qrcodes collection
-      const qrcodesCollection = db.collection('qrcodes');
-      const qrCode = await qrcodesCollection.findOne({ id });
-      
-      if (!qrCode) {
-        // Also try to find in user's qrCodes array
-        const usersCollection = db.collection('users');
-        const user = await usersCollection.findOne({ 'qrCodes.id': id });
-        if (!user) {
-          return res.status(404).send('QR code not found');
-        }
-        
-        const userQrCode = user.qrCodes.find(qr => qr.id === id);
-        if (!userQrCode) {
-          return res.status(404).send('QR code not found');
-        }
-        
-        // Record scan in user's qrCodes array
-        userQrCode.scans = (userQrCode.scans || 0) + 1;
-        userQrCode.lastScanned = new Date();
-        
-        // Add scan history with parsed device info
-        if (!userQrCode.scanHistory) {
-          userQrCode.scanHistory = [];
-        }
-        
-        userQrCode.scanHistory.push({
-          timestamp: new Date(),
-          ipAddress: req.ip || req.connection.remoteAddress,
-          userAgent: req.headers['user-agent'],
-          location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
-          device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
-        });
-        
-        // Update total scans
-        user.stats = user.stats || {};
-        user.stats.totalScans = (user.stats.totalScans || 0) + 1;
-        
-        await usersCollection.updateOne(
-          { _id: user._id },
-          { $set: { qrCodes: user.qrCodes, stats: user.stats } }
-        );
-        
-        // Save to the scans collection for analytics
-        await saveScanToCollection();
-        
-        // Redirect to the destination URL
-        let redirectUrl = userQrCode.data;
-        if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
-          redirectUrl = 'https://' + redirectUrl;
-        }
-        return res.redirect(redirectUrl);
+    const qrcodesCollection = db.collection('qrcodes');
+    const qrCode = await qrcodesCollection.findOne({ id });
+    
+    if (!qrCode) {
+      // Also try to find in user's qrCodes array
+      const usersCollection = db.collection('users');
+      const user = await usersCollection.findOne({ 'qrCodes.id': id });
+      if (!user) {
+        return res.status(404).send('QR code not found');
       }
       
-      // QR code found in qrcodes collection
-      // Record scan
-      qrCode.scans = (qrCode.scans || 0) + 1;
-      qrCode.lastScanned = new Date();
+      const userQrCode = user.qrCodes.find(qr => qr.id === id);
+      if (!userQrCode) {
+        return res.status(404).send('QR code not found');
+      }
+      
+      // Record scan in user's qrCodes array
+      userQrCode.scans = (userQrCode.scans || 0) + 1;
+      userQrCode.lastScanned = new Date();
       
       // Add scan history with parsed device info
-      if (!qrCode.scanHistory) {
-        qrCode.scanHistory = [];
+      if (!userQrCode.scanHistory) {
+        userQrCode.scanHistory = [];
       }
       
-      qrCode.scanHistory.push({
+      userQrCode.scanHistory.push({
         timestamp: new Date(),
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.headers['user-agent'],
@@ -184,64 +146,101 @@ app.get('/track/:id', async (req, res) => {
         device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
       });
       
-      await qrcodesCollection.updateOne(
-        { id },
-        { $set: { scans: qrCode.scans, lastScanned: qrCode.lastScanned, scanHistory: qrCode.scanHistory } }
+      // Update total scans
+      user.stats = user.stats || {};
+      user.stats.totalScans = (user.stats.totalScans || 0) + 1;
+      
+      await usersCollection.updateOne(
+        { _id: user._id },
+        { $set: { qrCodes: user.qrCodes, stats: user.stats } }
       );
       
       // Save to the scans collection for analytics
       await saveScanToCollection();
       
       // Redirect to the destination URL
-      let redirectUrl = qrCode.data;
-      
-      // IMPORTANT: Prevent redirect loops - if the stored data is a tracking URL
-      // pointing back to this server, try to find the actual destination from
-      // the user's qrCodes array instead
-      const host = req.get('host');
-      if (redirectUrl && (redirectUrl.includes(`/track/${id}`) || redirectUrl.includes(`/api/assets/qrcodes/${id}`))) {
-        console.log(`⚠️ Detected redirect loop for ${id}, trying to find actual destination URL`);
-        
-        // Try to find in user's qrCodes array for the actual destination
-        const usersCollection = db.collection('users');
-        const user = await usersCollection.findOne({ 'qrCodes.id': id });
-        if (user) {
-          const userQrCode = user.qrCodes.find(qr => qr.id === id);
-          if (userQrCode && userQrCode.data && 
-              !userQrCode.data.includes(`/track/${id}`) && 
-              !userQrCode.data.includes(`/api/assets/qrcodes/${id}`)) {
-            redirectUrl = userQrCode.data;
-            console.log(`✅ Found actual destination URL from user's qrCodes: ${redirectUrl.substring(0, 100)}`);
-          }
-        }
-        
-        // If still a loop, check if this is a social/event page type
-        if (redirectUrl.includes(`/track/${id}`) || redirectUrl.includes(`/api/assets/qrcodes/${id}`)) {
-          // Check social_pages collection
-          const socialPagesCollection = db.collection('social_pages');
-          const socialPage = await socialPagesCollection.findOne({ id });
-          if (socialPage) {
-            const socialUrl = `${req.protocol}://${host}/social/${id}`;
-            console.log(`✅ Redirecting to social page: ${socialUrl}`);
-            return res.redirect(socialUrl);
-          }
-          
-          // Check event_pages collection
-          const eventPagesCollection = db.collection('event_pages');
-          const eventPage = await eventPagesCollection.findOne({ id });
-          if (eventPage) {
-            const eventUrl = `${req.protocol}://${host}/event/${id}`;
-            console.log(`✅ Redirecting to event page: ${eventUrl}`);
-            return res.redirect(eventUrl);
-          }
-        }
-      }
-      
+      let redirectUrl = userQrCode.data;
       if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
         redirectUrl = 'https://' + redirectUrl;
       }
       return res.redirect(redirectUrl);
     }
+    
+    // QR code found in qrcodes collection
+    // Record scan
+    qrCode.scans = (qrCode.scans || 0) + 1;
+    qrCode.lastScanned = new Date();
+    
+    // Add scan history with parsed device info
+    if (!qrCode.scanHistory) {
+      qrCode.scanHistory = [];
+    }
+    
+    qrCode.scanHistory.push({
+      timestamp: new Date(),
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      location: { city: 'Unknown', region: 'Unknown', country: 'Unknown', countryCode: 'XX' },
+      device: { type: deviceType, brand: 'Unknown', model: 'Unknown', os: { name: osName, version: '' }, browser: { name: browserName, version: '' } }
+    });
+    
+    await qrcodesCollection.updateOne(
+      { id },
+      { $set: { scans: qrCode.scans, lastScanned: qrCode.lastScanned, scanHistory: qrCode.scanHistory } }
+    );
+    
+    // Save to the scans collection for analytics
+    await saveScanToCollection();
+    
+    // Redirect to the destination URL
+    let redirectUrl = qrCode.data;
+    
+    // IMPORTANT: Prevent redirect loops - if the stored data is a tracking URL
+    // pointing back to this server, try to find the actual destination from
+    // the user's qrCodes array instead
+    const host = req.get('host');
+    if (redirectUrl && (redirectUrl.includes(`/track/${id}`) || redirectUrl.includes(`/api/assets/qrcodes/${id}`))) {
+      console.log(`⚠️ Detected redirect loop for ${id}, trying to find actual destination URL`);
+      
+      // Try to find in user's qrCodes array for the actual destination
+      const usersCollection = db.collection('users');
+      const user = await usersCollection.findOne({ 'qrCodes.id': id });
+      if (user) {
+        const userQrCode = user.qrCodes.find(qr => qr.id === id);
+        if (userQrCode && userQrCode.data && 
+            !userQrCode.data.includes(`/track/${id}`) && 
+            !userQrCode.data.includes(`/api/assets/qrcodes/${id}`)) {
+          redirectUrl = userQrCode.data;
+          console.log(`✅ Found actual destination URL from user's qrCodes: ${redirectUrl.substring(0, 100)}`);
+        }
+      }
+      
+      // If still a loop, check if this is a social/event page type
+      if (redirectUrl.includes(`/track/${id}`) || redirectUrl.includes(`/api/assets/qrcodes/${id}`)) {
+        // Check social_pages collection
+        const socialPagesCollection = db.collection('social_pages');
+        const socialPage = await socialPagesCollection.findOne({ id });
+        if (socialPage) {
+          const socialUrl = `${req.protocol}://${host}/social/${id}`;
+          console.log(`✅ Redirecting to social page: ${socialUrl}`);
+          return res.redirect(socialUrl);
+        }
+        
+        // Check event_pages collection
+        const eventPagesCollection = db.collection('event_pages');
+        const eventPage = await eventPagesCollection.findOne({ id });
+        if (eventPage) {
+          const eventUrl = `${req.protocol}://${host}/event/${id}`;
+          console.log(`✅ Redirecting to event page: ${eventUrl}`);
+          return res.redirect(eventUrl);
+        }
+      }
+    }
+    
+    if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
+      redirectUrl = 'https://' + redirectUrl;
+    }
+    return res.redirect(redirectUrl);
   } catch (error) {
     console.error('Error in tracking endpoint:', error);
     res.status(500).send('Server error');
