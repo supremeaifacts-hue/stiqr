@@ -62,62 +62,57 @@ app.get('/track/:id', async (req, res) => {
     const { id } = req.params;
     console.log(`🔍 Tracking QR code scan: ${id}`);
 
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
 
-    if (!uri) {
+    if (!db) {
       return res.status(500).send('Database configuration error');
     }
+    
+    // Parse user agent for device info (used in both code paths)
+    const ua = (req.headers['user-agent'] || '').toLowerCase();
+    let deviceType = 'other';
+    if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) deviceType = 'phone';
+    else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'tablet';
+    else if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) deviceType = 'desktop';
+    
+    let osName = 'Unknown';
+    if (ua.includes('windows')) osName = 'Windows';
+    else if (ua.includes('mac os x') || ua.includes('macintosh')) osName = 'macOS';
+    else if (ua.includes('android')) osName = 'Android';
+    else if (ua.includes('iphone') || ua.includes('ipad')) osName = 'iOS';
+    else if (ua.includes('linux')) osName = 'Linux';
+    
+    let browserName = 'Unknown';
+    if (ua.includes('chrome') && !ua.includes('chromium')) browserName = 'Chrome';
+    else if (ua.includes('firefox')) browserName = 'Firefox';
+    else if (ua.includes('safari') && !ua.includes('chrome')) browserName = 'Safari';
+    else if (ua.includes('edge')) browserName = 'Edge';
+    else if (ua.includes('opera')) browserName = 'Opera';
 
-    const client = new MongoClient(uri);
-    try {
-      await client.connect();
-      const db = client.db('stiqr');
-      
-      // Parse user agent for device info (used in both code paths)
-      const ua = (req.headers['user-agent'] || '').toLowerCase();
-      let deviceType = 'other';
-      if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) deviceType = 'phone';
-      else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'tablet';
-      else if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) deviceType = 'desktop';
-      
-      let osName = 'Unknown';
-      if (ua.includes('windows')) osName = 'Windows';
-      else if (ua.includes('mac os x') || ua.includes('macintosh')) osName = 'macOS';
-      else if (ua.includes('android')) osName = 'Android';
-      else if (ua.includes('iphone') || ua.includes('ipad')) osName = 'iOS';
-      else if (ua.includes('linux')) osName = 'Linux';
-      
-      let browserName = 'Unknown';
-      if (ua.includes('chrome') && !ua.includes('chromium')) browserName = 'Chrome';
-      else if (ua.includes('firefox')) browserName = 'Firefox';
-      else if (ua.includes('safari') && !ua.includes('chrome')) browserName = 'Safari';
-      else if (ua.includes('edge')) browserName = 'Edge';
-      else if (ua.includes('opera')) browserName = 'Opera';
-
-      // Helper function to save scan to the scans collection
-      const saveScanToCollection = async () => {
-        try {
-          const scansCollection = db.collection('scans');
-          await scansCollection.insertOne({
-            qrCodeId: id,
-            timestamp: new Date(),
-            deviceType: deviceType,
-            os: osName,
-            browser: browserName,
-            city: 'Unknown',
-            country: 'Unknown',
-            countryCode: 'XX',
-            userAgent: req.headers['user-agent'],
-            ipAddress: req.ip || req.connection.remoteAddress
-          });
-          console.log(`✅ Scan saved to scans collection for QR: ${id}`);
-        } catch (scanErr) {
-          console.error('Error saving to scans collection:', scanErr);
-        }
-      };
-      
-      // Find the QR code in the qrcodes collection
+    // Helper function to save scan to the scans collection
+    const saveScanToCollection = async () => {
+      try {
+        const scansCollection = db.collection('scans');
+        await scansCollection.insertOne({
+          qrCodeId: id,
+          timestamp: new Date(),
+          deviceType: deviceType,
+          os: osName,
+          browser: browserName,
+          city: 'Unknown',
+          country: 'Unknown',
+          countryCode: 'XX',
+          userAgent: req.headers['user-agent'],
+          ipAddress: req.ip || req.connection.remoteAddress
+        });
+        console.log(`✅ Scan saved to scans collection for QR: ${id}`);
+      } catch (scanErr) {
+        console.error('Error saving to scans collection:', scanErr);
+      }
+    };
+    
+    // Find the QR code in the qrcodes collection
       const qrcodesCollection = db.collection('qrcodes');
       const qrCode = await qrcodesCollection.findOne({ id });
       
@@ -246,9 +241,6 @@ app.get('/track/:id', async (req, res) => {
         redirectUrl = 'https://' + redirectUrl;
       }
       return res.redirect(redirectUrl);
-      
-    } finally {
-      await client.close();
     }
   } catch (error) {
     console.error('Error in tracking endpoint:', error);
@@ -273,50 +265,43 @@ app.post('/qrcodes', async (req, res) => {
       return res.status(400).json({ error: 'Both id and data are required' });
     }
     
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
     
-    if (!uri) {
+    if (!db) {
       return res.status(500).json({ error: 'Database not configured' });
     }
     
-    const client = new MongoClient(uri);
-    try {
-      await client.connect();
-      const db = client.db('stiqr');
-      const collection = db.collection('qrcodes');
-      
-      // Upsert: insert if not exists, update if exists
-      const result = await collection.updateOne(
-        { id: id },
-        { 
-          $set: { 
-            id: id,
-            data: data,
-            updatedAt: new Date()
-          },
-          $setOnInsert: {
-            createdAt: new Date(),
-            scan_count: 0
-          }
+    const collection = db.collection('qrcodes');
+    
+    // Upsert: insert if not exists, update if exists
+    const result = await collection.updateOne(
+      { id: id },
+      { 
+        $set: { 
+          id: id,
+          data: data,
+          updatedAt: new Date()
         },
-        { upsert: true }
-      );
-      
-      console.log('✅ QR code saved to qrcodes collection!');
-      console.log('   Matched:', result.matchedCount);
-      console.log('   Modified:', result.modifiedCount);
-      console.log('   Upserted:', result.upsertedCount);
-      
-      res.json({
-        success: true,
-        message: 'QR code saved successfully',
-        id: id,
-        data: data
-      });
-    } finally {
-      await client.close();
-    }
+        $setOnInsert: {
+          createdAt: new Date(),
+          scan_count: 0
+        }
+      },
+      { upsert: true }
+    );
+    
+    console.log('✅ QR code saved to qrcodes collection!');
+    console.log('   Matched:', result.matchedCount);
+    console.log('   Modified:', result.modifiedCount);
+    console.log('   Upserted:', result.upsertedCount);
+    
+    res.json({
+      success: true,
+      message: 'QR code saved successfully',
+      id: id,
+      data: data
+    });
   } catch (error) {
     console.error('Error saving QR code to qrcodes collection:', error);
     res.status(500).json({ error: 'Server error', message: error.message });
@@ -331,42 +316,38 @@ app.get('/social/:id', async (req, res) => {
     const { id } = req.params;
     console.log(`🔍 Fetching social page: ${id}`);
 
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
 
-    if (!uri) {
+    if (!db) {
       return res.status(500).send('Database configuration error');
     }
 
-    const client = new MongoClient(uri);
-    try {
-      await client.connect();
-      const db = client.db('stiqr');
-      const collection = db.collection('social_pages');
-      const socialPage = await collection.findOne({ id });
+    const collection = db.collection('social_pages');
+    const socialPage = await collection.findOne({ id });
 
-      if (!socialPage) {
-        return res.status(404).send(`
-          <!DOCTYPE html>
-          <html>
-          <head><title>Social Page Not Found</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0a0a0a; color: #fff; }
-            .container { text-align: center; padding: 40px; }
-            h1 { color: #FF00FF; }
-            p { color: #a0a0a0; }
-          </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Social Page Not Found</h1>
-              <p>The social media page you're looking for doesn't exist or has been removed.</p>
-            </div>
-          </body>
-          </html>
-        `);
-      }
+    if (!socialPage) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Social Page Not Found</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0a0a0a; color: #fff; }
+          .container { text-align: center; padding: 40px; }
+          h1 { color: #FF00FF; }
+          p { color: #a0a0a0; }
+        </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Social Page Not Found</h1>
+            <p>The social media page you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
 
       const buttons = socialPage.buttons || [];
       const pageColor = socialPage.pageColor || '#e5e9ec';
@@ -599,9 +580,6 @@ app.get('/social/:id', async (req, res) => {
         </body>
         </html>
       `);
-    } finally {
-      await client.close();
-    }
   } catch (error) {
     console.error('Error serving social page:', error);
     res.status(500).send('Internal server error');

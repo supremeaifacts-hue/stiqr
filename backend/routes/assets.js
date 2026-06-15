@@ -793,30 +793,21 @@ router.post('/qrcodes/:id/increment', async (req, res) => {
     const { id } = req.params;
     
     // First try to update in the standalone qrcodes collection
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
     
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
-        await client.connect();
-        const db = client.db('stiqr');
-        const collection = db.collection('qrcodes');
-        
-        // Increment scan count in qrcodes collection
-        await collection.updateOne(
-          { id },
-          { 
-            $inc: { scan_count: 1 },
-            $set: { lastScanned: new Date() }
-          }
-        );
-        console.log(`✅ Incremented scan count for ${id} in qrcodes collection`);
-      } catch (dbError) {
-        console.error('MongoDB error incrementing scan count:', dbError);
-      } finally {
-        await client.close();
-      }
+    if (db) {
+      const collection = db.collection('qrcodes');
+      
+      // Increment scan count in qrcodes collection
+      await collection.updateOne(
+        { id },
+        { 
+          $inc: { scan_count: 1 },
+          $set: { lastScanned: new Date() }
+        }
+      );
+      console.log(`✅ Incremented scan count for ${id} in qrcodes collection`);
     }
     
     // Also update in user's qrCodes array if possible
@@ -974,29 +965,19 @@ router.post('/event-pages', async (req, res) => {
     };
 
     // Store in MongoDB event_pages collection
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
-        await client.connect();
-        const db = client.db('stiqr');
-        const collection = db.collection('event_pages');
-        
-        // Upsert the event page
-        await collection.updateOne(
-          { id },
-          { $set: eventPageData },
-          { upsert: true }
-        );
-        
-        console.log(`✅ Event page saved to MongoDB: ${id}`);
-      } catch (dbError) {
-        console.error('MongoDB error saving event page:', dbError);
-        // Continue even if DB fails - we'll return success
-      } finally {
-        await client.close();
-      }
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    if (db) {
+      const collection = db.collection('event_pages');
+      
+      // Upsert the event page
+      await collection.updateOne(
+        { id },
+        { $set: eventPageData },
+        { upsert: true }
+      );
+      
+      console.log(`✅ Event page saved to MongoDB: ${id}`);
     }
 
     res.json({ success: true, id, message: 'Event page saved successfully' });
@@ -1011,29 +992,22 @@ router.get('/event-pages/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
     
-    if (!uri) {
+    if (!db) {
       return res.status(500).json({ error: 'Database not configured' });
     }
     
-    const client = new MongoClient(uri);
-    try {
-      await client.connect();
-      const db = client.db('stiqr');
-      const collection = db.collection('event_pages');
-      
-      const eventPage = await collection.findOne({ id });
-      
-      if (!eventPage) {
-        return res.status(404).json({ error: 'Event page not found' });
-      }
-      
-      res.json(eventPage);
-    } finally {
-      await client.close();
+    const collection = db.collection('event_pages');
+    
+    const eventPage = await collection.findOne({ id });
+    
+    if (!eventPage) {
+      return res.status(404).json({ error: 'Event page not found' });
     }
+    
+    res.json(eventPage);
   } catch (error) {
     console.error('Error fetching event page:', error);
     res.status(500).json({ error: 'Server error' });
@@ -1045,23 +1019,14 @@ router.get('/event/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
     
     let eventPage = null;
     
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
-        await client.connect();
-        const db = client.db('stiqr');
-        const collection = db.collection('event_pages');
-        eventPage = await collection.findOne({ id });
-      } catch (dbError) {
-        console.error('MongoDB error fetching event page:', dbError);
-      } finally {
-        await client.close();
-      }
+    if (db) {
+      const collection = db.collection('event_pages');
+      eventPage = await collection.findOne({ id });
     }
     
     if (!eventPage) {
@@ -1318,28 +1283,19 @@ router.post('/social-pages', async (req, res) => {
     };
 
     // Store in MongoDB social_pages collection
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
-        await client.connect();
-        const db = client.db('stiqr');
-        const collection = db.collection('social_pages');
-        
-        // Upsert the social page
-        await collection.updateOne(
-          { id },
-          { $set: socialPageData },
-          { upsert: true }
-        );
-        
-        console.log(`✅ Social page saved to MongoDB: ${id}`);
-      } catch (dbError) {
-        console.error('MongoDB error saving social page:', dbError);
-      } finally {
-        await client.close();
-      }
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    if (db) {
+      const collection = db.collection('social_pages');
+      
+      // Upsert the social page
+      await collection.updateOne(
+        { id },
+        { $set: socialPageData },
+        { upsert: true }
+      );
+      
+      console.log(`✅ Social page saved to MongoDB: ${id}`);
     }
 
     res.json({ success: true, id, message: 'Social page saved successfully' });
@@ -1354,29 +1310,22 @@ router.get('/social-pages/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
     
-    if (!uri) {
+    if (!db) {
       return res.status(500).json({ error: 'Database not configured' });
     }
     
-    const client = new MongoClient(uri);
-    try {
-      await client.connect();
-      const db = client.db('stiqr');
-      const collection = db.collection('social_pages');
-      
-      const socialPage = await collection.findOne({ id });
-      
-      if (!socialPage) {
-        return res.status(404).json({ error: 'Social page not found' });
-      }
-      
-      res.json(socialPage);
-    } finally {
-      await client.close();
+    const collection = db.collection('social_pages');
+    
+    const socialPage = await collection.findOne({ id });
+    
+    if (!socialPage) {
+      return res.status(404).json({ error: 'Social page not found' });
     }
+    
+    res.json(socialPage);
   } catch (error) {
     console.error('Error fetching social page:', error);
     res.status(500).json({ error: 'Server error' });
@@ -1459,13 +1408,10 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
     
     // Try to fetch from scans collection if it exists (optional)
     try {
-      const { MongoClient } = require('mongodb');
-      const uri = process.env.MONGODB_URI;
+      const mongoose = require('mongoose');
+      const db = mongoose.connection.db;
       
-      if (uri) {
-        const client = new MongoClient(uri);
-        await client.connect();
-        const db = client.db('stiqr');
+      if (db) {
         const scansCollection = db.collection('scans');
         
         const scans = await scansCollection.find({ qrCodeId: id }).limit(50).toArray();
@@ -1505,8 +1451,6 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
           // Sort scans over time by date
           analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
         }
-        
-        await client.close();
       }
     } catch (dbError) {
       console.error('Error fetching from scans collection:', dbError.message);
@@ -1532,29 +1476,20 @@ router.post('/scan/log', async (req, res) => {
   try {
     const scanData = req.body;
     
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
     
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
-        await client.connect();
-        const db = client.db('stiqr');
-        const collection = db.collection('scans');
-        
-        // Add the scan record
-        await collection.insertOne({
-          ...scanData,
-          timestamp: new Date(scanData.timestamp || new Date()),
-          createdAt: new Date()
-        });
-        
-        console.log(`✅ Scan recorded for QR: ${scanData.qrCodeId}`);
-      } catch (err) {
-        console.error('Error saving scan:', err);
-      } finally {
-        await client.close();
-      }
+    if (db) {
+      const collection = db.collection('scans');
+      
+      // Add the scan record
+      await collection.insertOne({
+        ...scanData,
+        timestamp: new Date(scanData.timestamp || new Date()),
+        createdAt: new Date()
+      });
+      
+      console.log(`✅ Scan recorded for QR: ${scanData.qrCodeId}`);
     }
     
     res.json({ success: true });
