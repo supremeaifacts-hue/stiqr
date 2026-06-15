@@ -19,6 +19,7 @@
     "express-session": "^1.18.0",
     "ip-address": "^9.0.0",
     "jsonwebtoken": "^9.0.0",
+    "mongodb": "^5.8.0",
     "kareem": "^2.5.0",
     "mongodb-connection-string-url": "^2.6.0",
     "mongoose": "^7.5.0",
