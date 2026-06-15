@@ -80,6 +80,11 @@ router.get('/assets', isAuthenticated, async (req, res) => {
   }
 });
 
+// Get all QR codes for the authenticated user (dedicated endpoint)
+// NOTE: There is a more comprehensive version of this route at the bottom of this file
+// that also fetches scan counts from the qrcodes collection
+
+
 // Save a sticker
 router.post('/assets/stickers', isAuthenticated, async (req, res) => {
   try {
@@ -1402,8 +1407,12 @@ router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
         
         for (const qr of user.qrCodes) {
           const qrDoc = await collection.findOne({ id: qr.id });
-          if (qrDoc && qrDoc.scan_count) {
-            scanCounts[qr.id] = qrDoc.scan_count;
+          if (qrDoc) {
+            // Use scans field (set by /track/:id endpoint) or scan_count (legacy)
+            const count = qrDoc.scans || qrDoc.scan_count || 0;
+            if (count > 0) {
+              scanCounts[qr.id] = count;
+            }
           }
         }
       } catch (err) {
@@ -1414,10 +1423,14 @@ router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
     }
     
     // Merge scan counts into QR codes
-    const qrCodesWithScans = user.qrCodes.map(qr => ({
-      ...qr.toObject(),
-      scans: scanCounts[qr.id] || qr.scans || 0
-    }));
+    const qrCodesWithScans = user.qrCodes.map(qr => {
+      // Handle both Mongoose subdocuments and plain objects
+      const qrObj = typeof qr.toObject === 'function' ? qr.toObject() : qr;
+      return {
+        ...qrObj,
+        scans: scanCounts[qr.id] || qr.scans || 0
+      };
+    });
     
     res.json({
       success: true,

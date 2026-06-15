@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 
 const StatisticsModal = ({ qrCode, onClose }) => {
   const { isAuthenticated } = useAuth();
@@ -33,7 +33,6 @@ const StatisticsModal = ({ qrCode, onClose }) => {
       setError(null);
       
       try {
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
         const token = localStorage.getItem('jwtToken');
         const headers = {
           'Content-Type': 'application/json',
@@ -43,14 +42,14 @@ const StatisticsModal = ({ qrCode, onClose }) => {
         }
         
         // Try the analytics endpoint first (richer data), fall back to statistics endpoint
-        let response = await fetch(`${baseUrl}/api/qrcodes/${qrCodeInfo.id}/analytics`, {
+        let response = await fetch(`${API_BASE_URL}/api/qrcodes/${qrCodeInfo.id}/analytics`, {
           headers,
           credentials: 'include',
         });
         
         if (!response.ok) {
           // Fall back to the statistics endpoint
-          response = await fetch(`${baseUrl}/api/assets/qrcodes/${qrCodeInfo.id}/statistics`, {
+          response = await fetch(`${API_BASE_URL}/api/assets/qrcodes/${qrCodeInfo.id}/statistics`, {
             headers,
             credentials: 'include',
           });
