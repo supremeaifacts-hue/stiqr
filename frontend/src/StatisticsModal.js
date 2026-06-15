@@ -11,6 +11,7 @@ const StatisticsModal = ({ qrCode, onClose }) => {
   
   // Real scan data from API
   const [allScanData, setAllScanData] = useState([]);
+  const [totalScansFromApi, setTotalScansFromApi] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -62,10 +63,12 @@ const StatisticsModal = ({ qrCode, onClose }) => {
         const data = await response.json();
         
         let scans = [];
+        let apiTotalScans = 0;
         
         // Handle analytics endpoint response format
         if (data.analytics) {
           // Format: { success, analytics: { totalScans, recentScans, ... } }
+          apiTotalScans = data.analytics.totalScans || 0;
           const recentScans = data.analytics.recentScans || [];
           scans = recentScans.map((scan, index) => ({
             id: index + 1,
@@ -97,6 +100,7 @@ const StatisticsModal = ({ qrCode, onClose }) => {
         scans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         setAllScanData(scans);
+        setTotalScansFromApi(apiTotalScans);
       } catch (err) {
         console.error('Failed to fetch analytics:', err);
         setError(err.message);
@@ -151,8 +155,8 @@ const StatisticsModal = ({ qrCode, onClose }) => {
     return filtered;
   }, [allScanData, dateFrom, dateTo]);
 
-  // Total scans (filtered)
-  const totalScans = filteredScanData.length;
+  // Total scans (filtered) - use API total if filtered data is empty but API says there are scans
+  const totalScans = filteredScanData.length > 0 ? filteredScanData.length : totalScansFromApi;
 
   // Group scans by time step for the bar chart
   const scansOverTime = useMemo(() => {

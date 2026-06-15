@@ -1457,6 +1457,52 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
       // Don't fail the whole request - just return basic analytics
     }
     
+    // If scans collection had no data, fall back to scanHistory from user's qrCodes array
+    if (analytics.recentScans.length === 0 && qrCode.scanHistory && qrCode.scanHistory.length > 0) {
+      console.log(`📊 Falling back to scanHistory with ${qrCode.scanHistory.length} entries`);
+      
+      // Transform scanHistory into flat format matching the scans collection format
+      analytics.recentScans = qrCode.scanHistory.slice(-10).reverse().map(scan => ({
+        timestamp: scan.timestamp,
+        deviceType: scan.device?.type || 'unknown',
+        os: scan.device?.os?.name || 'Unknown',
+        browser: scan.device?.browser?.name || 'Unknown',
+        city: scan.location?.city || 'Unknown',
+        country: scan.location?.country || 'Unknown',
+        countryCode: scan.location?.countryCode || ''
+      }));
+      
+      // Process device types from scanHistory
+      for (const scan of qrCode.scanHistory) {
+        const device = scan.device?.type || 'unknown';
+        analytics.deviceTypes[device] = (analytics.deviceTypes[device] || 0) + 1;
+        
+        const browser = scan.device?.browser?.name || 'unknown';
+        analytics.browsers[browser] = (analytics.browsers[browser] || 0) + 1;
+        
+        const os = scan.device?.os?.name || 'unknown';
+        analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
+        
+        // Process location data
+        const city = scan.location?.city || 'Unknown';
+        const country = scan.location?.country || 'Unknown';
+        const locationKey = city !== 'Unknown' ? `${city}, ${country}` : country;
+        analytics.locations[locationKey] = (analytics.locations[locationKey] || 0) + 1;
+        
+        // Process scans over time
+        const date = new Date(scan.timestamp).toISOString().split('T')[0];
+        const existing = analytics.scansOverTime.find(item => item.date === date);
+        if (existing) {
+          existing.count++;
+        } else {
+          analytics.scansOverTime.push({ date, count: 1 });
+        }
+      }
+      
+      // Sort scans over time by date
+      analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
+    }
+    
     res.json({ success: true, analytics });
   } catch (error) {
     console.error('❌ Error in /api/qrcodes/:id/analytics:', error);
