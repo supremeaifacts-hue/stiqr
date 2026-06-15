@@ -2,6 +2,7 @@
   "functions": {
     "routes": [
       { "path": "/auth/*", "functionPath": "/auth" },
+      { "path": "/track/*", "functionPath": "/track" },
       { "path": "/test", "functionPath": "/test" }
     ]
   }

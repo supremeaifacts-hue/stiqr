@@ -110,10 +110,17 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     
     if (isLocalhost) {
       return `http://localhost:3000/track/${effectiveId}`;
-    } else {
-      const protocol = window.location.protocol;
-      return `${protocol}//${hostname}/track/${effectiveId}`;
     }
+    
+    // Use VITE_BACKEND_URL if available (configured in EdgeOne Pages env vars)
+    const backendUrl = typeof import.meta.env !== 'undefined' && import.meta.env.VITE_BACKEND_URL;
+    if (backendUrl) {
+      return `${backendUrl}/track/${effectiveId}`;
+    }
+    
+    // Fallback: use the current hostname (EdgeOne function will proxy to backend)
+    const protocol = window.location.protocol;
+    return `${protocol}//${hostname}/track/${effectiveId}`;
   };
   
   // ============================================================
