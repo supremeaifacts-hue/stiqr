@@ -1462,16 +1462,23 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
 // ============================================================
 // POST /api/scan/log - Save individual scan records for analytics
 // ============================================================
-router.post('/scan/log', async (req, res) => {
+router.post('/api/scan/log', async (req, res) => {
   try {
     const scanData = req.body;
     console.log('📊 === SCAN DATA RECEIVED ===');
+    console.log('Full scan data:', JSON.stringify(scanData, null, 2));
     console.log('QR Code ID:', scanData.qrCodeId);
     console.log('Device:', scanData.deviceType);
     console.log('OS:', scanData.os);
     console.log('Browser:', scanData.browser);
     console.log('Country:', scanData.country);
     console.log('City:', scanData.city);
+    
+    // Validate required fields
+    if (!scanData.qrCodeId) {
+      console.error('❌ Missing qrCodeId');
+      return res.status(400).json({ error: 'Missing qrCodeId' });
+    }
     
     const { MongoClient } = require('mongodb');
     const uri = process.env.MONGODB_URI;
@@ -1505,12 +1512,14 @@ router.post('/scan/log', async (req, res) => {
         createdAt: new Date()
       };
       
+      console.log('📝 Inserting scan document:', JSON.stringify(scanDocument, null, 2));
+      
       const result = await scansCollection.insertOne(scanDocument);
       console.log(`✅ Scan saved to scans collection! ID: ${result.insertedId}`);
       
       // 2. Update scan count in qrcodes collection
       const qrcodesCollection = db.collection('qrcodes');
-      await qrcodesCollection.updateOne(
+      const updateResult = await qrcodesCollection.updateOne(
         { id: scanData.qrCodeId },
         { 
           $inc: { scan_count: 1 },
@@ -1518,7 +1527,7 @@ router.post('/scan/log', async (req, res) => {
         },
         { upsert: true }
       );
-      console.log(`✅ Scan count updated in qrcodes collection for: ${scanData.qrCodeId}`);
+      console.log(`✅ Scan count updated in qrcodes collection: matched=${updateResult.matchedCount}, modified=${updateResult.modifiedCount}`);
       
       // 3. Also update in user's qrCodes array (for dashboard display)
       try {
@@ -1530,8 +1539,12 @@ router.post('/scan/log', async (req, res) => {
             qrCode.scans = (qrCode.scans || 0) + 1;
             qrCode.lastScanned = new Date();
             await user.save();
-            console.log(`✅ Scan count updated in user collection for: ${scanData.qrCodeId}`);
+            console.log(`✅ Scan count updated in user collection to: ${qrCode.scans}`);
+          } else {
+            console.log(`⚠️ QR code ${scanData.qrCodeId} not found in user's qrCodes array`);
           }
+        } else {
+          console.log(`⚠️ User not found for QR code ${scanData.qrCodeId}`);
         }
       } catch (userError) {
         console.error('⚠️ Could not update user collection:', userError.message);
@@ -1546,15 +1559,18 @@ router.post('/scan/log', async (req, res) => {
       
     } catch (error) {
       console.error('❌ Database error:', error);
+      console.error('Stack:', error.stack);
       res.status(500).json({ 
         error: 'Database error', 
         details: error.message 
       });
     } finally {
       await client.close();
+      console.log('🔌 MongoDB connection closed');
     }
   } catch (error) {
     console.error('❌ Server error:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ 
       error: 'Server error', 
       details: error.message 
@@ -1563,12 +1579,12 @@ router.post('/scan/log', async (req, res) => {
 });
 
 // ============================================================
-// POST /api/qrcodes/:id/increment - Increment scan count (backup endpoint)
+// POST /api/qrcodes/:id/increment - Backup scan increment endpoint
 // ============================================================
-router.post('/qrcodes/:id/increment', async (req, res) => {
+router.post('/api/qrcodes/:id/increment', async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`📊 Incrementing scan count for QR: ${id}`);
+    console.log(`📊 Increment endpoint called for QR: ${id}`);
     
     const { MongoClient } = require('mongodb');
     const uri = process.env.MONGODB_URI;
@@ -1584,7 +1600,7 @@ router.post('/qrcodes/:id/increment', async (req, res) => {
       
       // Update in qrcodes collection
       const qrcodesCollection = db.collection('qrcodes');
-      const result = await qrcodesCollection.updateOne(
+      await qrcodesCollection.updateOne(
         { id: id },
         { 
           $inc: { scan_count: 1 },
@@ -1592,18 +1608,14 @@ router.post('/qrcodes/:id/increment', async (req, res) => {
         },
         { upsert: true }
       );
-      
-      console.log(`✅ Scan count incremented for ${id}: matched=${result.matchedCount}, modified=${result.modifiedCount}`);
+      console.log(`✅ Scan count incremented for ${id}`);
       
       res.json({ success: true, message: 'Scan count incremented' });
-    } catch (error) {
-      console.error('❌ Error incrementing scan count:', error);
-      res.status(500).json({ error: 'Database error', details: error.message });
     } finally {
       await client.close();
     }
   } catch (error) {
-    console.error('❌ Error in increment endpoint:', error);
+    console.error('❌ Error incrementing scan count:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
