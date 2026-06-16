@@ -5,29 +5,37 @@ const jwt = require('jsonwebtoken');
 
 // Middleware to check if user is authenticated (supports both session and JWT)
 const isAuthenticated = async (req, res, next) => {
+  console.log('🔐 Checking authentication...');
+  
   // Check session-based authentication first
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    console.log('✅ User authenticated via session');
     return next();
   }
   
   // Check JWT token from Authorization header
   const authHeader = req.headers.authorization;
+  console.log('📝 Authorization header:', authHeader ? 'Present' : 'Missing');
+  
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
+    console.log('🔑 Token length:', token.length);
     
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('✅ Token verified for user:', decoded.userId);
       const user = await User.findById(decoded.userId);
       
       if (!user) {
+        console.log('❌ User not found for token');
         return res.status(401).json({ error: 'User not found' });
       }
       
-      // Attach user to request object
       req.user = user;
+      console.log('✅ User attached to request:', user.email);
       return next();
     } catch (error) {
-      console.error('JWT verification error:', error);
+      console.error('❌ JWT verification error:', error.message);
       return res.status(401).json({ error: 'Invalid token' });
     }
   }
@@ -43,7 +51,6 @@ const isAuthenticated = async (req, res, next) => {
         return res.status(401).json({ error: 'User not found' });
       }
       
-      // Attach user to request object
       req.user = user;
       return next();
     } catch (error) {
@@ -52,6 +59,7 @@ const isAuthenticated = async (req, res, next) => {
     }
   }
   
+  console.log('❌ No valid authentication found');
   res.status(401).json({ error: 'Not authenticated' });
 };
 
@@ -1334,20 +1342,25 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
     const { id } = req.params;
     console.log(`📊 Fetching analytics for QR: ${id}`);
     
+    // Find the user
     const user = await User.findById(req.user._id);
     if (!user) {
+      console.log('❌ User not found');
       return res.status(404).json({ error: 'User not found' });
     }
     
+    // Find the QR code
     const qrCode = user.qrCodes.find(qr => qr.id === id);
     if (!qrCode) {
+      console.log(`❌ QR code ${id} not found`);
       return res.status(404).json({ error: 'QR code not found' });
     }
     
-    const { MongoClient } = require('mongodb');
-    const uri = process.env.MONGODB_URI;
+    console.log(`✅ Found QR code: ${qrCode.name || id}`);
+    console.log(`   Scans: ${qrCode.scans || 0}`);
     
-    let analytics = {
+    // Initialize analytics with basic data
+    const analytics = {
       totalScans: qrCode.scans || 0,
       deviceTypes: {},
       browsers: {},
@@ -1357,70 +1370,91 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
       recentScans: []
     };
     
-    if (uri) {
-      const client = new MongoClient(uri);
-      try {
+    // Try to get detailed scans from the scans collection
+    try {
+      const { MongoClient } = require('mongodb');
+      const uri = process.env.MONGODB_URI;
+      
+      if (uri) {
+        console.log('📡 Connecting to MongoDB for detailed scans...');
+        const client = new MongoClient(uri);
         await client.connect();
         const db = client.db('stiqr');
         const scansCollection = db.collection('scans');
         
-        // Get all scans for this QR code
+        // Get scans for this QR code
         const scans = await scansCollection
           .find({ qrCodeId: id })
           .sort({ timestamp: -1 })
           .limit(100)
           .toArray();
         
-        console.log(`📊 Found ${scans.length} scans for QR: ${id}`);
+        console.log(`📊 Found ${scans.length} detailed scans in scans collection`);
         
-        analytics.totalScans = scans.length;
-        analytics.recentScans = scans.slice(0, 10);
-        
-        // Process statistics
-        for (const scan of scans) {
-          // Device types
-          const device = scan.deviceType || 'unknown';
-          analytics.deviceTypes[device] = (analytics.deviceTypes[device] || 0) + 1;
+        if (scans.length > 0) {
+          analytics.totalScans = scans.length;
+          analytics.recentScans = scans.slice(0, 10);
           
-          // Browsers
-          const browser = scan.browser || 'unknown';
-          analytics.browsers[browser] = (analytics.browsers[browser] || 0) + 1;
-          
-          // Operating Systems
-          const os = scan.os || 'unknown';
-          analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
-          
-          // Locations
-          if (scan.country) {
-            const location = scan.city ? `${scan.city}, ${scan.country}` : scan.country;
-            analytics.locations[location] = (analytics.locations[location] || 0) + 1;
+          // Process statistics
+          for (const scan of scans) {
+            // Device types
+            const device = scan.deviceType || 'unknown';
+            analytics.deviceTypes[device] = (analytics.deviceTypes[device] || 0) + 1;
+            
+            // Browsers
+            const browser = scan.browser || 'unknown';
+            analytics.browsers[browser] = (analytics.browsers[browser] || 0) + 1;
+            
+            // Operating Systems
+            const os = scan.os || 'unknown';
+            analytics.operatingSystems[os] = (analytics.operatingSystems[os] || 0) + 1;
+            
+            // Locations
+            if (scan.country) {
+              const location = scan.city ? `${scan.city}, ${scan.country}` : scan.country;
+              analytics.locations[location] = (analytics.locations[location] || 0) + 1;
+            }
+            
+            // Scans over time
+            if (scan.timestamp) {
+              const date = new Date(scan.timestamp).toISOString().split('T')[0];
+              const existing = analytics.scansOverTime.find(item => item.date === date);
+              if (existing) {
+                existing.count++;
+              } else {
+                analytics.scansOverTime.push({ date, count: 1 });
+              }
+            }
           }
           
-          // Scans over time (last 7 days)
-          const date = new Date(scan.timestamp).toISOString().split('T')[0];
-          const existing = analytics.scansOverTime.find(item => item.date === date);
-          if (existing) {
-            existing.count++;
-          } else {
-            analytics.scansOverTime.push({ date, count: 1 });
-          }
+          analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
+          console.log('✅ Analytics processed successfully');
         }
         
-        analytics.scansOverTime.sort((a, b) => a.date.localeCompare(b.date));
-        
-      } catch (dbError) {
-        console.error('❌ Database error in analytics:', dbError);
-      } finally {
         await client.close();
+      } else {
+        console.log('⚠️ MONGODB_URI not set, returning basic analytics');
       }
+    } catch (dbError) {
+      console.error('❌ Database error in analytics:', dbError.message);
+      console.error('Stack:', dbError.stack);
+      // Don't fail - return basic analytics
     }
     
-    res.json({ success: true, analytics });
+    // Always return JSON, never HTML
+    return res.json({ 
+      success: true, 
+      analytics: analytics 
+    });
+    
   } catch (error) {
-    console.error('❌ Error in analytics:', error);
-    res.status(500).json({ 
+    console.error('❌ Fatal error in analytics endpoint:', error);
+    console.error('Stack:', error.stack);
+    // Always return JSON, never HTML
+    return res.status(500).json({ 
+      success: false,
       error: 'Server error', 
-      details: error.message 
+      message: error.message 
     });
   }
 });
