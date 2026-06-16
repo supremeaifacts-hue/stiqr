@@ -1462,7 +1462,7 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
 // ============================================================
 // POST /api/scan/log - Save individual scan records for analytics
 // ============================================================
-router.post('/api/scan/log', async (req, res) => {
+router.post('/scan/log', async (req, res) => {
   try {
     const scanData = req.body;
     console.log('📊 === SCAN DATA RECEIVED ===');
@@ -1581,7 +1581,7 @@ router.post('/api/scan/log', async (req, res) => {
 // ============================================================
 // POST /api/qrcodes/:id/increment - Backup scan increment endpoint
 // ============================================================
-router.post('/api/qrcodes/:id/increment', async (req, res) => {
+router.post('/qrcodes/:id/increment', async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`📊 Increment endpoint called for QR: ${id}`);
