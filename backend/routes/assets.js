@@ -787,53 +787,6 @@ router.get('/track/:id', async (req, res) => {
   }
 });
 
-// POST /api/qrcodes/:id/increment - Increment scan count
-router.post('/qrcodes/:id/increment', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // First try to update in the standalone qrcodes collection
-    const mongoose = require('mongoose');
-    const db = mongoose.connection.db;
-    
-    if (db) {
-      const collection = db.collection('qrcodes');
-      
-      // Increment scan count in qrcodes collection
-      await collection.updateOne(
-        { id },
-        { 
-          $inc: { scan_count: 1 },
-          $set: { lastScanned: new Date() }
-        }
-      );
-      console.log(`✅ Incremented scan count for ${id} in qrcodes collection`);
-    }
-    
-    // Also update in user's qrCodes array if possible
-    try {
-      const User = require('../models/User');
-      const user = await User.findOne({ 'qrCodes.id': id });
-      if (user) {
-        const qrCode = user.qrCodes.find(qr => qr.id === id);
-        if (qrCode) {
-          qrCode.scans = (qrCode.scans || 0) + 1;
-          qrCode.lastScanned = new Date();
-          await user.save();
-          console.log(`✅ Incremented scan count for ${id} in user collection`);
-        }
-      }
-    } catch (userError) {
-      console.error('Error updating user scan count:', userError);
-    }
-    
-    res.json({ success: true, message: 'Scan count incremented' });
-  } catch (error) {
-    console.error('Error incrementing scan count:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // Simple stats endpoint - returns just scan count
 router.get('/qrcodes/:id/stats', isAuthenticated, async (req, res) => {
   try {
@@ -1516,31 +1469,137 @@ router.get('/qrcodes/:id/analytics', isAuthenticated, async (req, res) => {
 });
 
 // ============================================================
-// POST /api/scan/log - Save scan analytics
+// POST /api/scan/log - Save individual scan records for analytics
 // ============================================================
 router.post('/scan/log', async (req, res) => {
   try {
     const scanData = req.body;
+    console.log('📊 Received scan data:', scanData);
     
-    const mongoose = require('mongoose');
-    const db = mongoose.connection.db;
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
     
-    if (db) {
-      const collection = db.collection('scans');
-      
-      // Add the scan record
-      await collection.insertOne({
-        ...scanData,
-        timestamp: new Date(scanData.timestamp || new Date()),
-        createdAt: new Date()
-      });
-      
-      console.log(`✅ Scan recorded for QR: ${scanData.qrCodeId}`);
+    if (!uri) {
+      console.error('❌ MONGODB_URI not set');
+      return res.status(500).json({ error: 'Database not configured' });
     }
     
-    res.json({ success: true });
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      console.log('✅ Connected to MongoDB');
+      
+      const db = client.db('stiqr');
+      const scansCollection = db.collection('scans');
+      
+      // Prepare the scan document
+      const scanDocument = {
+        qrCodeId: scanData.qrCodeId,
+        timestamp: new Date(scanData.timestamp || new Date()),
+        userAgent: scanData.userAgent || '',
+        deviceType: scanData.deviceType || 'unknown',
+        os: scanData.os || 'unknown',
+        browser: scanData.browser || 'unknown',
+        ip: scanData.ip || '',
+        country: scanData.country || '',
+        city: scanData.city || '',
+        region: scanData.region || '',
+        timezone: scanData.timezone || '',
+        createdAt: new Date()
+      };
+      
+      // Insert the scan record
+      const result = await scansCollection.insertOne(scanDocument);
+      
+      console.log(`✅ Scan saved successfully!`);
+      console.log(`   QR Code ID: ${scanData.qrCodeId}`);
+      console.log(`   Scan ID: ${result.insertedId}`);
+      console.log(`   Device: ${scanData.deviceType}, OS: ${scanData.os}, Browser: ${scanData.browser}`);
+      
+      // Also update the scan count in the qrcodes collection
+      try {
+        const qrcodesCollection = db.collection('qrcodes');
+        await qrcodesCollection.updateOne(
+          { id: scanData.qrCodeId },
+          { 
+            $inc: { scan_count: 1 },
+            $set: { lastScanned: new Date() }
+          },
+          { upsert: true }
+        );
+        console.log(`✅ Updated scan count in qrcodes collection for: ${scanData.qrCodeId}`);
+      } catch (updateError) {
+        console.error('⚠️ Failed to update scan count in qrcodes:', updateError.message);
+        // Don't fail the request - the scan is already saved
+      }
+      
+      res.json({ 
+        success: true, 
+        scanId: result.insertedId,
+        message: 'Scan recorded successfully'
+      });
+      
+    } catch (error) {
+      console.error('❌ Error in /api/scan/log:', error);
+      res.status(500).json({ 
+        error: 'Database error', 
+        details: error.message 
+      });
+    } finally {
+      await client.close();
+      console.log('🔌 MongoDB connection closed');
+    }
   } catch (error) {
-    console.error('Error logging scan:', error);
+    console.error('❌ Error in /api/scan/log wrapper:', error);
+    res.status(500).json({ 
+      error: 'Server error', 
+      details: error.message 
+    });
+  }
+});
+
+// ============================================================
+// POST /api/qrcodes/:id/increment - Increment scan count (backup endpoint)
+// ============================================================
+router.post('/qrcodes/:id/increment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`📊 Incrementing scan count for QR: ${id}`);
+    
+    const { MongoClient } = require('mongodb');
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+    
+    const client = new MongoClient(uri);
+    try {
+      await client.connect();
+      const db = client.db('stiqr');
+      
+      // Update in qrcodes collection
+      const qrcodesCollection = db.collection('qrcodes');
+      const result = await qrcodesCollection.updateOne(
+        { id: id },
+        { 
+          $inc: { scan_count: 1 },
+          $set: { lastScanned: new Date() }
+        },
+        { upsert: true }
+      );
+      
+      console.log(`✅ Scan count incremented for ${id}: matched=${result.matchedCount}, modified=${result.modifiedCount}`);
+      
+      res.json({ success: true, message: 'Scan count incremented' });
+    } catch (error) {
+      console.error('❌ Error incrementing scan count:', error);
+      res.status(500).json({ error: 'Database error', details: error.message });
+    } finally {
+      await client.close();
+    }
+  } catch (error) {
+    console.error('❌ Error in increment endpoint:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
