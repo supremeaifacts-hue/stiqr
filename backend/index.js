@@ -649,7 +649,6 @@ app.get('/social/:id', async (req, res) => {
 app.post('/api/auth/google', async (req, res) => {
   try {
     console.log('📊 === GOOGLE AUTH REQUEST RECEIVED ===');
-    console.log('Request body keys:', Object.keys(req.body));
     
     const { credential } = req.body;
     
@@ -659,29 +658,56 @@ app.post('/api/auth/google', async (req, res) => {
     }
 
     console.log('📊 Credential received, length:', credential.length);
+    console.log('📊 Credential preview:', credential.substring(0, 50) + '...');
 
     // Verify the Google token
     let payload;
     try {
+      // Import the library
       const { OAuth2Client } = require('google-auth-library');
+      
+      // Create client with your client ID
       const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
       
-      console.log('🔐 Verifying Google token...');
+      console.log('🔐 Verifying Google token with client ID:', process.env.GOOGLE_CLIENT_ID);
+      
+      // Verify the ID token
       const ticket = await client.verifyIdToken({
         idToken: credential,
         audience: process.env.GOOGLE_CLIENT_ID
       });
       
       payload = ticket.getPayload();
-      console.log('✅ Google user verified:', payload.email);
+      console.log('✅ Google token verified successfully');
+      console.log('   Email:', payload.email);
       console.log('   Name:', payload.name);
-      console.log('   Picture:', payload.picture ? 'Yes' : 'No');
+      console.log('   Google ID:', payload.sub);
+      
     } catch (verifyError) {
       console.error('❌ Google token verification failed:', verifyError.message);
-      return res.status(401).json({ 
-        error: 'Invalid Google token', 
-        details: verifyError.message 
-      });
+      console.error('   Stack:', verifyError.stack);
+      
+      // Try alternative verification method
+      try {
+        console.log('🔄 Trying alternative verification...');
+        const { OAuth2Client } = require('google-auth-library');
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        
+        // Try with audience as an array
+        const ticket = await client.verifyIdToken({
+          idToken: credential,
+          audience: [process.env.GOOGLE_CLIENT_ID]
+        });
+        
+        payload = ticket.getPayload();
+        console.log('✅ Alternative verification succeeded!');
+      } catch (altError) {
+        console.error('❌ Alternative verification also failed:', altError.message);
+        return res.status(401).json({ 
+          error: 'Invalid Google token', 
+          details: verifyError.message 
+        });
+      }
     }
 
     const { email, name, picture, sub: googleId } = payload;
@@ -756,12 +782,13 @@ app.post('/api/auth/google', async (req, res) => {
     // Generate JWT token
     let token;
     try {
+      const jwt = require('jsonwebtoken');
       token = jwt.sign(
         { userId: user._id, email: user.email },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
-      console.log('✅ JWT token generated');
+      console.log('✅ JWT token generated successfully');
     } catch (jwtError) {
       console.error('❌ JWT generation error:', jwtError.message);
       return res.status(500).json({ 
@@ -800,6 +827,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
   }
 });
+
 
 
 // Import routes
