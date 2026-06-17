@@ -5,8 +5,11 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const session = require('express-session');
 const path = require('path');
+const jwt = require('jsonwebtoken');
+const User = require('./models/User');
 
 dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -639,6 +642,132 @@ app.get('/social/:id', async (req, res) => {
   }
 });
 
+// ============================================================
+// POST /api/auth/google - Google OAuth callback (GIS/One Tap flow)
+// This handles credential-based Google Sign-In from the frontend
+// ============================================================
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    if (!credential) {
+      console.error('❌ No credential provided');
+      return res.status(400).json({ error: 'No credential provided' });
+    }
+
+    console.log('📊 Google credential received, verifying...');
+
+    // Verify the Google token
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    console.log('✅ Google user verified:', payload.email);
+
+    const { email, name, picture, sub: googleId } = payload;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user with Google account
+      const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
+      
+      user = new User({
+        email,
+        username,
+        displayName: name || username,
+        name: name || username,
+        password: null, // No password for Google users
+        googleId: googleId,
+        profilePicture: picture,
+        profileImage: picture,
+        isGoogleUser: true,
+        authProvider: 'google',
+        emailVerified: true, // Google emails are verified
+        isVerified: true,
+        subscription: {
+          plan: 'free',
+          isActive: true,
+          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days trial
+        },
+        stats: {
+          qrCodesCreated: 0,
+          totalScans: 0
+        }
+      });
+
+      await user.save();
+      console.log(`✅ New user created via Google: ${email}`);
+    } else {
+      // Update existing user with Google info if needed
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.isGoogleUser = true;
+        user.authProvider = 'google';
+        user.emailVerified = true;
+        user.isVerified = true;
+        if (picture && !user.profilePicture) {
+          user.profilePicture = picture;
+        }
+        if (picture && !user.profileImage) {
+          user.profileImage = picture;
+        }
+        await user.save();
+        console.log(`✅ Existing user updated with Google info: ${email}`);
+      } else {
+        console.log(`✅ User logged in via Google: ${email}`);
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Return user data (excluding sensitive info)
+    const userData = {
+      id: user._id,
+      email: user.email,
+      username: user.username || user.displayName,
+      displayName: user.displayName,
+      name: user.name || user.displayName || user.username,
+      profileImage: user.profileImage || user.profilePicture,
+      profilePicture: user.profilePicture,
+      subscription: user.subscription,
+      isGoogleUser: user.isGoogleUser,
+      authProvider: user.authProvider,
+      emailVerified: user.emailVerified,
+      isVerified: user.isVerified,
+      stats: user.stats,
+      createdAt: user.createdAt
+    };
+
+    console.log(`✅ Google authentication successful for: ${email}`);
+    res.json({
+      success: true,
+      token,
+      user: userData,
+      message: 'Successfully authenticated with Google'
+    });
+
+  } catch (error) {
+    console.error('❌ Google authentication error:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Google authentication failed', 
+      details: error.message 
+    });
+  }
+});
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const assetsRoutes = require('./routes/assets');
@@ -650,6 +779,7 @@ app.use('/auth', authRoutes);
 app.use('/api', assetsRoutes);
 app.use('/api', stripeRoutes);
 app.use('/', eventRoutes);
+
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -37,6 +37,29 @@ const UserSchema = new mongoose.Schema({
     type: String,
     select: false // Don't return password in queries
   },
+  
+  // Google Identity Services (GIS) fields for credential-based OAuth
+  username: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  name: {
+    type: String,
+    default: ''
+  },
+  profileImage: {
+    type: String,
+    default: ''
+  },
+  isGoogleUser: {
+    type: Boolean,
+    default: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
   // User preferences and settings
   preferences: {
     theme: {

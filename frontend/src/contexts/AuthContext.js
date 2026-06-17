@@ -84,6 +84,47 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `${API_BASE_URL}/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
   };
 
+  // Google Identity Services (GIS) / One Tap credential-based login
+  const loginWithGoogleCredential = async (credential) => {
+    try {
+      console.log('📤 Sending Google credential to backend...');
+      const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential })
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        // Store user data
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Store JWT token
+        if (data.token) {
+          localStorage.setItem('jwtToken', data.token);
+          localStorage.setItem('token', data.token);
+          console.log('✅ JWT token stored from Google login');
+        }
+
+        // Dispatch login event
+        window.dispatchEvent(new CustomEvent('userLoggedIn', { 
+          detail: data.user 
+        }));
+        
+        console.log('✅ Google credential login successful:', data.user.email);
+        return { success: true, user: data.user };
+      } else {
+        console.error('❌ Google credential login failed:', data.error);
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error('❌ Google credential login error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+
   const logout = async () => {
     // Clear client-side storage
     localStorage.removeItem('user');
@@ -646,8 +687,10 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isDemoUser: user?.isDemo || false,
     loginWithGoogle,
+    loginWithGoogleCredential,
     logout: user?.isDemo ? demoLogout : logout,
     demoLogin,
+
     getCurrentUser,
     checkAuthStatus,
     setError,

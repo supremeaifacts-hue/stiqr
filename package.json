@@ -8,6 +8,7 @@
     "frontend"
   ],
   "dependencies": {
+    "google-auth-library": "^10.7.0",
     "mongodb": "^5.8.0",
     "stripe": "^14.0.0"
   }

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 
 const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
-  const { loginWithGoogle, demoLogin } = useAuth();
+  const { loginWithGoogle, loginWithGoogleCredential, demoLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -17,6 +17,8 @@ const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
   const [isFocusedPassword, setIsFocusedPassword] = useState(false);
   const [isFocusedConfirmPassword, setIsFocusedConfirmPassword] = useState(false);
   const [isFocusedDisplayName, setIsFocusedDisplayName] = useState(false);
+  const googleButtonRef = useRef(null);
+
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -128,6 +130,66 @@ const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
     }
   };
 
+  // Load Google Identity Services and render the GIS button
+  useEffect(() => {
+    // Load Google Identity Services script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.google && googleButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: '1091645843591-s9mqdm4gceuoqm024rv9o3e639c9araq.apps.googleusercontent.com',
+          callback: handleGoogleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            text: 'signup_with',
+            shape: 'pill',
+            width: 320
+          }
+        );
+      }
+    };
+
+    return () => {
+      // Cleanup script on unmount
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
+    };
+  }, []);
+
+  const handleGoogleCredentialResponse = async (response) => {
+    try {
+      console.log('📱 Google credential response received for signup');
+      
+      const result = await loginWithGoogleCredential(response.credential);
+      
+      if (result.success) {
+        console.log('✅ Google signup successful:', result.user.email);
+        onClose();
+      } else {
+        console.error('❌ Google signup failed:', result.error);
+        setError('Google signup failed: ' + result.error);
+      }
+    } catch (error) {
+      console.error('❌ Google signup error:', error);
+      setError('An error occurred during Google signup');
+    }
+  };
+
   const handleGoogleSignUp = () => {
     console.log('Initiating Google OAuth sign up');
     // Use the auth context to handle Google OAuth
@@ -136,6 +198,7 @@ const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
   };
 
   return (
+
     <div style={{
       position: 'fixed',
       top: 0,
@@ -426,32 +489,17 @@ const SignUpModal = ({ onClose, onLoginClick, onLoginSuccess }) => {
           }}></div>
         </div>
 
-        {/* Google Sign Up button */}
-        <button 
-          onClick={handleGoogleSignUp}
-          onMouseEnter={() => setIsHoveringGoogle(true)}
-          onMouseLeave={() => setIsHoveringGoogle(false)}
+        {/* Google Sign Up button - rendered by Google Identity Services */}
+        <div 
+          ref={googleButtonRef}
           style={{
-            width: '100%',
-            padding: '14px',
-            background: isHoveringGoogle ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            color: '#fff',
-            fontWeight: '600',
-            cursor: 'pointer',
-            fontSize: '14px',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
-            gap: '10px',
             marginBottom: '25px',
-            transition: 'background 0.3s ease',
+            minHeight: '48px',
           }}
-        >
-          <span style={{ fontSize: '18px' }}>G</span>
-          Sign up with Google
-        </button>
+        ></div>
+
 
         {/* Login link */}
         <div style={{
