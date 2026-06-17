@@ -648,6 +648,9 @@ app.get('/social/:id', async (req, res) => {
 // ============================================================
 app.post('/api/auth/google', async (req, res) => {
   try {
+    console.log('📊 === GOOGLE AUTH REQUEST RECEIVED ===');
+    console.log('Request body keys:', Object.keys(req.body));
+    
     const { credential } = req.body;
     
     if (!credential) {
@@ -655,98 +658,127 @@ app.post('/api/auth/google', async (req, res) => {
       return res.status(400).json({ error: 'No credential provided' });
     }
 
-    console.log('📊 Google credential received, verifying...');
+    console.log('📊 Credential received, length:', credential.length);
 
     // Verify the Google token
-    const { OAuth2Client } = require('google-auth-library');
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
-
-    const payload = ticket.getPayload();
-    console.log('✅ Google user verified:', payload.email);
+    let payload;
+    try {
+      const { OAuth2Client } = require('google-auth-library');
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      
+      console.log('🔐 Verifying Google token...');
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+      
+      payload = ticket.getPayload();
+      console.log('✅ Google user verified:', payload.email);
+      console.log('   Name:', payload.name);
+      console.log('   Picture:', payload.picture ? 'Yes' : 'No');
+    } catch (verifyError) {
+      console.error('❌ Google token verification failed:', verifyError.message);
+      return res.status(401).json({ 
+        error: 'Invalid Google token', 
+        details: verifyError.message 
+      });
+    }
 
     const { email, name, picture, sub: googleId } = payload;
 
     // Check if user exists
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      // Create new user with Google account
-      const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
+    let user;
+    try {
+      console.log('📊 Checking if user exists:', email);
+      user = await User.findOne({ email });
       
-      user = new User({
-        email,
-        username,
-        displayName: name || username,
-        name: name || username,
-        password: null, // No password for Google users
-        googleId: googleId,
-        profilePicture: picture,
-        profileImage: picture,
-        isGoogleUser: true,
-        authProvider: 'google',
-        emailVerified: true, // Google emails are verified
-        isVerified: true,
-        subscription: {
-          plan: 'free',
-          isActive: true,
-          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days trial
-        },
-        stats: {
-          qrCodesCreated: 0,
-          totalScans: 0
-        }
-      });
+      if (!user) {
+        // Create new user with Google account
+        console.log('📝 Creating new user from Google account...');
+        const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
+        
+        user = new User({
+          email,
+          username,
+          name: name || username,
+          password: null,
+          googleId: googleId,
+          profileImage: picture || '',
+          isGoogleUser: true,
+          emailVerified: true,
+          subscription: {
+            plan: 'free',
+            isActive: true,
+            trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          },
+          stats: {
+            qrCodesCreated: 0,
+            totalScans: 0
+          }
+        });
 
-      await user.save();
-      console.log(`✅ New user created via Google: ${email}`);
-    } else {
-      // Update existing user with Google info if needed
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.isGoogleUser = true;
-        user.authProvider = 'google';
-        user.emailVerified = true;
-        user.isVerified = true;
-        if (picture && !user.profilePicture) {
-          user.profilePicture = picture;
+        await user.save();
+        console.log(`✅ New user created via Google: ${email}`);
+      } else {
+        // Update existing user with Google info if needed
+        let updated = false;
+        if (!user.googleId) {
+          user.googleId = googleId;
+          updated = true;
+        }
+        if (!user.isGoogleUser) {
+          user.isGoogleUser = true;
+          updated = true;
+        }
+        if (!user.emailVerified) {
+          user.emailVerified = true;
+          updated = true;
         }
         if (picture && !user.profileImage) {
           user.profileImage = picture;
+          updated = true;
         }
-        await user.save();
-        console.log(`✅ Existing user updated with Google info: ${email}`);
-      } else {
-        console.log(`✅ User logged in via Google: ${email}`);
+        if (updated) {
+          await user.save();
+          console.log(`✅ Existing user updated with Google info: ${email}`);
+        } else {
+          console.log(`✅ User logged in via Google: ${email}`);
+        }
       }
+    } catch (dbError) {
+      console.error('❌ Database error:', dbError.message);
+      return res.status(500).json({ 
+        error: 'Database error', 
+        details: dbError.message 
+      });
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    let token;
+    try {
+      token = jwt.sign(
+        { userId: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      console.log('✅ JWT token generated');
+    } catch (jwtError) {
+      console.error('❌ JWT generation error:', jwtError.message);
+      return res.status(500).json({ 
+        error: 'Token generation error', 
+        details: jwtError.message 
+      });
+    }
 
-    // Return user data (excluding sensitive info)
+    // Return user data
     const userData = {
       id: user._id,
       email: user.email,
-      username: user.username || user.displayName,
-      displayName: user.displayName,
-      name: user.name || user.displayName || user.username,
-      profileImage: user.profileImage || user.profilePicture,
-      profilePicture: user.profilePicture,
+      username: user.username,
+      name: user.name || user.username,
+      profileImage: user.profileImage || '',
       subscription: user.subscription,
       isGoogleUser: user.isGoogleUser,
-      authProvider: user.authProvider,
-      emailVerified: user.emailVerified,
-      isVerified: user.isVerified,
-      stats: user.stats,
       createdAt: user.createdAt
     };
 
@@ -759,14 +791,16 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Google authentication error:', error);
+    console.error('❌ Fatal error in Google authentication:', error);
     console.error('Stack:', error.stack);
     res.status(500).json({ 
       error: 'Google authentication failed', 
-      details: error.message 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
+
 
 // Import routes
 const authRoutes = require('./routes/auth');
