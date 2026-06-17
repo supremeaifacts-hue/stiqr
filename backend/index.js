@@ -643,8 +643,7 @@ app.get('/social/:id', async (req, res) => {
 });
 
 // ============================================================
-// POST /api/auth/google - Google OAuth callback (GIS/One Tap flow)
-// This handles credential-based Google Sign-In from the frontend
+// POST /api/auth/google - Google OAuth callback
 // ============================================================
 app.post('/api/auth/google', async (req, res) => {
   try {
@@ -657,145 +656,103 @@ app.post('/api/auth/google', async (req, res) => {
       return res.status(400).json({ error: 'No credential provided' });
     }
 
-    console.log('📊 Credential received, length:', credential.length);
-    console.log('📊 Credential preview:', credential.substring(0, 50) + '...');
+    console.log('📊 Credential length:', credential.length);
 
     // Verify the Google token
     let payload;
     try {
-      // Import the library
       const { OAuth2Client } = require('google-auth-library');
-      
-      // Create client with your client ID
       const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
       
-      console.log('🔐 Verifying Google token with client ID:', process.env.GOOGLE_CLIENT_ID);
-      
-      // Verify the ID token
       const ticket = await client.verifyIdToken({
         idToken: credential,
         audience: process.env.GOOGLE_CLIENT_ID
       });
       
       payload = ticket.getPayload();
-      console.log('✅ Google token verified successfully');
-      console.log('   Email:', payload.email);
-      console.log('   Name:', payload.name);
-      console.log('   Google ID:', payload.sub);
+      console.log('✅ Google token verified:', payload.email);
       
     } catch (verifyError) {
-      console.error('❌ Google token verification failed:', verifyError.message);
-      console.error('   Stack:', verifyError.stack);
-      
-      // Try alternative verification method
-      try {
-        console.log('🔄 Trying alternative verification...');
-        const { OAuth2Client } = require('google-auth-library');
-        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-        
-        // Try with audience as an array
-        const ticket = await client.verifyIdToken({
-          idToken: credential,
-          audience: [process.env.GOOGLE_CLIENT_ID]
-        });
-        
-        payload = ticket.getPayload();
-        console.log('✅ Alternative verification succeeded!');
-      } catch (altError) {
-        console.error('❌ Alternative verification also failed:', altError.message);
-        return res.status(401).json({ 
-          error: 'Invalid Google token', 
-          details: verifyError.message 
-        });
-      }
+      console.error('❌ Token verification failed:', verifyError.message);
+      return res.status(401).json({ 
+        error: 'Invalid Google token', 
+        details: verifyError.message 
+      });
     }
 
     const { email, name, picture, sub: googleId } = payload;
 
     // Check if user exists
-    let user;
-    try {
-      console.log('📊 Checking if user exists:', email);
-      user = await User.findOne({ email });
-      
-      if (!user) {
-        // Create new user with Google account
-        console.log('📝 Creating new user from Google account...');
-        const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
-        
-        user = new User({
-          email,
-          username,
-          name: name || username,
-          password: null,
-          googleId: googleId,
-          profileImage: picture || '',
-          isGoogleUser: true,
-          emailVerified: true,
-          subscription: {
-            plan: 'free',
-            isActive: true,
-            trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          },
-          stats: {
-            qrCodesCreated: 0,
-            totalScans: 0
-          }
-        });
+    let user = await User.findOne({ email });
 
-        await user.save();
-        console.log(`✅ New user created via Google: ${email}`);
-      } else {
-        // Update existing user with Google info if needed
-        let updated = false;
-        if (!user.googleId) {
-          user.googleId = googleId;
-          updated = true;
+    if (!user) {
+      // Create new user with Google account
+      console.log('📝 Creating new user...');
+      const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
+      
+      user = new User({
+        email,
+        username,
+        name: name || username,
+        password: null,
+        googleId: googleId,
+        profileImage: picture || '',
+        isGoogleUser: true,
+        emailVerified: true,
+        subscription: {
+          plan: 'free',
+          isActive: true,
+          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        },
+        stats: {
+          qrCodesCreated: 0,
+          totalScans: 0
         }
-        if (!user.isGoogleUser) {
-          user.isGoogleUser = true;
-          updated = true;
-        }
-        if (!user.emailVerified) {
-          user.emailVerified = true;
-          updated = true;
-        }
-        if (picture && !user.profileImage) {
-          user.profileImage = picture;
-          updated = true;
-        }
-        if (updated) {
-          await user.save();
-          console.log(`✅ Existing user updated with Google info: ${email}`);
-        } else {
-          console.log(`✅ User logged in via Google: ${email}`);
-        }
-      }
-    } catch (dbError) {
-      console.error('❌ Database error:', dbError.message);
-      return res.status(500).json({ 
-        error: 'Database error', 
-        details: dbError.message 
       });
+
+      await user.save();
+      console.log(`✅ New user created: ${email}`);
+    } else {
+      // Update existing user with Google info
+      let updated = false;
+      
+      // Only update if fields are missing
+      if (!user.googleId) {
+        user.googleId = googleId;
+        updated = true;
+      }
+      if (!user.isGoogleUser) {
+        user.isGoogleUser = true;
+        updated = true;
+      }
+      if (!user.emailVerified) {
+        user.emailVerified = true;
+        updated = true;
+      }
+      if (picture && !user.profileImage) {
+        user.profileImage = picture;
+        updated = true;
+      }
+      if (!user.name && name) {
+        user.name = name;
+        updated = true;
+      }
+      
+      if (updated) {
+        await user.save();
+        console.log(`✅ User updated with Google info: ${email}`);
+      } else {
+        console.log(`✅ User logged in via Google: ${email}`);
+      }
     }
 
     // Generate JWT token
-    let token;
-    try {
-      const jwt = require('jsonwebtoken');
-      token = jwt.sign(
-        { userId: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-      console.log('✅ JWT token generated successfully');
-    } catch (jwtError) {
-      console.error('❌ JWT generation error:', jwtError.message);
-      return res.status(500).json({ 
-        error: 'Token generation error', 
-        details: jwtError.message 
-      });
-    }
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     // Return user data
     const userData = {
@@ -809,7 +766,7 @@ app.post('/api/auth/google', async (req, res) => {
       createdAt: user.createdAt
     };
 
-    console.log(`✅ Google authentication successful for: ${email}`);
+    console.log(`✅ Google auth successful: ${email}`);
     res.json({
       success: true,
       token,
@@ -818,7 +775,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Fatal error in Google authentication:', error);
+    console.error('❌ Google auth error:', error);
     console.error('Stack:', error.stack);
     res.status(500).json({ 
       error: 'Google authentication failed', 
@@ -827,6 +784,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
   }
 });
+
 
 
 
