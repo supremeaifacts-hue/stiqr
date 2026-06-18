@@ -707,17 +707,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         
         if (previewRect.top <= 0) {
           // Preview has reached the top of viewport
-          if (stickerRect.bottom > previewTotalHeight + 20) {
-            // The "Add Sticker" section is still visible below - stick to top
-            setPreviewStickyMode('top');
-            setPreviewStickyOffset(20);
-          } else {
-            // The "Add Sticker" section bottom has reached the viewport top
-            // Stop the preview at the bottom of the "Add Sticker" section
-            const offset = Math.max(20, stickerRect.bottom - previewTotalHeight);
-            setPreviewStickyMode('bottom');
-            setPreviewStickyOffset(offset);
-          }
+          // Calculate how far the user has scrolled past the initial sticky point
+          // The preview moves from top:20px down to top:2500px as user scrolls
+          const scrollPast = Math.abs(previewRect.top);
+          const maxOffset = 2500;
+          const offset = Math.min(20 + scrollPast, maxOffset);
+          
+          setPreviewStickyMode('top');
+          setPreviewStickyOffset(offset);
         } else {
           // Preview hasn't reached the top yet - normal flow
           setPreviewStickyMode('none');
