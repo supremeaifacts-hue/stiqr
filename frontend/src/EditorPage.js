@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import StickerPicker from './StickerPicker';
 import { useAuth } from './contexts/AuthContext';
@@ -687,6 +687,24 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [frameColor, setFrameColor] = useState('#000000');
   
   const canvasRef = useRef(null);
+  
+  // Sticky preview state for scroll-following QR code preview
+  const [isPreviewSticky, setIsPreviewSticky] = useState(false);
+  const previewContainerRef = useRef(null);
+  const previewPlaceholderRef = useRef(null);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      if (previewContainerRef.current) {
+        const rect = previewContainerRef.current.getBoundingClientRect();
+        // Make sticky when the preview reaches the top of the viewport
+        setIsPreviewSticky(rect.top <= 0);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch user logos when component mounts or authentication changes
   useEffect(() => {
@@ -2875,29 +2893,45 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
       </div>
 
-      {/* Right Preview */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '30px 40px',
-        alignSelf: 'flex-start',
-        height: 'fit-content',
-      }}>
-        <div style={{
-          padding: '50px',
-          background: '#ffffff',
-          borderRadius: '20px',
-          border: 'none',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-          marginBottom: '40px',
-          overflow: 'visible',
+      {/* Right Preview - Sticky QR Code Preview */}
+      <div
+        ref={previewContainerRef}
+        style={{
+          flex: 1,
           display: 'flex',
-          justifyContent: 'center',
+          flexDirection: 'column',
           alignItems: 'center',
-        }}>
+          justifyContent: 'flex-start',
+          padding: '30px 40px',
+          alignSelf: 'flex-start',
+          height: 'fit-content',
+          position: 'relative',
+        }}
+      >
+        {/* Placeholder to maintain layout space when sticky */}
+        {isPreviewSticky && (
+          <div style={{ height: '500px', width: '100%' }} />
+        )}
+        
+        <div
+          ref={previewPlaceholderRef}
+          style={{
+            padding: '50px',
+            background: '#ffffff',
+            borderRadius: '20px',
+            border: 'none',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            marginBottom: '40px',
+            overflow: 'visible',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: isPreviewSticky ? 'fixed' : 'relative',
+            top: isPreviewSticky ? '20px' : 'auto',
+            zIndex: isPreviewSticky ? 100 : 1,
+            transition: 'all 0.3s ease',
+          }}
+        >
           <canvas ref={canvasRef} style={{ 
             border: '1px solid white', // Frame preview area
             width: selectedFrame === 'frame1' ? '270px' : 'auto',
@@ -2907,7 +2941,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           }} /> {/* Frame preview area */}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '20px',
+          flexWrap: 'wrap',
+          position: isPreviewSticky ? 'fixed' : 'relative',
+          top: isPreviewSticky ? '440px' : 'auto',
+          zIndex: isPreviewSticky ? 100 : 1,
+          transition: 'all 0.3s ease',
+        }}>
           <button
             onClick={handleDownload}
             style={{
