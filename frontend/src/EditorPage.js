@@ -705,16 +705,18 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         // The preview card + buttons height (approximate)
         const previewTotalHeight = 500;
         
-        if (previewRect.top <= 0) {
-          // Preview has reached the top of viewport
-          // Move it down as user scrolls, from top:100px to top:1000px max
-          const scrollPast = Math.abs(previewRect.top);
-          const offset = Math.min(100 + scrollPast, 1000);
-          
+        // Check if the "Center Sticker" section is near the bottom of the page
+        // When stickerRect.bottom is less than window.innerHeight - 600,
+        // it means the sticker section is about 600px from the bottom
+        const stickerNearBottom = stickerRect.bottom < window.innerHeight - 600;
+        
+        if (previewRect.top <= 0 && !stickerNearBottom) {
+          // Preview has reached the top of viewport AND sticker section is not near bottom
+          // Stick at top:100px
           setPreviewStickyMode('top');
-          setPreviewStickyOffset(offset);
+          setPreviewStickyOffset(100);
         } else {
-          // Preview hasn't reached the top yet - normal flow
+          // Preview hasn't reached the top yet, or sticker section is near bottom
           setPreviewStickyMode('none');
           setPreviewStickyOffset(0);
         }
