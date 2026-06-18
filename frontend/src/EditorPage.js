@@ -689,33 +689,32 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const canvasRef = useRef(null);
   
   // Sticky preview state for scroll-following QR code preview
-  // 'none' = normal flow, 'top' = fixed at top of viewport, 'bottom' = fixed at bottom of sidebar rectangle
   const [previewStickyMode, setPreviewStickyMode] = useState('none');
   const [previewStickyOffset, setPreviewStickyOffset] = useState(0);
   const previewContainerRef = useRef(null);
   const previewPlaceholderRef = useRef(null);
   const leftSidebarRef = useRef(null);
+  const stickerBoundaryRef = useRef(null);
   
   useEffect(() => {
     const handleScroll = () => {
-      if (previewContainerRef.current && leftSidebarRef.current) {
+      if (previewContainerRef.current && stickerBoundaryRef.current) {
         const previewRect = previewContainerRef.current.getBoundingClientRect();
-        const sidebarRect = leftSidebarRef.current.getBoundingClientRect();
+        const stickerRect = stickerBoundaryRef.current.getBoundingClientRect();
         
         // The preview card + buttons height (approximate)
         const previewTotalHeight = 500;
         
         if (previewRect.top <= 0) {
           // Preview has reached the top of viewport
-          if (sidebarRect.bottom > previewTotalHeight + 20) {
-            // There's still room below the sidebar - stick to top
+          if (stickerRect.bottom > previewTotalHeight + 20) {
+            // The "Add Sticker" section is still visible below - stick to top
             setPreviewStickyMode('top');
             setPreviewStickyOffset(20);
           } else {
-            // Bottom of sidebar is near - stick to bottom of sidebar rectangle
-            // Calculate how far the sidebar bottom is from the viewport top
-            // We want the preview to stop at the bottom of the sidebar
-            const offset = Math.max(20, sidebarRect.bottom - previewTotalHeight);
+            // The "Add Sticker" section bottom has reached the viewport top
+            // Stop the preview at the bottom of the "Add Sticker" section
+            const offset = Math.max(20, stickerRect.bottom - previewTotalHeight);
             setPreviewStickyMode('bottom');
             setPreviewStickyOffset(offset);
           }
@@ -2858,7 +2857,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ marginTop: '30px' }}>
+            <div ref={stickerBoundaryRef} style={{ marginTop: '30px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', marginBottom: '15px' }}>
                 <span>✨</span> Center Sticker
               </label>
