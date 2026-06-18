@@ -689,7 +689,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const canvasRef = useRef(null);
   
   // Sticky preview state for scroll-following QR code preview
-  const [isPreviewSticky, setIsPreviewSticky] = useState(false);
+  // 'none' = normal flow, 'top' = fixed at top of viewport, 'bottom' = fixed at bottom of sidebar rectangle
+  const [previewStickyMode, setPreviewStickyMode] = useState('none');
+  const [previewStickyOffset, setPreviewStickyOffset] = useState(0);
   const previewContainerRef = useRef(null);
   const previewPlaceholderRef = useRef(null);
   const leftSidebarRef = useRef(null);
@@ -700,11 +702,28 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const previewRect = previewContainerRef.current.getBoundingClientRect();
         const sidebarRect = leftSidebarRef.current.getBoundingClientRect();
         
-        // Make sticky when the preview reaches the top of the viewport
-        // AND stop being sticky when the bottom of the left sidebar scrolls past
-        const shouldBeSticky = previewRect.top <= 0 && sidebarRect.bottom > 300;
+        // The preview card + buttons height (approximate)
+        const previewTotalHeight = 500;
         
-        setIsPreviewSticky(shouldBeSticky);
+        if (previewRect.top <= 0) {
+          // Preview has reached the top of viewport
+          if (sidebarRect.bottom > previewTotalHeight + 20) {
+            // There's still room below the sidebar - stick to top
+            setPreviewStickyMode('top');
+            setPreviewStickyOffset(20);
+          } else {
+            // Bottom of sidebar is near - stick to bottom of sidebar rectangle
+            // Calculate how far the sidebar bottom is from the viewport top
+            // We want the preview to stop at the bottom of the sidebar
+            const offset = Math.max(20, sidebarRect.bottom - previewTotalHeight);
+            setPreviewStickyMode('bottom');
+            setPreviewStickyOffset(offset);
+          }
+        } else {
+          // Preview hasn't reached the top yet - normal flow
+          setPreviewStickyMode('none');
+          setPreviewStickyOffset(0);
+        }
       }
     };
 
@@ -2917,7 +2936,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         }}
       >
         {/* Placeholder to maintain layout space when sticky */}
-        {isPreviewSticky && (
+        {previewStickyMode !== 'none' && (
           <div style={{ height: '500px', width: '100%' }} />
         )}
         
@@ -2934,9 +2953,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            position: isPreviewSticky ? 'fixed' : 'relative',
-            top: isPreviewSticky ? '20px' : 'auto',
-            zIndex: isPreviewSticky ? 100 : 1,
+            position: previewStickyMode !== 'none' ? 'fixed' : 'relative',
+            top: previewStickyMode !== 'none' ? `${previewStickyOffset}px` : 'auto',
+            zIndex: previewStickyMode !== 'none' ? 100 : 1,
             transition: 'all 0.3s ease',
           }}
         >
@@ -2954,9 +2973,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           justifyContent: 'center',
           gap: '20px',
           flexWrap: 'wrap',
-          position: isPreviewSticky ? 'fixed' : 'relative',
-          top: isPreviewSticky ? '440px' : 'auto',
-          zIndex: isPreviewSticky ? 100 : 1,
+          position: previewStickyMode !== 'none' ? 'fixed' : 'relative',
+          top: previewStickyMode !== 'none' ? `${previewStickyOffset + 420}px` : 'auto',
+          zIndex: previewStickyMode !== 'none' ? 100 : 1,
           transition: 'all 0.3s ease',
         }}>
           <button
