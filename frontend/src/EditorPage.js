@@ -706,9 +706,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         const previewTotalHeight = 500;
         
         if (previewRect.top <= 0) {
-          // Preview has reached the top of viewport - stick at top:100px
+          // Preview has reached the top of viewport
+          // Move it down as user scrolls, from top:100px to top:1000px max
+          const scrollPast = Math.abs(previewRect.top);
+          const offset = Math.min(100 + scrollPast, 1000);
+          
           setPreviewStickyMode('top');
-          setPreviewStickyOffset(1000);
+          setPreviewStickyOffset(offset);
         } else {
           // Preview hasn't reached the top yet - normal flow
           setPreviewStickyMode('none');
