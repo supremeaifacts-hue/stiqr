@@ -688,44 +688,74 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   
   const canvasRef = useRef(null);
   
-  // Sticky preview state for scroll-following QR code preview
-  const [previewStickyMode, setPreviewStickyMode] = useState('none');
-  const [previewStickyOffset, setPreviewStickyOffset] = useState(0);
+  // Scroll-following QR preview: content moves up/down inside a fixed-height sticky box
+  const [previewTranslateY, setPreviewTranslateY] = useState(0);
+  const [previewBoxHeight, setPreviewBoxHeight] = useState(0);
+  const [previewContentHeight, setPreviewContentHeight] = useState(0);
+  const previewWrapperRef = useRef(null);
   const previewContainerRef = useRef(null);
-  const previewPlaceholderRef = useRef(null);
+  const previewContentRef = useRef(null);
   const leftSidebarRef = useRef(null);
   const stickerBoundaryRef = useRef(null);
-  
+
+  // Measure heights after content renders
+  useLayoutEffect(() => {
+    if (previewContainerRef.current && previewContentRef.current) {
+      const containerRect = previewContainerRef.current.getBoundingClientRect();
+      setPreviewBoxHeight(containerRect.height);
+      setPreviewContentHeight(previewContentRef.current.scrollHeight);
+    }
+  }, []);
+
+  // Re-measure when QR content changes (canvas updates, buttons appear, etc.)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (previewContainerRef.current && previewContentRef.current) {
+        setPreviewBoxHeight(previewContainerRef.current.getBoundingClientRect().height);
+        setPreviewContentHeight(previewContentRef.current.scrollHeight);
+      }
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [qrData, qrColor, bgColor, selectedSticker, selectedLogo, selectedFrame, framePhrase, frameFont, frameColor, selectedType, emailData, smsData, wifiData, pdfFile]);
+
+  // Scroll handler: move content inside the box as user scrolls
   useEffect(() => {
     const handleScroll = () => {
-      if (previewContainerRef.current && stickerBoundaryRef.current) {
-        const previewRect = previewContainerRef.current.getBoundingClientRect();
-        const stickerRect = stickerBoundaryRef.current.getBoundingClientRect();
-        
-        // The preview card + buttons height (approximate)
-        const previewTotalHeight = 500;
-        
-        // Check if the "Center Sticker" section is near the bottom of the page
-        // When stickerRect.bottom is less than window.innerHeight - 600,
-        // it means the sticker section is about 600px from the bottom
-        const stickerNearBottom = stickerRect.bottom < window.innerHeight - 600;
-        
-        if (previewRect.top <= 0 && !stickerNearBottom) {
-          // Preview has reached the top of viewport AND sticker section is not near bottom
-          // Stick at top:100px
-          setPreviewStickyMode('top');
-          setPreviewStickyOffset(100);
-        } else {
-          // Preview hasn't reached the top yet, or sticker section is near bottom
-          setPreviewStickyMode('none');
-          setPreviewStickyOffset(0);
-        }
-      }
+      if (!previewContainerRef.current || !previewContentRef.current) return;
+      
+      const container = previewContainerRef.current;
+      const content = previewContentRef.current;
+      
+      const rect = container.getBoundingClientRect();
+      const contentScrollHeight = content.scrollHeight;
+      const containerHeight = rect.height;
+      
+      // Calculate how far the container is from the top of viewport
+      const containerTop = rect.top;
+      
+      // Calculate the scrollable distance within the container
+      const maxTranslate = Math.max(0, contentScrollHeight - containerHeight);
+      
+      // Progress: 0 = container at top of viewport, 1 = container bottom at viewport bottom
+      const viewportHeight = window.innerHeight;
+      const progress = Math.max(0, Math.min(1, 
+        (-containerTop) / (contentScrollHeight - containerHeight + viewportHeight - containerHeight)
+      ));
+      
+      // Apply translation (negative = move up)
+      const translateY = -progress * maxTranslate;
+      setPreviewTranslateY(translateY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [previewBoxHeight, previewContentHeight]);
 
   // Fetch user logos when component mounts or authentication changes
   useEffect(() => {
@@ -2916,64 +2946,68 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
       </div>
 
-      {/* Right Preview - Sticky QR Code Preview */}
+      {/* Right Preview - Scroll-following QR Code Preview inside sticky box */}
       <div
-        ref={previewContainerRef}
+        ref={previewWrapperRef}
         style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          padding: '30px 40px',
+          width: '528px',
           alignSelf: 'flex-start',
-          height: 'fit-content',
-          position: 'relative',
+          position: 'sticky',
+          top: '80px',
+          maxHeight: 'calc(100vh - 100px)',
+          overflow: 'hidden',
+          background: 'rgba(0, 0, 0, 0.5)',
+          borderRadius: '24px',
+          border: '1px solid rgba(0, 217, 255, 0.1)',
+          padding: '30px',
         }}
       >
-        {/* Placeholder to maintain layout space when sticky */}
-        {previewStickyMode !== 'none' && (
-          <div style={{ height: '500px', width: '100%' }} />
-        )}
+        <h1 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 10px 0', color: '#00D9FF' }}>
+          QR Preview
+        </h1>
         
         <div
-          ref={previewPlaceholderRef}
+          ref={previewContainerRef}
           style={{
-            padding: '50px',
-            background: '#ffffff',
-            borderRadius: '20px',
-            border: 'none',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            marginBottom: '40px',
-            overflow: 'visible',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            position: previewStickyMode !== 'none' ? 'fixed' : 'relative',
-            top: previewStickyMode !== 'none' ? `${previewStickyOffset}px` : 'auto',
-            zIndex: previewStickyMode !== 'none' ? 100 : 1,
-            transition: 'all 0.3s ease',
+            overflow: 'hidden',
+            position: 'relative',
           }}
         >
-          <canvas ref={canvasRef} style={{ 
-            border: '1px solid white', // Frame preview area
-            width: selectedFrame === 'frame1' ? '270px' : 'auto',
-            height: selectedFrame === 'frame1' ? '300px' : 'auto',
-            maxWidth: '100%',
-            maxHeight: '100%',
-          }} /> {/* Frame preview area */}
-        </div>
+          <div
+            ref={previewContentRef}
+            style={{
+              transform: `translateY(${previewTranslateY}px)`,
+              transition: 'transform 0.1s ease-out',
+              willChange: 'transform',
+            }}
+          >
+            <div style={{
+              padding: '50px',
+              background: '#ffffff',
+              borderRadius: '20px',
+              border: 'none',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              marginBottom: '40px',
+              overflow: 'visible',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <canvas ref={canvasRef} style={{ 
+                border: '1px solid white',
+                width: selectedFrame === 'frame1' ? '270px' : 'auto',
+                height: selectedFrame === 'frame1' ? '300px' : 'auto',
+                maxWidth: '100%',
+                maxHeight: '100%',
+              }} />
+            </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '20px',
-          flexWrap: 'wrap',
-          position: previewStickyMode !== 'none' ? 'fixed' : 'relative',
-          top: previewStickyMode !== 'none' ? `${previewStickyOffset + 420}px` : 'auto',
-          zIndex: previewStickyMode !== 'none' ? 100 : 1,
-          transition: 'all 0.3s ease',
-        }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '20px',
+              flexWrap: 'wrap',
+            }}>
           <button
             onClick={handleDownload}
             style={{
@@ -3444,7 +3478,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     />
   ) : null;
 
-  const renderSocialModal = (() => {
+  const renderSocialModal = () => {
     if (!showSocialModal) return null;
     return (
         <div style={{
@@ -3907,9 +3941,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         </div>
       </div>
     );
-  })();
+  };
 
-  const renderEventModal = (() => {
+  const renderEventModal = () => {
     if (!showEventModal) return null;
     return (
       <div style={{
@@ -4713,7 +4747,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         </div>
       </div>
     );
-  })();
+  };
 
 
   return (
