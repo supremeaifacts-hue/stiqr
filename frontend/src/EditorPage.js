@@ -692,13 +692,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [isPreviewSticky, setIsPreviewSticky] = useState(false);
   const previewContainerRef = useRef(null);
   const previewPlaceholderRef = useRef(null);
+  const leftSidebarRef = useRef(null);
   
   useEffect(() => {
     const handleScroll = () => {
-      if (previewContainerRef.current) {
-        const rect = previewContainerRef.current.getBoundingClientRect();
+      if (previewContainerRef.current && leftSidebarRef.current) {
+        const previewRect = previewContainerRef.current.getBoundingClientRect();
+        const sidebarRect = leftSidebarRef.current.getBoundingClientRect();
+        
         // Make sticky when the preview reaches the top of the viewport
-        setIsPreviewSticky(rect.top <= 0);
+        // AND stop being sticky when the bottom of the left sidebar scrolls past
+        const shouldBeSticky = previewRect.top <= 0 && sidebarRect.bottom > 300;
+        
+        setIsPreviewSticky(shouldBeSticky);
       }
     };
 
@@ -1794,7 +1800,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       width: '100%',
     }}>
       {/* Left Sidebar */}
-      <div style={{
+      <div
+        ref={leftSidebarRef}
+        style={{
         width: '528px',
         background: 'rgba(0, 0, 0, 0.5)',
         padding: '30px',
