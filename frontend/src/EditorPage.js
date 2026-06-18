@@ -3478,7 +3478,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     />
   ) : null;
 
-  const renderSocialModal = () => {
+  function renderSocialModal() {
     if (!showSocialModal) return null;
     return (
         <div style={{
