@@ -3233,6 +3233,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             </button>
           </div>
         </div>
+        {/* Spacer to give the sticky preview room to scroll within the column */}
+        <div style={{ height: '600px' }} />
       </div>
     </div>
   );
