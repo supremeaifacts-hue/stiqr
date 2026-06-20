@@ -100,8 +100,47 @@
   gap: 12px;
 }
 
+/* ===== Social & Event Modal Layout ===== */
+.modal-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.modal-editor {
+  width: 100%;
+  max-width: 100%;
+}
+
+.modal-preview {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
 /* ===== Desktop Styles ===== */
 @media (min-width: 768px) {
+  .modal-layout {
+    flex-direction: row;
+    gap: 30px;
+  }
+
+  .modal-editor {
+    max-width: 520px;
+    flex-shrink: 0;
+  }
+
+  .modal-preview {
+    flex: 1;
+    margin-top: 0;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+  }
   .editor-content {
     flex-direction: row;
     gap: 30px;

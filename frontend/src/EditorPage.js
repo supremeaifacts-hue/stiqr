@@ -3251,22 +3251,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             padding: '30px',
             maxWidth: '1100px',
             width: '100%',
-            minWidth: '900px',
             maxHeight: '90vh',
             overflowY: 'auto',
             display: 'block',
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '520px', width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="modal-layout">
+              <div className="modal-editor">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
                   Social Media QR Code
                 </h2>
                 <button
                   onClick={() => setShowSocialModal(false)}
                   style={{
-                    position: 'absolute',
-                    top: '16px',
-                    right: '16px',
                     background: 'transparent',
                     border: 'none',
                     color: '#ccc',
@@ -3284,7 +3281,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 </button>
               </div>
 
-              <div style={{ maxWidth: '520px' }}>
+              <div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
                     Page Color
@@ -3567,7 +3564,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            <div style={{ position: 'absolute', top: '130px', left: '750px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', width: '280px', zIndex: 20 }}>
+            </div>
+            <div className="modal-preview">
               <div style={{
                 position: 'relative',
                 width: '100%',
@@ -3716,22 +3714,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           padding: '30px',
           maxWidth: '1100px',
           width: '100%',
-          minWidth: '900px',
           maxHeight: '90vh',
           overflowY: 'auto',
           display: 'block',
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '520px', width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="modal-layout">
+            <div className="modal-editor">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
                 Event QR Code
               </h2>
               <button
                 onClick={() => setShowEventModal(false)}
                 style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
                   background: 'transparent',
                   border: 'none',
                   color: '#ccc',
@@ -3749,7 +3744,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </button>
             </div>
 
-            <div style={{ maxWidth: '520px' }}>
+            <div>
               {/* Page Color */}
               <div>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
@@ -4253,8 +4248,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
               </div>
             </div>
 
-            {/* Phone Mockup Preview */}
-            <div style={{ position: 'absolute', top: '150px', left: '750px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px', width: '280px', zIndex: 20 }}>
+            </div>
+            <div className="modal-preview">
               <div style={{
                 position: 'relative',
                 width: '100%',
