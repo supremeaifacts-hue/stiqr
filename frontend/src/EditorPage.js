@@ -145,23 +145,34 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   }, [qrData]);
   
   // ============================================================
-  // Scroll-following QR preview: make the preview sticky when
-  // the user scrolls past the editor header.
+  // Scroll-following QR preview: smoothly move the QR preview
+  // up and down within the column as the user scrolls.
   // ============================================================
-  const [isPreviewSticky, setIsPreviewSticky] = useState(false);
-  const previewContainerRef = useRef(null);
-  const previewPlaceholderRef = useRef(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const columnRef = useRef(null);
   
   useEffect(() => {
     const handleScroll = () => {
-      if (previewContainerRef.current) {
-        const rect = previewContainerRef.current.getBoundingClientRect();
-        // Make sticky when the preview reaches the top of the viewport
-        setIsPreviewSticky(rect.top <= 20);
+      if (!columnRef.current) return;
+      const rect = columnRef.current.getBoundingClientRect();
+      // Calculate how far the column is from the top of the viewport
+      // progress = 0 when column top is at viewport top
+      // progress = 1 when column bottom is at viewport bottom
+      const columnHeight = rect.height;
+      const viewportHeight = window.innerHeight;
+      const maxScroll = columnHeight - viewportHeight;
+      if (maxScroll <= 0) {
+        setScrollProgress(0);
+        return;
       }
+      // How much of the column is above the viewport top
+      const scrolled = -rect.top;
+      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+      setScrollProgress(progress);
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initialize
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
@@ -2897,22 +2908,21 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       </div>
 
       {/* NEW: QR Preview Column (this is the container) */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        minHeight: '1200px',
-        overflow: 'hidden',
-        position: 'relative',
-      }}>
-        {/* QR Preview Box (sticky inside the column) */}
+      <div
+        ref={columnRef}
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          minHeight: '1200px',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* QR Preview Box (moves up and down with scroll) */}
         <div
-          ref={previewContainerRef}
           style={{
-            position: 'sticky',
-            top: '20px',
-            alignSelf: 'flex-start',
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
@@ -2920,8 +2930,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
             justifyContent: 'flex-start',
             padding: '30px 40px',
             height: 'fit-content',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            transform: isPreviewSticky ? 'translateY(0)' : 'translateY(0)',
+            transition: 'transform 0.1s ease-out',
+            transform: `translateY(${scrollProgress * 600}px)`,
           }}
         >
           <div style={{
