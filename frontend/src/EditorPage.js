@@ -2902,8 +2902,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        minHeight: '600px',
+        minHeight: '1200px',
+        overflow: 'hidden',
         position: 'relative',
       }}>
         {/* QR Preview Box (sticky inside the column) */}
