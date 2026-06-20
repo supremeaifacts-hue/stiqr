@@ -1,0 +1,147 @@
+/* EditorPage.css - Mobile-first responsive styles */
+
+/* ===== Outer Container ===== */
+.editor-page-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* ===== Editor Content Layout ===== */
+.editor-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* ===== Left Sidebar (Editor Controls) ===== */
+.editor-left {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 217, 255, 0.1);
+  box-sizing: border-box;
+}
+
+/* ===== Right Column (QR Preview) ===== */
+.editor-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== QR Preview Box ===== */
+.qr-preview-scroll {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px;
+  height: fit-content;
+  box-sizing: border-box;
+}
+
+/* ===== QR Preview Card ===== */
+.qr-preview-card {
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  overflow: visible;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+/* ===== QR Canvas ===== */
+.qr-canvas {
+  border: 1px solid white;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ===== Action Buttons Row ===== */
+.editor-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* ===== Header ===== */
+.editor-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.editor-header-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* ===== Desktop Styles ===== */
+@media (min-width: 768px) {
+  .editor-content {
+    flex-direction: row;
+    gap: 30px;
+    padding: 20px;
+  }
+
+  .editor-left {
+    width: 528px;
+    padding: 30px;
+    flex-shrink: 0;
+  }
+
+  .editor-right {
+    position: sticky;
+    top: 0;
+    flex: 1;
+    min-height: 1200px;
+    overflow: hidden;
+  }
+
+  .qr-preview-scroll {
+    padding: 30px 40px;
+    transition: transform 0.1s ease-out;
+  }
+
+  .qr-preview-card {
+    padding: 50px;
+    max-width: none;
+    width: auto;
+  }
+
+  .editor-header {
+    padding: 20px 40px;
+  }
+
+  .editor-header-buttons {
+    gap: 20px;
+  }
+
+  .editor-actions {
+    gap: 20px;
+  }
+}

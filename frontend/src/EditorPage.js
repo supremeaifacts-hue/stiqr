@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import StickerPicker from './StickerPicker';
 import { useAuth } from './contexts/AuthContext';
+import './EditorPage.css';
 import whatsappLogo from './assets/logos/whatsapp.png';
 import wechatLogo from './assets/logos/wechat.png';
 import instagramLogo from './assets/logos/instagram.png';
@@ -1800,21 +1801,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   };
 
   const editorContent = (
-    <div style={{
-      display: 'flex',
-      flex: 1,
-      flexDirection: 'row',
-      gap: '30px',
-      width: '100%',
-    }}>
+    <div className="editor-content">
       {/* Left Sidebar */}
-      <div style={{
-        width: '528px',
-        background: 'rgba(0, 0, 0, 0.5)',
-        padding: '30px',
-        borderRadius: '24px',
-        border: '1px solid rgba(0, 217, 255, 0.1)',
-      }}>
+      <div className="editor-left">
         <h1 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 10px 0', color: '#00D9FF' }}>
           QR Editor
         </h1>
@@ -2910,52 +2899,23 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       {/* NEW: QR Preview Column (this is the container) */}
       <div
         ref={columnRef}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          minHeight: '1200px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
+        className="editor-right"
       >
         {/* QR Preview Box (moves up and down with scroll) */}
         <div
+          className="qr-preview-scroll"
           style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            padding: '30px 40px',
-            height: 'fit-content',
-            transition: 'transform 0.1s ease-out',
             transform: `translateY(${scrollProgress * 600}px)`,
           }}
         >
-          <div style={{
-            padding: '50px',
-            background: '#ffffff',
-            borderRadius: '20px',
-            border: 'none',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            marginBottom: '40px',
-            overflow: 'visible',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-            <canvas ref={canvasRef} style={{ 
-              border: '1px solid white',
+          <div className="qr-preview-card">
+            <canvas ref={canvasRef} className="qr-canvas" style={{ 
               width: selectedFrame === 'frame1' ? '270px' : 'auto',
               height: selectedFrame === 'frame1' ? '300px' : 'auto',
-              maxWidth: '100%',
-              maxHeight: '100%',
             }} />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          <div className="editor-actions">
             <button
               onClick={handleDownload}
               style={{
@@ -4540,24 +4500,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%)',
-      color: '#fff',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: '"Inter", "Segoe UI", sans-serif',
-    }}>
+    <div className="editor-page-wrapper">
       {!embedded && (
-        <header style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          padding: '20px 40px',
-          borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
-          background: 'rgba(0, 0, 0, 0.5)',
-        }}>
-          <div style={{ display: 'flex', gap: '20px' }}>
+        <header className="editor-header">
+          <div className="editor-header-buttons">
             <button
               onClick={onBack}
               style={{
