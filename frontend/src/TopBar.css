@@ -1,0 +1,183 @@
+/* TopBar.css - Mobile-first responsive styles */
+
+/* ===== Top Bar Container ===== */
+.topbar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 60px;
+  border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
+}
+
+/* ===== Logo Section ===== */
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-logo-img {
+  height: 60px;
+  width: auto;
+  cursor: pointer;
+}
+
+.topbar-logo-text {
+  color: #00D9FF;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+}
+
+/* ===== Desktop Navigation ===== */
+.topbar-nav {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+/* ===== Hamburger Button (hidden on desktop) ===== */
+.topbar-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1001;
+}
+
+.topbar-hamburger-line {
+  width: 28px;
+  height: 3px;
+  background: #00D9FF;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Hamburger open state (X shape) */
+.topbar-hamburger.open .topbar-hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 6px);
+}
+
+.topbar-hamburger.open .topbar-hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.topbar-hamburger.open .topbar-hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -6px);
+}
+
+/* ===== Mobile Dropdown Menu ===== */
+.topbar-mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(10, 10, 10, 0.98);
+  border-left: 1px solid rgba(0, 217, 255, 0.2);
+  flex-direction: column;
+  padding: 100px 30px 30px;
+  gap: 20px;
+  z-index: 1000;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+}
+
+.topbar-mobile-menu.open {
+  display: flex;
+}
+
+.topbar-mobile-link {
+  color: #fff;
+  text-decoration: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  font-weight: 500;
+}
+
+.topbar-mobile-link:hover,
+.topbar-mobile-link:active {
+  background: rgba(0, 217, 255, 0.1);
+}
+
+.topbar-mobile-link.signup {
+  display: none; /* Sign Up is already in the header on mobile */
+}
+
+.topbar-mobile-link.logout {
+  color: #ff6b6b;
+}
+
+.topbar-mobile-link.login {
+  color: #00D9FF;
+}
+
+/* ===== Overlay when menu is open ===== */
+.topbar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.topbar-overlay.open {
+  display: block;
+}
+
+/* ===== Mobile Styles ===== */
+@media (max-width: 767px) {
+  .topbar-header {
+    padding: 12px 16px;
+  }
+
+  .topbar-logo-img {
+    height: 40px;
+  }
+
+  .topbar-logo-text {
+    font-size: 20px;
+  }
+
+  .topbar-nav {
+    display: none;
+  }
+
+  .topbar-hamburger {
+    display: flex;
+  }
+
+  /* Show Sign Up button in header on mobile */
+  .topbar-mobile-signup-btn {
+    display: block;
+    padding: 8px 16px;
+    background: #00D9FF;
+    border: none;
+    border-radius: 8px;
+    color: #0a0a0a;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+/* ===== Desktop Styles ===== */
+@media (min-width: 768px) {
+  .topbar-mobile-menu,
+  .topbar-overlay,
+  .topbar-mobile-signup-btn {
+    display: none !important;
+  }
+}

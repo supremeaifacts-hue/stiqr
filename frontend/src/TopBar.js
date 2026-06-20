@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE_URL } from './contexts/AuthContext';
 import SignUpModal from './SignUpModal';
 import LoginModal from './LoginModal';
+import './TopBar.css';
 
 const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLanding, onLoginSuccess }) => {
   const { user, logout } = useAuth();
@@ -9,6 +10,7 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignUpClick = () => {
     setShowSignUpModal(true);
@@ -78,39 +80,24 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
 
   return (
     <>
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '18px 60px',
-        borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
-        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <header className="topbar-header">
+        <div className="topbar-logo">
           <img 
             src="/assets/logo.png" 
             alt="StiQR" 
-            style={{
-              height: '60px',
-              width: 'auto',
-              cursor: 'pointer',
-            }}
+            className="topbar-logo-img"
             onClick={onGoToLanding}
           />
           <span 
+            className="topbar-logo-text"
             onClick={onGoToLanding}
-            style={{ 
-              color: '#00D9FF', 
-              fontSize: '24px', 
-              fontWeight: 'bold',
-              letterSpacing: '2px',
-              cursor: 'pointer',
-            }}
           >
             StiQR
           </span>
         </div>
-        <nav style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
+
+        {/* Desktop Navigation */}
+        <nav className="topbar-nav">
           <a onClick={onViewDashboard} style={{ color: '#fff', textDecoration: 'none', fontSize: '16px', cursor: 'pointer' }}>
             Dashboard
           </a>
@@ -120,7 +107,7 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
           
           {user ? (
             // User is logged in - show user info and logout
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 {user.profilePicture ? (
                   <img 
@@ -211,7 +198,101 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
             </>
           )}
         </nav>
+
+        {/* Mobile: Sign Up button + Hamburger */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {!user && (
+            <button
+              onClick={handleSignUpClick}
+              className="topbar-mobile-signup-btn"
+            >
+              Sign Up
+            </button>
+          )}
+          <button
+            className={`topbar-hamburger ${mobileMenuOpen ? 'open' : ''}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="topbar-hamburger-line" />
+            <span className="topbar-hamburger-line" />
+            <span className="topbar-hamburger-line" />
+          </button>
+        </div>
       </header>
+
+      {/* Mobile overlay */}
+      <div
+        className={`topbar-overlay ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
+      {/* Mobile dropdown menu */}
+      <div className={`topbar-mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        <a
+          className="topbar-mobile-link"
+          onClick={() => { onViewDashboard(); setMobileMenuOpen(false); }}
+        >
+          Dashboard
+        </a>
+        <a
+          className="topbar-mobile-link"
+          onClick={() => { onViewPricing(); setMobileMenuOpen(false); }}
+        >
+          Pricing
+        </a>
+        {user ? (
+          <>
+            <div style={{
+              borderTop: '1px solid rgba(0, 217, 255, 0.2)',
+              paddingTop: '16px',
+              marginTop: '8px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                {user.profilePicture ? (
+                  <img src={user.profilePicture} alt={user.displayName} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#000', fontWeight: 'bold', fontSize: '16px',
+                  }}>
+                    {user.displayName?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div>
+                  <div style={{ color: '#fff', fontSize: '14px' }}>{user.displayName || user.email}</div>
+                  {!loadingSubscription && subscriptionData?.subscriptionStatus === 'active' && 
+                   (subscriptionData?.planType === 'pro' || subscriptionData?.planType === 'ultra') && (
+                    <div style={{
+                      fontSize: '10px', fontWeight: '600',
+                      color: subscriptionData.planType === 'pro' ? '#FF00FF' : '#00FF00',
+                      background: 'rgba(0, 0, 0, 0.5)', padding: '2px 6px', borderRadius: '4px', marginTop: '2px',
+                      textTransform: 'uppercase',
+                    }}>
+                      {subscriptionData.planType === 'pro' ? '⭐ Pro' : '👑 Ultra'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <a
+              className="topbar-mobile-link logout"
+              onClick={() => { logout(); setMobileMenuOpen(false); }}
+            >
+              Logout
+            </a>
+          </>
+        ) : (
+          <a
+            className="topbar-mobile-link login"
+            onClick={() => { handleLoginClick(); setMobileMenuOpen(false); }}
+          >
+            Login
+          </a>
+        )}
+      </div>
       {showSignUpModal && (
         <SignUpModal 
           onClose={handleModalClose}
