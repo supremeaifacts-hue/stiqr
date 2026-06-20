@@ -3238,6 +3238,17 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   alert('Failed to save QR code. Please try again.');
                 }
               }}
+              style={{
+                padding: '14px 40px',
+                background: 'linear-gradient(135deg, #FF00FF 0%, #FF6600 100%)',
+                border: 'none',
+                borderRadius: '20px',
+                color: '#fff',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontSize: '14px',
+                boxShadow: '0 0 30px rgba(255, 0, 255, 0.5)',
+              }}
             >
               💾 Save to My QR codes
             </button>
