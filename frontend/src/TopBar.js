@@ -86,30 +86,29 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
         borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
         background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%)',
       }}>
-        <div 
-          onClick={onGoToLanding}
-          style={{
-            fontSize: '28px',
-            fontWeight: 'bold',
-            color: '#00D9FF',
-            letterSpacing: '2px',
-            cursor: onGoToLanding ? 'pointer' : 'default',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            if (onGoToLanding) {
-              e.currentTarget.style.color = '#FF00FF';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (onGoToLanding) {
-              e.currentTarget.style.color = '#00D9FF';
-              e.currentTarget.style.transform = 'scale(1)';
-            }
-          }}
-        >
-          ◼◼ StiQR
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img 
+            src="/assets/logo.png" 
+            alt="StiQR" 
+            style={{
+              height: '40px',
+              width: 'auto',
+              cursor: 'pointer',
+            }}
+            onClick={onGoToLanding}
+          />
+          <span 
+            onClick={onGoToLanding}
+            style={{ 
+              color: '#00D9FF', 
+              fontSize: '24px', 
+              fontWeight: 'bold',
+              letterSpacing: '2px',
+              cursor: 'pointer',
+            }}
+          >
+            StiQR
+          </span>
         </div>
         <nav style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
           <a onClick={onViewDashboard} style={{ color: '#fff', textDecoration: 'none', fontSize: '16px', cursor: 'pointer' }}>
