@@ -3427,7 +3427,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                           {profile.platform}
                         </span>
                       </div>
-                      <div style={{ flex: 1, minWidth: '0' }}>
+                      <div style={{ flex: 1, minWidth: '0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <input
                           type="text"
                           value={profile.url}
@@ -3442,61 +3442,60 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             color: '#fff',
                             fontSize: '12px',
                             boxSizing: 'border-box',
-                            maxWidth: '260px',
                           }}
                         />
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <button
-                          onClick={() => moveSocialProfileUp(profile.id)}
-                          disabled={index === 0}
-                          style={{
-                            minWidth: '62px',
-                            padding: '6px 10px',
-                            background: index === 0 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
-                            border: '1px solid rgba(0, 217, 255, 0.3)',
-                            borderRadius: '4px',
-                            color: index === 0 ? '#666' : '#00D9FF',
-                            cursor: index === 0 ? 'not-allowed' : 'pointer',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Up
-                        </button>
-                        <button
-                          onClick={() => moveSocialProfileDown(profile.id)}
-                          disabled={index === socialProfiles.length - 1}
-                          style={{
-                            minWidth: '62px',
-                            padding: '6px 10px',
-                            background: index === socialProfiles.length - 1 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
-                            border: '1px solid rgba(0, 217, 255, 0.3)',
-                            borderRadius: '4px',
-                            color: index === socialProfiles.length - 1 ? '#666' : '#00D9FF',
-                            cursor: index === socialProfiles.length - 1 ? 'not-allowed' : 'pointer',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Down
-                        </button>
-                        <button
-                          onClick={() => removeSocialProfile(profile.id)}
-                          style={{
-                            minWidth: '62px',
-                            padding: '6px 10px',
-                            background: 'rgba(255, 0, 0, 0.2)',
-                            border: '1px solid rgba(255, 0, 0, 0.3)',
-                            borderRadius: '4px',
-                            color: '#ff6b6b',
-                            cursor: 'pointer',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Delete
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <button
+                            onClick={() => moveSocialProfileUp(profile.id)}
+                            disabled={index === 0}
+                            style={{
+                              minWidth: '62px',
+                              padding: '6px 10px',
+                              background: index === 0 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
+                              border: '1px solid rgba(0, 217, 255, 0.3)',
+                              borderRadius: '4px',
+                              color: index === 0 ? '#666' : '#00D9FF',
+                              cursor: index === 0 ? 'not-allowed' : 'pointer',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            Up
+                          </button>
+                          <button
+                            onClick={() => moveSocialProfileDown(profile.id)}
+                            disabled={index === socialProfiles.length - 1}
+                            style={{
+                              minWidth: '62px',
+                              padding: '6px 10px',
+                              background: index === socialProfiles.length - 1 ? 'rgba(0, 217, 255, 0.1)' : 'rgba(0, 217, 255, 0.2)',
+                              border: '1px solid rgba(0, 217, 255, 0.3)',
+                              borderRadius: '4px',
+                              color: index === socialProfiles.length - 1 ? '#666' : '#00D9FF',
+                              cursor: index === socialProfiles.length - 1 ? 'not-allowed' : 'pointer',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            Down
+                          </button>
+                          <button
+                            onClick={() => removeSocialProfile(profile.id)}
+                            style={{
+                              minWidth: '62px',
+                              padding: '6px 10px',
+                              background: 'rgba(255, 0, 0, 0.2)',
+                              border: '1px solid rgba(255, 0, 0, 0.3)',
+                              borderRadius: '4px',
+                              color: '#ff6b6b',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -4103,14 +4102,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       boxSizing: 'border-box',
                     }}
                   />
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     <input
                       type="text"
                       value={eventData.city}
                       onChange={(e) => setEventData({...eventData, city: e.target.value})}
                       placeholder="City"
                       style={{
-                        flex: 1,
                         padding: '10px',
                         background: 'rgba(0, 217, 255, 0.05)',
                         border: '1px solid rgba(0, 217, 255, 0.2)',
@@ -4118,6 +4116,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         color: '#fff',
                         fontSize: '12px',
                         boxSizing: 'border-box',
+                        width: '100%',
                       }}
                     />
                     <input
@@ -4126,7 +4125,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       onChange={(e) => setEventData({...eventData, state: e.target.value})}
                       placeholder="State"
                       style={{
-                        flex: 1,
                         padding: '10px',
                         background: 'rgba(0, 217, 255, 0.05)',
                         border: '1px solid rgba(0, 217, 255, 0.2)',
@@ -4134,17 +4132,17 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         color: '#fff',
                         fontSize: '12px',
                         boxSizing: 'border-box',
+                        width: '100%',
                       }}
                     />
                   </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     <input
                       type="text"
                       value={eventData.zip}
                       onChange={(e) => setEventData({...eventData, zip: e.target.value})}
                       placeholder="ZIP"
                       style={{
-                        flex: 1,
                         padding: '10px',
                         background: 'rgba(0, 217, 255, 0.05)',
                         border: '1px solid rgba(0, 217, 255, 0.2)',
@@ -4152,6 +4150,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         color: '#fff',
                         fontSize: '12px',
                         boxSizing: 'border-box',
+                        width: '100%',
                       }}
                     />
                     <input
@@ -4160,7 +4159,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       onChange={(e) => setEventData({...eventData, country: e.target.value})}
                       placeholder="Country"
                       style={{
-                        flex: 1,
                         padding: '10px',
                         background: 'rgba(0, 217, 255, 0.05)',
                         border: '1px solid rgba(0, 217, 255, 0.2)',
@@ -4168,6 +4166,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         color: '#fff',
                         fontSize: '12px',
                         boxSizing: 'border-box',
+                        width: '100%',
                       }}
                     />
                   </div>
