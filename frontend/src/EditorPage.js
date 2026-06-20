@@ -2896,504 +2896,342 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           </div>
       </div>
 
-      {/* Right Preview - Scroll-following */}
-      <div
-        ref={previewContainerRef}
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          padding: '30px 40px',
-          alignSelf: 'flex-start',
-          height: 'fit-content',
-          position: 'sticky',
-          top: '20px',
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-          transform: isPreviewSticky ? 'translateY(0)' : 'translateY(0)',
-        }}
-      >
-        <div style={{
-          padding: '50px',
-          background: '#ffffff',
-          borderRadius: '20px',
-          border: 'none',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-          marginBottom: '40px',
-          overflow: 'visible',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <canvas ref={canvasRef} style={{ 
-            border: '1px solid white', // Frame preview area
-            width: selectedFrame === 'frame1' ? '270px' : 'auto',
-            height: selectedFrame === 'frame1' ? '300px' : 'auto',
-            maxWidth: '100%',
-            maxHeight: '100%',
-          }} /> {/* Frame preview area */}
-        </div>
+      {/* NEW: QR Preview Column (this is the container) */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        minHeight: '600px',
+        position: 'relative',
+      }}>
+        {/* QR Preview Box (sticky inside the column) */}
+        <div
+          ref={previewContainerRef}
+          style={{
+            position: 'sticky',
+            top: '20px',
+            alignSelf: 'flex-start',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: '30px 40px',
+            height: 'fit-content',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            transform: isPreviewSticky ? 'translateY(0)' : 'translateY(0)',
+          }}
+        >
+          <div style={{
+            padding: '50px',
+            background: '#ffffff',
+            borderRadius: '20px',
+            border: 'none',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            marginBottom: '40px',
+            overflow: 'visible',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <canvas ref={canvasRef} style={{ 
+              border: '1px solid white',
+              width: selectedFrame === 'frame1' ? '270px' : 'auto',
+              height: selectedFrame === 'frame1' ? '300px' : 'auto',
+              maxWidth: '100%',
+              maxHeight: '100%',
+            }} />
+          </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-          <button
-            onClick={handleDownload}
-            style={{
-              padding: '14px 40px',
-              background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
-              border: 'none',
-              borderRadius: '20px',
-              color: '#000',
-              fontWeight: '700',
-              cursor: 'pointer',
-              fontSize: '14px',
-              boxShadow: '0 0 30px rgba(0, 217, 255, 0.5)',
-            }}
-          >
-            Download QR Code
-          </button>
-          <button
-            onClick={async () => {
-              console.log('💾 Save to My QR codes button clicked');
-              console.log('isAuthenticated:', isAuthenticated);
-              console.log('qrData:', qrData?.substring(0, 100));
-              console.log('qrCodeId:', qrCodeId);
-              console.log('selectedFrame:', selectedFrame);
-              console.log('framePhrase:', framePhrase);
-              
-              if (!isAuthenticated) {
-                alert('Please login to save QR codes to your collection');
-                return;
-              }
-              
-              if (!hasQrContent()) {
-                alert('Please create a QR code first');
-                return;
-              }
-              
-              try {
-                // ============================================================
-                // Generate a final rendered image with tracking URL, frame,
-                // logo, and sticker - matching exactly what would be downloaded.
-                // This ensures the dashboard preview matches the downloaded QR code.
-                // ============================================================
-                let imageData;
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleDownload}
+              style={{
+                padding: '14px 40px',
+                background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                border: 'none',
+                borderRadius: '20px',
+                color: '#000',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontSize: '14px',
+                boxShadow: '0 0 30px rgba(0, 217, 255, 0.5)',
+              }}
+            >
+              Download QR Code
+            </button>
+            <button
+              onClick={async () => {
+                console.log('💾 Save to My QR codes button clicked');
+                console.log('isAuthenticated:', isAuthenticated);
+                console.log('qrData:', qrData?.substring(0, 100));
+                console.log('qrCodeId:', qrCodeId);
+                console.log('selectedFrame:', selectedFrame);
+                console.log('framePhrase:', framePhrase);
                 
-                // Generate a fresh canvas with the tracking URL and all design elements
-                const finalCanvas = document.createElement('canvas');
-                const trackingUrl = getTrackingUrl(qrCodeIdRef.current);
-                
-                // Use same dimensions as preview: 270x300px for Frame #1 and Frame #2, otherwise original dimensions
-                if (selectedFrame === 'frame1' || selectedFrame === 'frame2') {
-                  finalCanvas.width = 270;
-                  finalCanvas.height = 300;
-                } else {
-                  finalCanvas.width = qrSize;
-                  finalCanvas.height = qrSize * 2 + 250;
+                if (!isAuthenticated) {
+                  alert('Please login to save QR codes to your collection');
+                  return;
                 }
                 
-                // Generate QR code with tracking URL (skip for Frame #1 and Frame #2)
-                if (selectedFrame !== 'frame1' && selectedFrame !== 'frame2') {
-                  await new Promise((resolve, reject) => {
-                    QRCode.toCanvas(
-                      finalCanvas,
-                      trackingUrl,
-                      {
-                        width: qrSize - 60,
-                        margin: includeMargin ? 2 : 0,
-                        color: {
-                          dark: qrColor,
-                          light: bgColor,
-                        },
-                        errorCorrectionLevel: errorCorrectionLevel,
-                      },
-                      (error) => {
-                        if (error) reject(error);
-                        else resolve();
-                      }
-                    );
-                  });
+                if (!hasQrContent()) {
+                  alert('Please create a QR code first');
+                  return;
                 }
                 
-                // Apply frame effects (same logic as handleDownload)
-                const ctx = finalCanvas.getContext('2d');
-                if (selectedFrame !== 'none') {
-                  if (selectedFrame === 'frame1') {
-                    const outerWidth = 270;
-                    const outerHeight = 300;
-                    const borderRadius = 14;
-                    
-                    ctx.fillStyle = frameColor;
-                    ctx.beginPath();
-                    ctx.roundRect(0, 0, outerWidth, outerHeight, borderRadius);
-                    ctx.fill();
-                    
-                    const labelY = 15 + 240 + 8 + 5 + 5 + 10;
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = `700 18px ${frameFont}, sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'alphabetic';
-                    
-                    const labelText = framePhrase.toUpperCase();
-                    const labelX = outerWidth / 2;
-                    let currentX = labelX - (ctx.measureText(labelText).width / 2);
-                    for (let i = 0; i < labelText.length; i++) {
-                      ctx.fillText(labelText[i], currentX, labelY);
-                      currentX += ctx.measureText(labelText[i]).width + 2;
-                    }
-                    
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(15, 15, 240, 240);
-                    ctx.clip();
-                    
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 240;
-                    tempCanvas.height = 240;
-                    
-                    await new Promise((resolve, reject) => {
-                      QRCode.toCanvas(
-                        tempCanvas,
-                        trackingUrl,
-                        {
-                          width: 240,
-                          margin: includeMargin ? 2 : 0,
-                          color: { dark: qrColor, light: bgColor },
-                          errorCorrectionLevel: errorCorrectionLevel,
-                        },
-                        (error) => {
-                          if (error) reject(error);
-                          else resolve();
-                        }
-                      );
-                    });
-                    
-                    ctx.drawImage(tempCanvas, 15, 15);
-                    ctx.restore();
-                  } else if (selectedFrame === 'frame2') {
-                    const frameWidth = 10;
-                    const frameSize = 240;
-                    const frameX = 10;
-                    const frameY = 0;
-                    
-                    ctx.strokeStyle = frameColor;
-                    ctx.lineWidth = frameWidth;
-                    ctx.beginPath();
-                    ctx.roundRect(frameX + frameWidth/2, frameY + frameWidth/2, frameSize, frameSize, 6);
-                    ctx.stroke();
-                    
-                    const textRectX = 10;
-                    const textRectY = 260;
-                    const textRectWidth = 250;
-                    const textRectHeight = 40;
-                    
-                    ctx.fillStyle = frameColor;
-                    ctx.beginPath();
-                    ctx.roundRect(textRectX, textRectY, textRectWidth, textRectHeight, 16);
-                    ctx.fill();
-                    
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = `700 18px ${frameFont}, sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    
-                    const labelText = framePhrase.toUpperCase();
-                    const labelX = textRectX + textRectWidth / 2;
-                    const labelY = textRectY + textRectHeight / 2;
-                    
-                    let currentX = labelX - (ctx.measureText(labelText).width / 2);
-                    for (let i = 0; i < labelText.length; i++) {
-                      ctx.fillText(labelText[i], currentX, labelY);
-                      currentX += ctx.measureText(labelText[i]).width + 2;
-                    }
-                    
-                    ctx.clearRect(20, 10, 230, 230);
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(20, 10, 230, 230);
-                    ctx.clip();
-                    
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 230;
-                    tempCanvas.height = 230;
-                    
-                    await new Promise((resolve, reject) => {
-                      QRCode.toCanvas(
-                        tempCanvas,
-                        trackingUrl,
-                        {
-                          width: 230,
-                          margin: includeMargin ? 2 : 0,
-                          color: { dark: qrColor, light: bgColor },
-                          errorCorrectionLevel: errorCorrectionLevel,
-                        },
-                        (error) => {
-                          if (error) reject(error);
-                          else resolve();
-                        }
-                      );
-                    });
-                    
-                    ctx.drawImage(tempCanvas, 20, 10);
-                    ctx.restore();
-                  }
-                }
-                
-                // Apply sticker if selected
-                if (selectedSticker) {
-                  const stickerSize = qrSize * 0.2;
-                  // Calculate QR code area dimensions based on frame type
-                  let qrAreaSize, qrAreaX, qrAreaY;
-                  if (selectedFrame === 'frame1') {
-                    qrAreaSize = 240;
-                    qrAreaX = 15;
-                    qrAreaY = 15;
-                  } else if (selectedFrame === 'frame2') {
-                    qrAreaSize = 230;
-                    qrAreaX = 20;
-                    qrAreaY = 10;
-                  } else {
-                    qrAreaSize = qrSize - 60;
-                    qrAreaX = 0;
-                    qrAreaY = 0;
-                  }
-                  // Center sticker within the QR code area
-                  const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
-                  const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
-                  const padding = 6;
-                  // White square perfectly centered (no offset)
-                  const whiteSquareX = x - padding;
-                  const whiteSquareY = y - padding;
-                  ctx.fillStyle = 'white';
-                  const radius = 8;
-                  ctx.beginPath();
-                  ctx.moveTo(whiteSquareX + radius, whiteSquareY);
-                  ctx.lineTo(whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY);
-                  ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY, whiteSquareX + stickerSize + padding * 2, whiteSquareY + radius);
-                  ctx.lineTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2 - radius);
-                  ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2, whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY + stickerSize + padding * 2);
-                  ctx.lineTo(whiteSquareX + radius, whiteSquareY + stickerSize + padding * 2);
-                  ctx.quadraticCurveTo(whiteSquareX, whiteSquareY + stickerSize + padding * 2, whiteSquareX, whiteSquareY + stickerSize + padding * 2 - radius);
-                  ctx.lineTo(whiteSquareX, whiteSquareY + radius);
-                  ctx.quadraticCurveTo(whiteSquareX, whiteSquareY, whiteSquareX + radius, whiteSquareY);
-                  ctx.closePath();
-                  ctx.fill();
-
-                  // Sticker perfectly centered (no offset)
-                  const stickerX = x;
-                  const stickerY = y;
+                try {
+                  let imageData;
+                  const finalCanvas = document.createElement('canvas');
+                  const trackingUrl = getTrackingUrl(qrCodeIdRef.current);
                   
-                  if (selectedSticker.startsWith('data:')) {
+                  if (selectedFrame === 'frame1' || selectedFrame === 'frame2') {
+                    finalCanvas.width = 270;
+                    finalCanvas.height = 300;
+                  } else {
+                    finalCanvas.width = qrSize;
+                    finalCanvas.height = qrSize * 2 + 250;
+                  }
+                  
+                  if (selectedFrame !== 'frame1' && selectedFrame !== 'frame2') {
+                    await new Promise((resolve, reject) => {
+                      QRCode.toCanvas(
+                        finalCanvas,
+                        trackingUrl,
+                        {
+                          width: qrSize - 60,
+                          margin: includeMargin ? 2 : 0,
+                          color: { dark: qrColor, light: bgColor },
+                          errorCorrectionLevel: errorCorrectionLevel,
+                        },
+                        (error) => {
+                          if (error) reject(error);
+                          else resolve();
+                        }
+                      );
+                    });
+                  }
+                  
+                  const ctx = finalCanvas.getContext('2d');
+                  if (selectedFrame !== 'none') {
+                    if (selectedFrame === 'frame1') {
+                      const outerWidth = 270;
+                      const outerHeight = 300;
+                      const borderRadius = 14;
+                      ctx.fillStyle = frameColor;
+                      ctx.beginPath();
+                      ctx.roundRect(0, 0, outerWidth, outerHeight, borderRadius);
+                      ctx.fill();
+                      const labelY = 15 + 240 + 8 + 5 + 5 + 10;
+                      ctx.fillStyle = '#ffffff';
+                      ctx.font = `700 18px ${frameFont}, sans-serif`;
+                      ctx.textAlign = 'center';
+                      ctx.textBaseline = 'alphabetic';
+                      const labelText = framePhrase.toUpperCase();
+                      const labelX = outerWidth / 2;
+                      let currentX = labelX - (ctx.measureText(labelText).width / 2);
+                      for (let i = 0; i < labelText.length; i++) {
+                        ctx.fillText(labelText[i], currentX, labelY);
+                        currentX += ctx.measureText(labelText[i]).width + 2;
+                      }
+                      ctx.save();
+                      ctx.beginPath();
+                      ctx.rect(15, 15, 240, 240);
+                      ctx.clip();
+                      const tempCanvas = document.createElement('canvas');
+                      tempCanvas.width = 240;
+                      tempCanvas.height = 240;
+                      await new Promise((resolve, reject) => {
+                        QRCode.toCanvas(tempCanvas, trackingUrl, { width: 240, margin: includeMargin ? 2 : 0, color: { dark: qrColor, light: bgColor }, errorCorrectionLevel: errorCorrectionLevel }, (error) => { if (error) reject(error); else resolve(); });
+                      });
+                      ctx.drawImage(tempCanvas, 15, 15);
+                      ctx.restore();
+                    } else if (selectedFrame === 'frame2') {
+                      const frameWidth = 10;
+                      const frameSize = 240;
+                      const frameX = 10;
+                      const frameY = 0;
+                      ctx.strokeStyle = frameColor;
+                      ctx.lineWidth = frameWidth;
+                      ctx.beginPath();
+                      ctx.roundRect(frameX + frameWidth/2, frameY + frameWidth/2, frameSize, frameSize, 6);
+                      ctx.stroke();
+                      const textRectX = 10;
+                      const textRectY = 260;
+                      const textRectWidth = 250;
+                      const textRectHeight = 40;
+                      ctx.fillStyle = frameColor;
+                      ctx.beginPath();
+                      ctx.roundRect(textRectX, textRectY, textRectWidth, textRectHeight, 16);
+                      ctx.fill();
+                      ctx.fillStyle = '#ffffff';
+                      ctx.font = `700 18px ${frameFont}, sans-serif`;
+                      ctx.textAlign = 'center';
+                      ctx.textBaseline = 'middle';
+                      const labelText = framePhrase.toUpperCase();
+                      const labelX = textRectX + textRectWidth / 2;
+                      const labelY = textRectY + textRectHeight / 2;
+                      let currentX = labelX - (ctx.measureText(labelText).width / 2);
+                      for (let i = 0; i < labelText.length; i++) {
+                        ctx.fillText(labelText[i], currentX, labelY);
+                        currentX += ctx.measureText(labelText[i]).width + 2;
+                      }
+                      ctx.clearRect(20, 10, 230, 230);
+                      ctx.save();
+                      ctx.beginPath();
+                      ctx.rect(20, 10, 230, 230);
+                      ctx.clip();
+                      const tempCanvas = document.createElement('canvas');
+                      tempCanvas.width = 230;
+                      tempCanvas.height = 230;
+                      await new Promise((resolve, reject) => {
+                        QRCode.toCanvas(tempCanvas, trackingUrl, { width: 230, margin: includeMargin ? 2 : 0, color: { dark: qrColor, light: bgColor }, errorCorrectionLevel: errorCorrectionLevel }, (error) => { if (error) reject(error); else resolve(); });
+                      });
+                      ctx.drawImage(tempCanvas, 20, 10);
+                      ctx.restore();
+                    }
+                  }
+                  
+                  if (selectedSticker) {
+                    const stickerSize = qrSize * 0.2;
+                    let qrAreaSize, qrAreaX, qrAreaY;
+                    if (selectedFrame === 'frame1') { qrAreaSize = 240; qrAreaX = 15; qrAreaY = 15; }
+                    else if (selectedFrame === 'frame2') { qrAreaSize = 230; qrAreaX = 20; qrAreaY = 10; }
+                    else { qrAreaSize = qrSize - 60; qrAreaX = 0; qrAreaY = 0; }
+                    const x = qrAreaX + (qrAreaSize - stickerSize) / 2;
+                    const y = qrAreaY + (qrAreaSize - stickerSize) / 2;
+                    const padding = 6;
+                    const whiteSquareX = x - padding;
+                    const whiteSquareY = y - padding;
+                    ctx.fillStyle = 'white';
+                    const radius = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(whiteSquareX + radius, whiteSquareY);
+                    ctx.lineTo(whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY);
+                    ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY, whiteSquareX + stickerSize + padding * 2, whiteSquareY + radius);
+                    ctx.lineTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2 - radius);
+                    ctx.quadraticCurveTo(whiteSquareX + stickerSize + padding * 2, whiteSquareY + stickerSize + padding * 2, whiteSquareX + stickerSize + padding * 2 - radius, whiteSquareY + stickerSize + padding * 2);
+                    ctx.lineTo(whiteSquareX + radius, whiteSquareY + stickerSize + padding * 2);
+                    ctx.quadraticCurveTo(whiteSquareX, whiteSquareY + stickerSize + padding * 2, whiteSquareX, whiteSquareY + stickerSize + padding * 2 - radius);
+                    ctx.lineTo(whiteSquareX, whiteSquareY + radius);
+                    ctx.quadraticCurveTo(whiteSquareX, whiteSquareY, whiteSquareX + radius, whiteSquareY);
+                    ctx.closePath();
+                    ctx.fill();
+                    const stickerX = x;
+                    const stickerY = y;
+                    if (selectedSticker.startsWith('data:')) {
+                      const img = new Image();
+                      await new Promise((resolve, reject) => {
+                        img.onload = () => { ctx.drawImage(img, stickerX, stickerY, stickerSize, stickerSize); resolve(); };
+                        img.onerror = reject;
+                        img.src = selectedSticker;
+                      });
+                    } else {
+                      ctx.font = `${stickerSize * 0.8}px serif`;
+                      ctx.textAlign = 'center';
+                      ctx.textBaseline = 'middle';
+                      ctx.fillStyle = '#000';
+                      ctx.fillText(selectedSticker, stickerX + stickerSize/2, stickerY + stickerSize/2);
+                    }
+                  }
+                  
+                  if (selectedLogo) {
+                    const logoSize = 50;
+                    let qrAreaSize, qrAreaX, qrAreaY;
+                    if (selectedFrame === 'frame1') { qrAreaSize = 240; qrAreaX = 15; qrAreaY = 15; }
+                    else if (selectedFrame === 'frame2') { qrAreaSize = 230; qrAreaX = 20; qrAreaY = 10; }
+                    else { qrAreaSize = qrSize - 60; qrAreaX = 0; qrAreaY = 0; }
+                    const x = qrAreaX + (qrAreaSize - logoSize) / 2;
+                    const y = qrAreaY + (qrAreaSize - logoSize) / 2;
                     const img = new Image();
                     await new Promise((resolve, reject) => {
                       img.onload = () => {
-                        ctx.drawImage(img, stickerX, stickerY, stickerSize, stickerSize);
+                        ctx.fillStyle = 'white';
+                        ctx.beginPath();
+                        ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
+                        ctx.fill();
+                        ctx.drawImage(img, x, y, logoSize, logoSize);
                         resolve();
                       };
                       img.onerror = reject;
-                      img.src = selectedSticker;
+                      img.src = selectedLogo;
                     });
-                  } else {
-                    ctx.font = `${stickerSize * 0.8}px serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#000';
-                    ctx.fillText(selectedSticker, stickerX + stickerSize/2, stickerY + stickerSize/2);
                   }
-                }
-                
-                // Apply logo if selected
-                if (selectedLogo) {
-                  const logoSize = 50;
-                  // Calculate QR code area dimensions based on frame type
-                  let qrAreaSize, qrAreaX, qrAreaY;
-                  if (selectedFrame === 'frame1') {
-                    qrAreaSize = 240;
-                    qrAreaX = 15;
-                    qrAreaY = 15;
-                  } else if (selectedFrame === 'frame2') {
-                    qrAreaSize = 230;
-                    qrAreaX = 20;
-                    qrAreaY = 10;
-                  } else {
-                    qrAreaSize = qrSize - 60;
-                    qrAreaX = 0;
-                    qrAreaY = 0;
+                  
+                  imageData = finalCanvas.toDataURL('image/png');
+                  console.log('📸 Generated final rendered image with tracking URL, frame, sticker, and logo');
+                  
+                  const designCharacteristics = {
+                    qrColor, bgColor, selectedFrame, frameColor, frameFont, framePhrase,
+                    selectedSticker, selectedLogo, errorCorrectionLevel, qrMode, selectedType, includeMargin, qrSize
+                  };
+                  
+                  const isEditing = qrCodeToEdit && qrCodeToEdit.id;
+                  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                  const token = localStorage.getItem('jwtToken');
+                  
+                  if (selectedType === 'pdf' && pdfFile && !pdfFile.uploadedUrl) {
+                    console.log('📄 Uploading PDF file:', pdfFile.name);
+                    const pdfReader = new FileReader();
+                    const pdfBase64 = await new Promise((resolve, reject) => {
+                      pdfReader.onload = () => resolve(pdfReader.result);
+                      pdfReader.onerror = reject;
+                      pdfReader.readAsDataURL(pdfFile);
+                    });
+                    const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                      body: JSON.stringify({ fileData: pdfBase64, fileName: pdfFile.name })
+                    });
+                    if (uploadResponse.ok) {
+                      const uploadResult = await uploadResponse.json();
+                      console.log('✅ PDF uploaded successfully:', uploadResult.url);
+                      setPdfFile(prev => { const updated = prev; updated.uploadedUrl = uploadResult.url; return updated; });
+                      pdfFile.uploadedUrl = uploadResult.url;
+                    } else {
+                      const uploadError = await uploadResponse.text();
+                      console.error('❌ PDF upload failed:', uploadError);
+                      alert('Failed to upload PDF file. Please try again.');
+                      return;
+                    }
                   }
-                  // Center logo within the QR code area
-                  const x = qrAreaX + (qrAreaSize - logoSize) / 2;
-                  const y = qrAreaY + (qrAreaSize - logoSize) / 2;
                   
-                  const img = new Image();
-                  await new Promise((resolve, reject) => {
-                    img.onload = () => {
-                      // Draw white background for logo perfectly centered (no offset)
-                      ctx.fillStyle = 'white';
-                      ctx.beginPath();
-                      ctx.roundRect(x - 2, y - 2, logoSize + 4, logoSize + 4, 4);
-                      ctx.fill();
-                      // Draw the logo perfectly centered (no offset)
-                      ctx.drawImage(img, x, y, logoSize, logoSize);
-                      resolve();
-                    };
-                    img.onerror = reject;
-                    img.src = selectedLogo;
-                  });
-                }
-                
-                // Capture the final rendered image
-                imageData = finalCanvas.toDataURL('image/png');
-                console.log('📸 Generated final rendered image with tracking URL, frame, sticker, and logo');
-
-                
-                // Create design characteristics object
-                const designCharacteristics = {
-                  qrColor,
-                  bgColor,
-                  selectedFrame,
-                  frameColor,
-                  frameFont,
-                  framePhrase,
-                  selectedSticker,
-                  selectedLogo,
-                  errorCorrectionLevel,
-                  qrMode,
-                  selectedType,
-                  includeMargin,
-                  qrSize
-                };
-                
-                // Check if we're editing an existing QR code
-                const isEditing = qrCodeToEdit && qrCodeToEdit.id;
-                
-                // ============================================================
-                // Get base URL and auth token (needed for both PDF upload and STEP 1)
-                // ============================================================
-                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                const token = localStorage.getItem('jwtToken');
-                
-                // ============================================================
-                // PDF UPLOAD: If this is a PDF QR code, upload the file first
-                // ============================================================
-                if (selectedType === 'pdf' && pdfFile && !pdfFile.uploadedUrl) {
-                  console.log('📄 Uploading PDF file:', pdfFile.name);
-                  
-                  // Read the PDF file as base64
-                  const pdfReader = new FileReader();
-                  const pdfBase64 = await new Promise((resolve, reject) => {
-                    pdfReader.onload = () => resolve(pdfReader.result);
-                    pdfReader.onerror = reject;
-                    pdfReader.readAsDataURL(pdfFile);
-                  });
-                  
-                  // Upload to backend
-                  const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
+                  const qrContent = getQrContent();
+                  console.log('📡 STEP 1: Saving to standalone qrcodes collection...');
+                  const qrcodesHeaders = { 'Content-Type': 'application/json' };
+                  if (token) qrcodesHeaders['Authorization'] = `Bearer ${token}`;
+                  const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
                     method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                      fileData: pdfBase64,
-                      fileName: pdfFile.name
-                    })
+                    headers: qrcodesHeaders,
+                    body: JSON.stringify({ id: qrCodeId, data: qrContent })
                   });
-                  
-                  if (uploadResponse.ok) {
-                    const uploadResult = await uploadResponse.json();
-                    console.log('✅ PDF uploaded successfully:', uploadResult.url);
-                    
-                    // Store the uploaded URL on the pdfFile object
-                    setPdfFile(prev => {
-                      const updated = prev;
-                      updated.uploadedUrl = uploadResult.url;
-                      return updated;
-                    });
-                    
-                    // Also update the ref directly for immediate use
-                    pdfFile.uploadedUrl = uploadResult.url;
+                  if (qrcodesResponse.ok) {
+                    const qrcodesResult = await qrcodesResponse.json();
+                    console.log('✅ STEP 1 SUCCESS: QR code saved to qrcodes collection:', qrcodesResult);
                   } else {
-                    const uploadError = await uploadResponse.text();
-                    console.error('❌ PDF upload failed:', uploadError);
-                    alert('Failed to upload PDF file. Please try again.');
-                    return;
+                    const errorText = await qrcodesResponse.text();
+                    console.error('⚠️ STEP 1 WARNING: Failed to save to qrcodes collection:', errorText);
                   }
+                  
+                  console.log('📡 STEP 2: Saving to user account...');
+                  const savedQrCode = await saveQrCode(qrContent, imageData, framePhrase || `QR Code ${new Date().toLocaleDateString()}`, qrCodeId, designCharacteristics, selectedType);
+                  console.log('✅ STEP 2 SUCCESS: QR code saved to user account:', savedQrCode);
+                  
+                  if (isEditing) {
+                    alert(`QR code "${framePhrase || 'Untitled QR Code'}" updated successfully!\n\nThe modified QR code has overwritten the old version in your Dashboard > My QR codes.`);
+                  } else {
+                    alert('QR code saved to your collection! You can find it in Dashboard > My QR codes.');
+                  }
+                } catch (error) {
+                  console.error('Failed to save QR code:', error);
+                  alert('Failed to save QR code. Please try again.');
                 }
-                
-                // ============================================================
-                // STEP 1: Save to the standalone qrcodes collection
-                // This is what the EdgeOne function queries for /track/:id
-                // ============================================================
-                // Get the formatted QR content for the current type
-                const qrContent = getQrContent();
-                console.log('📡 STEP 1: Saving to standalone qrcodes collection...');
-                console.log('   POST /qrcodes');
-                console.log('   Body:', JSON.stringify({ id: qrCodeId, data: qrContent }));
-                const qrcodesHeaders = {
-                  'Content-Type': 'application/json',
-                };
-                if (token) {
-                  qrcodesHeaders['Authorization'] = `Bearer ${token}`;
-                }
-                const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
-                  method: 'POST',
-                  headers: qrcodesHeaders,
-                  body: JSON.stringify({
-                    id: qrCodeId,
-                    data: qrContent
-                  })
-                });
-
-                
-                console.log('   Response status:', qrcodesResponse.status, qrcodesResponse.statusText);
-                
-                if (qrcodesResponse.ok) {
-                  const qrcodesResult = await qrcodesResponse.json();
-                  console.log('✅ STEP 1 SUCCESS: QR code saved to qrcodes collection:', qrcodesResult);
-                } else {
-                  const errorText = await qrcodesResponse.text();
-                  console.error('⚠️ STEP 1 WARNING: Failed to save to qrcodes collection:', errorText);
-                }
-                
-                // ============================================================
-                // STEP 2: Save to user's account (for Dashboard display)
-                // ============================================================
-                console.log('📡 STEP 2: Saving to user account...');
-                const savedQrCode = await saveQrCode(
-                  qrContent, 
-                  imageData, 
-                  framePhrase || `QR Code ${new Date().toLocaleDateString()}`,
-                  qrCodeId, // Pass the QR code ID generated by frontend
-                  designCharacteristics,
-                  selectedType // Pass the QR type (wifi, pdf, email, sms, whatsapp, url)
-                );
-                console.log('✅ STEP 2 SUCCESS: QR code saved to user account:', savedQrCode);
-                
-                if (isEditing) {
-                  alert(`QR code "${framePhrase || 'Untitled QR Code'}" updated successfully!\n\nThe modified QR code has overwritten the old version in your Dashboard > My QR codes.`);
-                } else {
-                  alert('QR code saved to your collection! You can find it in Dashboard > My QR codes.');
-                }
-                
-              } catch (error) {
-                console.error('Failed to save QR code:', error);
-                alert('Failed to save QR code. Please try again.');
-              }
-            }}
-            style={{
-              padding: '14px 40px',
-              background: 'linear-gradient(135deg, #00FF00 0%, #00D9FF 100%)',
-              border: 'none',
-              borderRadius: '20px',
-              color: '#000',
-              fontWeight: '700',
-              cursor: 'pointer',
-              fontSize: '14px',
-              boxShadow: '0 0 30px rgba(0, 255, 0, 0.5)',
-            }}
-          >
-            💾 Save to My QR codes
-          </button>
+              }}
+            >
+              💾 Save to My QR codes
+            </button>
+          </div>
         </div>
       </div>
     </div>
