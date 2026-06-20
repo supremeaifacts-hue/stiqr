@@ -10,7 +10,6 @@ const User = require('./models/User');
 
 dotenv.config();
 
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -19,6 +18,132 @@ app.use(cors({
   origin: ['http://localhost:5173', 'https://www.stiqr.top', 'https://stiqr-frontend.pages.dev'],
   credentials: true
 }));
+
+// Stripe webhook MUST use raw body before express.json() parses it
+app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('❌ Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Respond immediately to acknowledge receipt
+  res.json({ received: true });
+
+  // Process events asynchronously (don't block the response)
+  try {
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        console.log('✅ Webhook: checkout.session.completed', session.id);
+
+        const userId = session.metadata?.userId || session.client_reference_id;
+        const plan = session.metadata?.plan || 'pro';
+
+        if (userId) {
+          await User.findByIdAndUpdate(userId, {
+            'subscription.plan': plan,
+            'subscription.isActive': true,
+            'subscription.stripeSubscriptionId': session.subscription,
+            'subscription.stripeCustomerId': session.customer,
+            'subscription.subscribedAt': new Date(),
+            'subscription.stripeCurrentPeriodEnd': new Date(session.expires_at * 1000),
+            'subscription.stripeCancelAtPeriodEnd': false
+          });
+          console.log(`✅ User ${userId} upgraded to ${plan}`);
+        }
+        break;
+      }
+
+      case 'invoice.paid': {
+        const invoice = event.data.object;
+        console.log('✅ Webhook: invoice.paid', invoice.id);
+
+        const subscriptionId = invoice.subscription;
+        if (subscriptionId && db) {
+          const usersCollection = db.collection('users');
+          const user = await usersCollection.findOne({ 'subscription.stripeSubscriptionId': subscriptionId });
+          if (user) {
+            await usersCollection.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  'subscription.stripeCurrentPeriodEnd': new Date(invoice.lines?.data?.[0]?.period?.end * 1000 || Date.now()),
+                  'subscription.isActive': true
+                }
+              }
+            );
+            console.log(`✅ Subscription renewed for user ${user._id}`);
+          }
+        }
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        console.log('✅ Webhook: customer.subscription.updated', subscription.id);
+
+        if (db) {
+          const usersCollection = db.collection('users');
+          const user = await usersCollection.findOne({ 'subscription.stripeSubscriptionId': subscription.id });
+          if (user) {
+            await usersCollection.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  'subscription.stripeCurrentPeriodEnd': new Date(subscription.current_period_end * 1000),
+                  'subscription.stripeCancelAtPeriodEnd': subscription.cancel_at_period_end,
+                  'subscription.isActive': subscription.status === 'active' || subscription.status === 'trialing'
+                }
+              }
+            );
+            console.log(`✅ Subscription updated for user ${user._id}`);
+          }
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        console.log('✅ Webhook: customer.subscription.deleted', subscription.id);
+
+        if (db) {
+          const usersCollection = db.collection('users');
+          const user = await usersCollection.findOne({ 'subscription.stripeSubscriptionId': subscription.id });
+          if (user) {
+            await usersCollection.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  'subscription.plan': 'free',
+                  'subscription.isActive': false,
+                  'subscription.stripeSubscriptionId': null,
+                  'subscription.stripeCancelAtPeriodEnd': false
+                }
+              }
+            );
+            console.log(`✅ Subscription cancelled for user ${user._id}`);
+          }
+        }
+        break;
+      }
+
+      default:
+        console.log(`ℹ️ Webhook: unhandled event type ${event.type}`);
+    }
+  } catch (processError) {
+    console.error('❌ Error processing webhook event:', processError);
+  }
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -785,9 +910,6 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-
-
-
 // Import routes
 const authRoutes = require('./routes/auth');
 const assetsRoutes = require('./routes/assets');
@@ -799,7 +921,6 @@ app.use('/auth', authRoutes);
 app.use('/api', assetsRoutes);
 app.use('/api', stripeRoutes);
 app.use('/', eventRoutes);
-
 
 // Health check endpoint
 app.get('/health', (req, res) => {

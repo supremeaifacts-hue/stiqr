@@ -91,7 +91,7 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
             src="/assets/logo.png" 
             alt="StiQR" 
             style={{
-              height: '40px',
+              height: '60px',
               width: 'auto',
               cursor: 'pointer',
             }}
