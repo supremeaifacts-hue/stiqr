@@ -13,6 +13,105 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
   const [selectedQrCodeForEditMetadata, setSelectedQrCodeForEditMetadata] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState('');
+  
+  // Determine if features are unlocked based on subscription data
+  const canUseFeatures = subscriptionData?.featuresUnlocked || false;
+  
+  // Handle clicking a locked feature
+  const handleLockedFeatureClick = (featureName) => {
+    setLockedFeatureName(featureName);
+    setShowUpgradeModal(true);
+  };
+  
+  // Handle Statistics click
+  const handleStatisticsClick = (qrCode) => {
+    if (!canUseFeatures) {
+      handleLockedFeatureClick('Statistics');
+      return;
+    }
+    setSelectedQrCodeForStats(qrCode);
+  };
+  
+  // Handle Edit Metadata click
+  const handleEditMetadataClick = (qrCode) => {
+    if (!canUseFeatures) {
+      handleLockedFeatureClick('Edit Metadata');
+      return;
+    }
+    setSelectedQrCodeForEditMetadata(qrCode);
+  };
+  
+  // Upgrade Modal component
+  const UpgradeModal = () => {
+    if (!showUpgradeModal) return null;
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.7)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+      }}>
+        <div style={{
+          background: '#1a1a2e',
+          padding: '40px',
+          borderRadius: '16px',
+          maxWidth: '400px',
+          textAlign: 'center',
+          border: '1px solid rgba(0,217,255,0.1)',
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+          <h3 style={{ color: 'white', marginBottom: '8px', fontSize: '20px' }}>
+            Feature Locked
+          </h3>
+          <p style={{ color: '#aaa', marginBottom: '24px', fontSize: '14px', lineHeight: '1.5' }}>
+            Your 7-day free trial has ended. Upgrade to Pro to unlock <strong style={{ color: '#00D9FF' }}>{lockedFeatureName}</strong> and other premium features.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button 
+              onClick={() => setShowUpgradeModal(false)}
+              style={{
+                padding: '10px 20px',
+                background: 'transparent',
+                color: 'white',
+                border: '1px solid #555',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+              }}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => {
+                setShowUpgradeModal(false);
+                if (onViewPricing) onViewPricing();
+              }}
+              style={{
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #FF00FF 0%, #00D9FF 100%)',
+                color: '#000',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+              }}
+            >
+              View Plans
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -767,46 +866,46 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
                               onClick={() => {
                                 console.log('Statistics clicked for:', qrCode.name);
                                 setOpenDropdownId(null);
-                                setSelectedQrCodeForStats(qrCode);
+                                handleStatisticsClick(qrCode);
                               }}
                               style={{
                                 width: '100%',
                                 padding: '8px 16px',
                                 background: 'transparent',
                                 border: 'none',
-                                color: '#00D9FF',
+                                color: canUseFeatures ? '#00D9FF' : '#666',
                                 textAlign: 'left',
-                                cursor: 'pointer',
+                                cursor: canUseFeatures ? 'pointer' : 'not-allowed',
                                 fontSize: '12px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                               }}
                             >
-                              <span>📊</span>
+                              <span>{canUseFeatures ? '📊' : '🔒'}</span>
                               Statistics
                             </button>
                             <button
                               onClick={() => {
                                 console.log('Edit Metadata clicked for:', qrCode.name);
                                 setOpenDropdownId(null);
-                                setSelectedQrCodeForEditMetadata(qrCode);
+                                handleEditMetadataClick(qrCode);
                               }}
                               style={{
                                 width: '100%',
                                 padding: '8px 16px',
                                 background: 'transparent',
                                 border: 'none',
-                                color: '#FF00FF',
+                                color: canUseFeatures ? '#FF00FF' : '#666',
                                 textAlign: 'left',
-                                cursor: 'pointer',
+                                cursor: canUseFeatures ? 'pointer' : 'not-allowed',
                                 fontSize: '12px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                               }}
                             >
-                              <span>🔗</span>
+                              <span>{canUseFeatures ? '🔗' : '🔒'}</span>
                               Edit Metadata (for Dynamic QR codes)
                             </button>
                             <div style={{
@@ -1349,6 +1448,9 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal />
 
       {/* Statistics Modal */}
       {selectedQrCodeForStats && (

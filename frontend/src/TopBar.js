@@ -158,6 +158,42 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
                       {subscriptionData.planType === 'pro' ? '⭐ Pro' : '👑 Ultra'}
                     </div>
                   )}
+                  {/* Trial countdown badge for free users */}
+                  {!loadingSubscription && subscriptionData?.planType === 'free' && subscriptionData?.isTrialActive && (
+                    <div style={{
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      color: '#FF00FF',
+                      background: 'rgba(255, 0, 255, 0.15)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginTop: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      ⭐ Trial: {subscriptionData.trialDaysLeft}d left
+                    </div>
+                  )}
+                  {/* Trial ended badge for free users */}
+                  {!loadingSubscription && subscriptionData?.planType === 'free' && !subscriptionData?.isTrialActive && (
+                    <div style={{
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      color: '#FF4444',
+                      background: 'rgba(255, 68, 68, 0.15)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginTop: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      ⏰ Trial ended
+                    </div>
+                  )}
                 </div>
               </div>
               <button 
@@ -272,6 +308,26 @@ const TopBar = ({ onViewDashboard, onViewPricing, onSignUp, onLogin, onGoToLandi
                       textTransform: 'uppercase',
                     }}>
                       {subscriptionData.planType === 'pro' ? '⭐ Pro' : '👑 Ultra'}
+                    </div>
+                  )}
+                  {/* Trial countdown badge for free users (mobile) */}
+                  {!loadingSubscription && subscriptionData?.planType === 'free' && subscriptionData?.isTrialActive && (
+                    <div style={{
+                      fontSize: '10px', fontWeight: '600',
+                      color: '#FF00FF',
+                      background: 'rgba(255, 0, 255, 0.15)', padding: '2px 6px', borderRadius: '4px', marginTop: '2px',
+                    }}>
+                      ⭐ Trial: {subscriptionData.trialDaysLeft}d left
+                    </div>
+                  )}
+                  {/* Trial ended badge for free users (mobile) */}
+                  {!loadingSubscription && subscriptionData?.planType === 'free' && !subscriptionData?.isTrialActive && (
+                    <div style={{
+                      fontSize: '10px', fontWeight: '600',
+                      color: '#FF4444',
+                      background: 'rgba(255, 68, 68, 0.15)', padding: '2px 6px', borderRadius: '4px', marginTop: '2px',
+                    }}>
+                      ⏰ Trial ended
                     </div>
                   )}
                 </div>

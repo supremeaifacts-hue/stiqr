@@ -861,11 +861,27 @@ router.get('/user/subscription', isAuthenticated, async (req, res) => {
       subscriptionEndDate = user.subscription.trialEndsAt;
     }
 
+    // Calculate trial status based on createdAt (7-day trial from signup)
+    const createdAt = new Date(user.createdAt);
+    const now = new Date();
+    const daysSinceSignup = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+    const trialDaysLeft = Math.max(0, 7 - daysSinceSignup);
+    const isTrialActive = trialDaysLeft > 0;
+    
+    // Determine if features are unlocked (Pro/Ultra users OR within 7-day trial)
+    const isPro = user.subscription.plan === 'pro' || user.subscription.plan === 'ultra';
+    const featuresUnlocked = isPro || isTrialActive;
+
     res.json({
       subscriptionStatus,
       planType: user.subscription.plan,
       subscriptionEndDate,
       isActive: user.subscription.isActive,
+      isPro: isPro,
+      featuresUnlocked: featuresUnlocked,
+      trialDaysLeft: trialDaysLeft,
+      isTrialActive: isTrialActive,
+      createdAt: user.createdAt,
       stripeCustomerId: user.subscription.stripeCustomerId,
       stripeSubscriptionId: user.subscription.stripeSubscriptionId,
       trialEndsAt: user.subscription.trialEndsAt,

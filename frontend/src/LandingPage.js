@@ -210,10 +210,10 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
                     📋
                   </div>
                   <h4 style={{ color: '#00D9FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
-                    1. Select the Type
+                    1. Choose Your Content
                   </h4>
                   <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
-                    Choose between Dynamic QR (editable) or Static QR (fixed). Pick the type that fits your needs.
+                    Pick from URLs, events, social media pages, WiFi credentials, and more. There's a QR type for every need.
                   </p>
                 </div>
               </div>
