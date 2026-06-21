@@ -120,8 +120,19 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            minHeight: '400px',
+            minHeight: '500px',
+            position: 'relative',
           }}>
+            {/* Dim glow behind the cards */}
+            <div style={{
+              position: 'absolute',
+              width: '450px',
+              height: '450px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(0, 217, 255, 0.12) 0%, rgba(255, 0, 255, 0.08) 40%, transparent 70%)',
+              filter: 'blur(40px)',
+              pointerEvents: 'none',
+            }} />
             <style>{`
               .wrap_card {
                 position: relative;
@@ -131,10 +142,10 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                --w-card: 150px;
-                --h-card: 200px;
+                --w-card: 225px;
+                --h-card: 300px;
                 --rotate-card: 15deg;
-                --insetX-card: 28px;
+                --insetX-card: 42px;
                 --t-card: calc(var(--insetX-card) * 1.25);
                 --w-wrap-card: calc(var(--w-card) + calc(calc(var(--w-card) / 2) * 2));
               }
@@ -157,26 +168,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
                 position: absolute;
                 inset: 50% 0 0 50%;
                 opacity: 1;
-                animation: opacity 8.4s cubic-bezier(1, 0, 0, 1) forwards
-                  calc(var(--delay) - 4.3s);
                 transform: translate(-50%, -50%);
-              }
-              .card:nth-child(1) {
-                --delay: 4.3s;
-              }
-              .card:nth-child(2) {
-                --delay: 7.3s;
-              }
-              .card:nth-child(3) {
-                --delay: 10.3s;
-              }
-              @keyframes opacity {
-                from {
-                  opacity: 1;
-                }
-                to {
-                  opacity: 0;
-                }
               }
 
               .card {
