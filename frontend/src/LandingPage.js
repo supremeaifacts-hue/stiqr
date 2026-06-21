@@ -102,17 +102,96 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           <EditorPage embedded qrCodeToEdit={qrCodeToEdit} onClearQrCodeToEdit={onClearQrCodeToEdit} />
         </div>
 
-        {/* Benefits Section */}
+        {/* Benefits Section - Two Columns */}
         <div style={{
           marginTop: '80px',
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           width: '100%',
           maxWidth: '1200px',
           padding: '0 40px',
           boxSizing: 'border-box',
+          gap: '60px',
         }}>
+          {/* Left Column - QR Code Stack */}
           <div style={{
+            flex: '1',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <style>{`
+              .qr-stack {
+                width: 55%;
+                max-width: 400px;
+                transition: 0.25s ease;
+              }
+              .qr-stack:hover {
+                transform: rotate(5deg);
+              }
+              .qr-stack:hover .qr-card:before {
+                transform: translatey(-2%) rotate(-4deg);
+              }
+              .qr-stack:hover .qr-card:after {
+                transform: translatey(2%) rotate(4deg);
+              }
+              .qr-card {
+                aspect-ratio: 3 / 2;
+                border: 4px solid #00D9FF;
+                background-color: #fff;
+                position: relative;
+                transition: 0.15s ease;
+                cursor: pointer;
+                padding: 5% 5% 15% 5%;
+                border-radius: 8px;
+              }
+              .qr-card:before,
+              .qr-card:after {
+                content: "";
+                display: block;
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                border: 4px solid #00D9FF;
+                background-color: #fff;
+                transform-origin: center center;
+                z-index: -1;
+                transition: 0.15s ease;
+                top: 0;
+                left: 0;
+                border-radius: 8px;
+              }
+              .qr-card:before {
+                transform: translatey(-2%) rotate(-6deg);
+              }
+              .qr-card:after {
+                transform: translatey(2%) rotate(6deg);
+              }
+              .qr-image {
+                width: 100%;
+                border: 4px solid #00D9FF;
+                background-color: #eee;
+                aspect-ratio: 1 / 1;
+                position: relative;
+                border-radius: 4px;
+                object-fit: contain;
+              }
+            `}</style>
+            <div className="qr-stack">
+              <div className="qr-card">
+                <img
+                  className="qr-image"
+                  src="/assets/stiqr-qrcode.png"
+                  alt="stiQR QR Code"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Benefits Content */}
+          <div style={{
+            flex: '1',
             textAlign: 'right',
             maxWidth: '700px',
           }}>
