@@ -102,6 +102,436 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           <EditorPage embedded qrCodeToEdit={qrCodeToEdit} onClearQrCodeToEdit={onClearQrCodeToEdit} />
         </div>
 
+        {/* ===== How Does It Work? Section ===== */}
+        <section style={{
+          width: '100%',
+          maxWidth: '1200px',
+          padding: '80px 40px 40px',
+          boxSizing: 'border-box',
+          position: 'relative',
+        }}>
+          <h2 style={{
+            fontSize: '42px',
+            fontWeight: '900',
+            color: '#ffffff',
+            textAlign: 'center',
+            margin: '0 0 60px 0',
+            letterSpacing: '-1px',
+          }}>
+            How does it <span style={{ color: '#00D9FF' }}>work?</span>
+          </h2>
+
+          {/* Phase 1: Creating a QR Code */}
+          <div style={{ marginBottom: '80px' }}>
+            <h3 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#FF00FF',
+              margin: '0 0 40px 0',
+              textAlign: 'center',
+              textShadow: '0 0 20px rgba(255, 0, 255, 0.3)',
+            }}>
+              ✨ Creating a QR Code
+            </h3>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              gap: '0',
+              position: 'relative',
+              flexWrap: 'wrap',
+            }}>
+              {/* Light string connector */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '10%',
+                right: '10%',
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent, #00D9FF, #FF00FF, #00D9FF, transparent)',
+                opacity: '0.4',
+                zIndex: '0',
+              }} />
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '10%',
+                right: '10%',
+                height: '6px',
+                background: 'linear-gradient(90deg, transparent, #00D9FF, #FF00FF, #00D9FF, transparent)',
+                opacity: '0.15',
+                filter: 'blur(4px)',
+                zIndex: '0',
+              }} />
+
+              {/* Step 1: Select Type */}
+              <div style={{
+                flex: '1',
+                minWidth: '220px',
+                maxWidth: '280px',
+                margin: '0 10px',
+                position: 'relative',
+                zIndex: '1',
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#00D9FF';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 217, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.05))',
+                    border: '2px solid rgba(0, 217, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '36px',
+                  }}>
+                    📋
+                  </div>
+                  <h4 style={{ color: '#00D9FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                    1. Select the Type
+                  </h4>
+                  <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
+                    Choose between Dynamic QR (editable) or Static QR (fixed). Pick the type that fits your needs.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2: Type Content */}
+              <div style={{
+                flex: '1',
+                minWidth: '220px',
+                maxWidth: '280px',
+                margin: '0 10px',
+                position: 'relative',
+                zIndex: '1',
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 0, 255, 0.3)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#FF00FF';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(255, 0, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 0, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.05))',
+                    border: '2px solid rgba(255, 0, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '36px',
+                  }}>
+                    ✏️
+                  </div>
+                  <h4 style={{ color: '#FF00FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                    2. Type the Content
+                  </h4>
+                  <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
+                    Enter your URL, text, or any data. Our smart editor will generate a QR code instantly.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3: Add Colors & Logos */}
+              <div style={{
+                flex: '1',
+                minWidth: '220px',
+                maxWidth: '280px',
+                margin: '0 10px',
+                position: 'relative',
+                zIndex: '1',
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#00D9FF';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 217, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.05))',
+                    border: '2px solid rgba(0, 217, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '36px',
+                  }}>
+                    🎨
+                  </div>
+                  <h4 style={{ color: '#00D9FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                    3. Add Colors & Logos
+                  </h4>
+                  <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
+                    Customize with vibrant colors, stickers, and your own logo. Make your QR code stand out!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Phase 2: Managing a QR Code (Pro & Ultra) */}
+          <div>
+            <h3 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#00D9FF',
+              margin: '0 0 40px 0',
+              textAlign: 'center',
+              textShadow: '0 0 20px rgba(0, 217, 255, 0.3)',
+            }}>
+              🚀 Managing a QR Code <span style={{ fontSize: '16px', fontWeight: '500', color: '#FF00FF' }}>Pro & Ultra</span>
+            </h3>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              gap: '0',
+              position: 'relative',
+              flexWrap: 'wrap',
+            }}>
+              {/* Light string connector */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '15%',
+                right: '15%',
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent, #FF00FF, #00D9FF, transparent)',
+                opacity: '0.4',
+                zIndex: '0',
+              }} />
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '15%',
+                right: '15%',
+                height: '6px',
+                background: 'linear-gradient(90deg, transparent, #FF00FF, #00D9FF, transparent)',
+                opacity: '0.15',
+                filter: 'blur(4px)',
+                zIndex: '0',
+              }} />
+
+              {/* Step 1: Dashboard */}
+              <div style={{
+                flex: '1',
+                minWidth: '260px',
+                maxWidth: '340px',
+                margin: '0 15px',
+                position: 'relative',
+                zIndex: '1',
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 0, 255, 0.3)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#FF00FF';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(255, 0, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 0, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.05))',
+                    border: '2px solid rgba(255, 0, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '36px',
+                  }}>
+                    📊
+                  </div>
+                  <h4 style={{ color: '#FF00FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                    1. Go to Dashboard
+                  </h4>
+                  <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
+                    Access your personal dashboard where all your QR codes are stored and organized.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2: Change Metadata */}
+              <div style={{
+                flex: '1',
+                minWidth: '260px',
+                maxWidth: '340px',
+                margin: '0 15px',
+                position: 'relative',
+                zIndex: '1',
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#00D9FF';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 217, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.05))',
+                    border: '2px solid rgba(0, 217, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '36px',
+                  }}>
+                    🔄
+                  </div>
+                  <h4 style={{ color: '#00D9FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                    2. Change Metadata
+                  </h4>
+                  <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
+                    Update the destination URL or content anytime. No need to regenerate the QR code!
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3: Check Statistics */}
+              <div style={{
+                flex: '1',
+                minWidth: '260px',
+                maxWidth: '340px',
+                margin: '0 15px',
+                position: 'relative',
+                zIndex: '1',
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 0, 255, 0.3)',
+                  borderRadius: '16px',
+                  padding: '24px 20px',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#FF00FF';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(255, 0, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 0, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.05))',
+                    border: '2px solid rgba(255, 0, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    fontSize: '36px',
+                  }}>
+                    📈
+                  </div>
+                  <h4 style={{ color: '#FF00FF', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                    3. Check Statistics
+                  </h4>
+                  <p style={{ color: '#a0a0a0', fontSize: '13px', lineHeight: '1.5', margin: '0' }}>
+                    Track scans, locations, and devices. See how your audience interacts with your QR codes.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Benefits Section - Two Columns */}
         <div style={{
           marginTop: '80px',
