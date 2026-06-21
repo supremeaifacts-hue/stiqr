@@ -114,77 +114,283 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           boxSizing: 'border-box',
           gap: '60px',
         }}>
-          {/* Left Column - QR Code Stack */}
+          {/* Left Column - Animated QR Cards */}
           <div style={{
             flex: '1',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            minHeight: '400px',
           }}>
             <style>{`
-              .qr-stack {
-                width: 55%;
-                max-width: 400px;
-                transition: 0.25s ease;
-              }
-              .qr-stack:hover {
-                transform: rotate(5deg);
-              }
-              .qr-stack:hover .qr-card:before {
-                transform: translatey(-2%) rotate(-4deg);
-              }
-              .qr-stack:hover .qr-card:after {
-                transform: translatey(2%) rotate(4deg);
-              }
-              .qr-card {
-                aspect-ratio: 3 / 2;
-                border: 4px solid #00D9FF;
-                background-color: #fff;
+              .wrap_card {
                 position: relative;
-                transition: 0.15s ease;
-                cursor: pointer;
-                padding: 5% 5% 15% 5%;
-                border-radius: 8px;
+                overflow: hidden;
+                width: var(--w-wrap-card);
+                height: calc(var(--h-card) / 1.25);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                --w-card: 150px;
+                --h-card: 200px;
+                --rotate-card: 15deg;
+                --insetX-card: 28px;
+                --t-card: calc(var(--insetX-card) * 1.25);
+                --w-wrap-card: calc(var(--w-card) + calc(calc(var(--w-card) / 2) * 2));
               }
-              .qr-card:before,
-              .qr-card:after {
-                content: "";
-                display: block;
-                position: absolute;
-                height: 100%;
-                width: 100%;
-                border: 4px solid #00D9FF;
-                background-color: #fff;
-                transform-origin: center center;
-                z-index: -1;
-                transition: 0.15s ease;
-                top: 0;
-                left: 0;
-                border-radius: 8px;
-              }
-              .qr-card:before {
-                transform: translatey(-2%) rotate(-6deg);
-              }
-              .qr-card:after {
-                transform: translatey(2%) rotate(6deg);
-              }
-              .qr-image {
-                width: 100%;
-                border: 4px solid #00D9FF;
-                background-color: #eee;
-                aspect-ratio: 1 / 1;
+
+              .content {
+                background-color: #ffffff50;
+                overflow: hidden;
                 position: relative;
-                border-radius: 4px;
+                width: calc(100% - calc(var(--pd) * 2));
+                height: calc(100% - calc(var(--pd) * 2));
+                border-radius: calc(var(--round) - var(--pd));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .content > img {
+                width: 80%;
+                height: 80%;
                 object-fit: contain;
+                position: absolute;
+                inset: 50% 0 0 50%;
+                opacity: 1;
+                animation: opacity 8.4s cubic-bezier(1, 0, 0, 1) forwards
+                  calc(var(--delay) - 4.3s);
+                transform: translate(-50%, -50%);
+              }
+              .card:nth-child(1) {
+                --delay: 4.3s;
+              }
+              .card:nth-child(2) {
+                --delay: 7.3s;
+              }
+              .card:nth-child(3) {
+                --delay: 10.3s;
+              }
+              @keyframes opacity {
+                from {
+                  opacity: 1;
+                }
+                to {
+                  opacity: 0;
+                }
+              }
+
+              .card {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: absolute;
+                overflow: hidden;
+                animation: rotating 9s cubic-bezier(0.75, 0, 0, 1.01) infinite 0s;
+                border-radius: var(--round);
+                background: var(--bg);
+                order: var(--order);
+                width: var(--w-card);
+                height: var(--h-card);
+                z-index: var(--z1);
+                top: var(--t1);
+                left: var(--l1);
+                right: var(--r1);
+                transform: var(--trans1);
+                --pd: 4px;
+                --round: 16px;
+                --x1: var(--insetX-card);
+                --x2: calc(var(--w-wrap-card) - calc(var(--w-card) + var(--insetX-card)));
+                --to-left: rotate(calc(var(--rotate-card) * -1));
+                --to-center: calc(var(--w-card) / 2);
+                --to-right: rotate(calc(var(--rotate-card) * 1));
+              }
+
+              .card:nth-child(1) {
+                --order: 2;
+                --bg: radial-gradient(
+                  circle,
+                  rgba(252, 240, 142, 1) 0%,
+                  rgba(246, 173, 32, 1) 40%,
+                  rgba(192, 142, 8, 1) 100%
+                );
+                --z1: 2;
+                --t1: 0;
+                --l1: var(--to-center);
+                --r1: var(--to-center);
+                --trans1: rotate(calc(var(--rotate-card) * 0));
+                --z2: 0;
+                --t2: var(--t-card);
+                --l2: var(--x1);
+                --r2: var(--x2);
+                --trans2: var(--to-left);
+                --z3: 0;
+                --t3: var(--t-card);
+                --l3: var(--x2);
+                --r3: var(--x1);
+                --trans3: var(--to-right);
+              }
+              .card:nth-child(2) {
+                --order: 3;
+                --bg: radial-gradient(
+                  circle,
+                  rgba(142, 249, 252, 1) 0%,
+                  rgba(32, 164, 246, 1) 40%,
+                  rgba(8, 81, 192, 1) 100%
+                );
+                --z1: 0;
+                --t1: var(--t-card);
+                --l1: var(--x2);
+                --r1: var(--x1);
+                --trans1: var(--to-right);
+                --z2: 2;
+                --t2: 0;
+                --l2: var(--to-center);
+                --r2: var(--to-center);
+                --trans2: rotate(calc(var(--rotate-card) * 0));
+                --z3: 0;
+                --t3: var(--t-card);
+                --l3: var(--x1);
+                --r3: var(--x2);
+                --trans3: var(--to-left);
+              }
+              .card:nth-child(3) {
+                --order: 1;
+                --bg: radial-gradient(
+                  circle,
+                  rgba(222, 128, 233, 1) 0%,
+                  rgba(213, 32, 246, 1) 40%,
+                  rgba(139, 6, 157, 1) 100%
+                );
+                --z1: 0;
+                --t1: var(--t-card);
+                --l1: var(--x1);
+                --r1: var(--x2);
+                --trans1: var(--to-left);
+                --z2: 0;
+                --t2: var(--t-card);
+                --l2: var(--x2);
+                --r2: var(--x1);
+                --trans2: var(--to-right);
+                --z3: 2;
+                --t3: 0;
+                --l3: var(--to-center);
+                --r3: var(--to-center);
+                --trans3: rotate(calc(var(--rotate-card) * 0));
+              }
+              @keyframes rotating {
+                0%,
+                99.99% {
+                  z-index: var(--z1);
+                  top: var(--t1);
+                  left: var(--l1);
+                  right: var(--r1);
+                  transform: var(--trans1);
+                }
+                33.33% {
+                  z-index: var(--z2);
+                  top: var(--t2);
+                  left: var(--l2);
+                  right: var(--r2);
+                  transform: var(--trans2);
+                }
+                66.66% {
+                  z-index: var(--z3);
+                  top: var(--t3);
+                  left: var(--l3);
+                  right: var(--r3);
+                  transform: var(--trans3);
+                }
+              }
+
+              .lines {
+                position: absolute;
+                inset: auto 0 0;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 4;
+              }
+              .lines::after {
+                content: "";
+                width: 100%;
+                height: 0px;
+                position: absolute;
+                z-index: 2;
+                inset: 0;
+                --mask-bg: #e8e8e8;
+                background: var(--mask-bg);
+                mask-image: radial-gradient(
+                  50% 200px at top,
+                  transparent 20%,
+                  var(--mask-bg)
+                );
+              }
+
+              .line {
+                position: absolute;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .line::before,
+              .line::after {
+                content: "";
+                position: absolute;
+                inset: auto;
+                background: linear-gradient(
+                  to right,
+                  var(--gradient-a-line, #0000),
+                  var(--gradient-b-line, #0000),
+                  var(--gradient-c-line, #0000)
+                );
+                filter: var(--blur-line);
+                width: var(--w-line);
+                height: var(--h-line);
+              }
+              .line:nth-child(1)::before {
+                --blur-line: blur(4px);
+                --w-line: 100%;
+                --h-line: 5px;
+                --gradient-b-line: #2f69f2;
+              }
+              .line:nth-child(1)::after {
+                --w-line: 100%;
+                --h-line: 1px;
+                --gradient-b-line: #6366f1;
+              }
+              .line:nth-child(2)::before {
+                --blur-line: blur(4px);
+                --w-line: 50%;
+                --h-line: 5px;
+                --gradient-b-line: #84ccfc;
+              }
+              .line:nth-child(2)::after {
+                --w-line: 50%;
+                --h-line: 1px;
+                --gradient-b-line: #14d3f5;
               }
             `}</style>
-            <div className="qr-stack">
-              <div className="qr-card">
-                <img
-                  className="qr-image"
-                  src="/assets/stiqr-qrcode.png"
-                  alt="stiQR QR Code"
-                />
+            <div className="wrap_card">
+              <div className="card">
+                <div className="content">
+                  <img src="/assets/stiqr-qrcode.png" alt="stiQR QR Code" />
+                </div>
+              </div>
+              <div className="card">
+                <div className="content">
+                  <img src="/assets/stiqr-qrcode.png" alt="stiQR QR Code" />
+                </div>
+              </div>
+              <div className="card">
+                <div className="content">
+                  <img src="/assets/stiqr-qrcode.png" alt="stiQR QR Code" />
+                </div>
+              </div>
+              <div className="lines">
+                <div className="line"></div>
+                <div className="line"></div>
               </div>
             </div>
           </div>
