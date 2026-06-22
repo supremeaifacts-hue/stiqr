@@ -1320,12 +1320,12 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '16px',
           }}>
-            <img src="/assets/payment/visa.svg" alt="Visa" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
-            <img src="/assets/payment/mastercard.svg" alt="Mastercard" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
-            <img src="/assets/payment/paypal.svg" alt="PayPal" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
-            <img src="/assets/payment/stripe.svg" alt="Stripe" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
+            <img src="/assets/payment/visa.svg" alt="Visa" style={{ height: '48px', opacity: 0.5 }} />
+            <img src="/assets/payment/mastercard.svg" alt="Mastercard" style={{ height: '48px', opacity: 0.5 }} />
+            <img src="/assets/payment/paypal.svg" alt="PayPal" style={{ height: '48px', opacity: 0.5 }} />
+            <img src="/assets/payment/stripe.svg" alt="Stripe" style={{ height: '48px', opacity: 0.5 }} />
           </div>
 
           {/* GDPR Compliant */}
