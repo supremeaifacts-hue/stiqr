@@ -56,9 +56,9 @@ const Pricing = ({ onViewDashboard, onBack }) => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          priceId,
-          userId: user?._id || user?.id || user?.email || '',
-          userEmail: user?.email || ''
+          plan: planType,
+          successUrl: `${window.location.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/pricing`
         })
       });
       
