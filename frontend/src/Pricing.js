@@ -32,6 +32,14 @@ const Pricing = ({ onViewDashboard, onBack }) => {
       return;
     }
     
+    // Check for JWT token before making the request
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in first');
+      window.location.href = '/login';
+      return;
+    }
+    
     setLoading(true);
     setError('');
     
@@ -45,6 +53,7 @@ const Pricing = ({ onViewDashboard, onBack }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           priceId,
@@ -52,6 +61,15 @@ const Pricing = ({ onViewDashboard, onBack }) => {
           userEmail: user?.email || ''
         })
       });
+      
+      // Handle 401 Unauthorized gracefully
+      if (response.status === 401) {
+        alert('Session expired. Please log in again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return;
+      }
       
       if (!response.ok) {
         const errorData = await response.json();
