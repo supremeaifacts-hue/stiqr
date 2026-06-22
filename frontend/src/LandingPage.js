@@ -1284,6 +1284,87 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
         </div>
       </section>
 
+      {/* ===== Trust Badges Footer ===== */}
+      <section style={{
+        padding: '60px 20px 40px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+        background: 'rgba(0, 0, 0, 0.3)',
+      }}>
+        <div style={{
+          maxWidth: '1000px',
+          margin: '0 auto',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '32px 48px',
+        }}>
+          
+          {/* SSL Secured */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: '#aaa',
+            fontSize: '13px',
+            fontWeight: '500',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D9FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>SSL Secured</span>
+          </div>
+
+          {/* Payment Logos */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
+            <img src="/assets/payment/visa.svg" alt="Visa" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
+            <img src="/assets/payment/mastercard.svg" alt="Mastercard" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
+            <img src="/assets/payment/paypal.svg" alt="PayPal" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
+            <img src="/assets/payment/stripe.svg" alt="Stripe" style={{ height: '24px', opacity: 0.6, filter: 'brightness(0) invert(0.7)' }} />
+          </div>
+
+          {/* GDPR Compliant */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: '#aaa',
+            fontSize: '13px',
+            fontWeight: '500',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D9FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>GDPR Compliant</span>
+          </div>
+
+          {/* 7-Day Free Trial */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.12) 0%, rgba(255, 0, 255, 0.12) 100%)',
+            border: '1px solid rgba(0, 217, 255, 0.2)',
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#00D9FF',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00D9FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>7-Day Free Trial</span>
+          </div>
+
+        </div>
+      </section>
+
     </div>
   );
 };
