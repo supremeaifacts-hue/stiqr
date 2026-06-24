@@ -509,7 +509,7 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
         <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '20px', color: '#00D9FF' }}>
           Dashboard
         </h1>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '20px', marginBottom: '40px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
           <div style={{
             background: 'rgba(0,0,0,0.5)',
             border: '1px solid #00D9FF',
