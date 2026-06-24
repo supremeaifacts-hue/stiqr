@@ -69,10 +69,10 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           fontWeight: '600',
         }}>
           <span style={{ fontSize: '16px' }}>✨</span>
-          Next-Gen QR Code Generator
+          Smart QR Code Generator with Analytics
         </div>
 
-        {/* Main Heading */}
+        {/* Main Heading - Single H1 */}
         <h1 style={{
           fontSize: '56px',
           fontWeight: '900',
@@ -81,9 +81,9 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           letterSpacing: '-1px',
         }}>
           <span style={{ color: '#FF00FF', textShadow: '0 0 24px rgba(255, 0, 255, 0.5)' }}>
-            Create QR Codes 
+            Create Smart QR Codes 
           </span>
-          <span style={{ color: '#ffffff' }}> That Pop</span>
+          <span style={{ color: '#ffffff' }}> with Analytics</span>
         </h1>
 
         {/* Description */}
@@ -94,8 +94,8 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           maxWidth: '700px',
           marginBottom: '10px',
         }}>
-          Generate fully customized QR codes with{' '}
-          <span style={{ color: '#00D9FF' }}>stunning stickers</span>, vibrant colors, and advanced features for your brand.
+          Generate dynamic, trackable QR codes with{' '}
+          <span style={{ color: '#00D9FF' }}>stunning stickers</span>, vibrant colors, and real-time analytics for your brand.
         </p>
 
         <div style={{ width: '100%', maxWidth: '1200px', marginTop: '10px' }}>
@@ -118,7 +118,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
             margin: '0 0 60px 0',
             letterSpacing: '-1px',
           }}>
-            How does it <span style={{ color: '#00D9FF' }}>work?</span>
+            How Our Dynamic QR Code Generator <span style={{ color: '#00D9FF' }}>Works</span>
           </h2>
 
           {/* Phase 1: Creating a QR Code */}
@@ -797,17 +797,17 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
             <div className="wrap_card">
               <div className="card">
                 <div className="content">
-                  <img src="/assets/stiqr-qrcode.png" alt="stiQR QR Code" />
+                  <img src="/assets/stiqr-qrcode.png" alt="Dynamic QR code generator with analytics dashboard" />
                 </div>
               </div>
               <div className="card">
                 <div className="content">
-                  <img src="/assets/stiqr-qrcode.png" alt="stiQR QR Code" />
+                  <img src="/assets/stiqr-qrcode.png" alt="Trackable QR code with real-time scan tracking" />
                 </div>
               </div>
               <div className="card">
                 <div className="content">
-                  <img src="/assets/stiqr-qrcode.png" alt="stiQR QR Code" />
+                  <img src="/assets/stiqr-qrcode.png" alt="Custom QR code with stickers and branding" />
                 </div>
               </div>
               <div className="lines">
@@ -830,7 +830,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
               margin: '0 0 20px 0',
               letterSpacing: '-1px',
             }}>
-              Benefits of <span style={{ color: '#00D9FF' }}>stiQR.top</span>
+              QR Code Analytics & <span style={{ color: '#00D9FF' }}>Benefits</span>
             </h2>
             <p style={{
               fontSize: '18px',
@@ -838,7 +838,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
               lineHeight: '1.7',
               margin: '0 0 30px 0',
             }}>
-              By using stiQR.top you will be able attract people to your business, making them easily choose you over the competitors.
+              By using stiQR.top you will be able attract people to your business with dynamic QR codes and real-time analytics, making them easily choose you over the competitors.
             </p>
             <p style={{
               fontSize: '16px',
@@ -847,7 +847,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
               margin: '0 0 30px 0',
             }}>
               <strong style={{ color: '#FF00FF' }}>Why?</strong><br />
-              Because stiQR allows you to add stickers or logos over your QR codes, making it different from the usual bland black and white QR code. Do you want to get noticed instantly? Change the colors, add frames and place your logo over the QR code.
+              Because stiQR allows you to add stickers or logos over your QR codes, making it different from the usual bland black and white QR code. Do you want to get noticed instantly? Change the colors, add frames and place your logo over the QR code. Our QR code generator with analytics helps you track every scan.
             </p>
             <div style={{
               display: 'flex',
