@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="footer-column">
           <h4>Product</h4>
           <ul>
-            <li><a href="/qr-code-generator">QR Code Types</a></li>
+            <li><a href="/types">QR Code Types</a></li>
             <li><a href="/dynamic-qr-codes">Dynamic QR Codes</a></li>
             <li><a href="/static-qr-codes">Static QR Codes</a></li>
             <li><a href="/features">Features</a></li>

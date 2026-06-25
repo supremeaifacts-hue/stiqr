@@ -5,6 +5,7 @@ import LandingPage from './LandingPage';
 import EditorPage from './EditorPage';
 import Dashboard from './Dashboard';
 import Pricing from './Pricing';
+import QRCodeTypes from './QRCodeTypes';
 import Footer from './Footer';
 
 function AppContent() {
@@ -34,6 +35,12 @@ function AppContent() {
       } />
       <Route path="/pricing" element={
         <Pricing onViewDashboard={() => navigate('/dashboard')} onBack={() => navigate('/')} />
+      } />
+      <Route path="/types" element={
+        <QRCodeTypes
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewPricing={() => navigate('/pricing')}
+        />
       } />
     </Routes>
   );
