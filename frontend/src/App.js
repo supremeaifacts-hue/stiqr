@@ -6,6 +6,7 @@ import EditorPage from './EditorPage';
 import Dashboard from './Dashboard';
 import Pricing from './Pricing';
 import QRCodeTypes from './QRCodeTypes';
+import Weddings from './Weddings';
 import Footer from './Footer';
 
 function AppContent() {
@@ -38,6 +39,12 @@ function AppContent() {
       } />
       <Route path="/types" element={
         <QRCodeTypes
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewPricing={() => navigate('/pricing')}
+        />
+      } />
+      <Route path="/use-cases/weddings" element={
+        <Weddings
           onViewDashboard={() => navigate('/dashboard')}
           onViewPricing={() => navigate('/pricing')}
         />
