@@ -5,6 +5,7 @@ import LandingPage from './LandingPage';
 import EditorPage from './EditorPage';
 import Dashboard from './Dashboard';
 import Pricing from './Pricing';
+import Footer from './Footer';
 
 function AppContent() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppContent />
+        <Footer />
       </BrowserRouter>
     </AuthProvider>
   );
