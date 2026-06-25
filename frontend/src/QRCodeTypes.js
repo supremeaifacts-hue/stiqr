@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import TopBar from './TopBar';
 import Footer from './Footer';
 
 const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
+  const navigate = useNavigate();
   return (
     <div style={{
       minHeight: '100vh',
@@ -112,6 +114,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             stat="+124%"
             statLabel="Avg. growth in traffic"
             reversed={false}
+            onGenerateCode={() => navigate('/')}
           />
 
           {/* Wi-Fi */}
@@ -123,6 +126,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             features={['Secure WPA2 encryption', 'One-tap connect experience']}
             image="https://lh3.googleusercontent.com/aida-public/AB6AXuCI0RJyu6eoGBXGdqnDxWJ2q6tDDyTXY2HfevsqcN7adNGIUrcndNPP0icmEuBnfNApAzcVjKvRspXzkvbtz2ksTht4tdCt92Zo6TivHPmDkhr0wvZCPaQSm1NqP7ntmowqvnTPb_4y3DdjJMMiR9o02MfwNBFW9Ez-xNEwfj4CR68Ikpq12Nh3NK-z2sLTUgfgWnKkZt4yGORAzLnYF1QimTM0RS1t_7bGsmXeuPyvNzV6P0ukstUbKsTMM_HBRCvSj1ofSt0XWmMD"
             reversed={true}
+            onGenerateCode={() => navigate('/')}
           />
 
           {/* PDF */}
@@ -134,6 +138,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             features={['Mobile-optimized PDF viewer', 'Your documents look great on every device']}
             image="https://lh3.googleusercontent.com/aida-public/AB6AXuB1QSgC3S3Nc5wJGfkaPr5nZ2ms0r62Vp8jgLK_J5i2GTHISJQs1_evUX2C5vowv-l31hytqvI4lV-zlTLRHtF4ZlCZLFJzvYi5wbFoEkDluQJl7UIxBq-ZTyG__VOWKqimFxCRBXtlTfhEZM50e_gc_CyHWCWAUmj9UKlLVef2_uKDYk9IAW_14AGMRzBonT6dc300SzPiLufE24PGQHHKJ12tTC4ZQL4kLYugBwzXF1iHpRUcAlIEkEkx5XstPTWTmeB5LWbzhe34"
             reversed={false}
+            onGenerateCode={() => navigate('/')}
           />
 
           {/* Social Media */}
@@ -146,6 +151,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             image="https://lh3.googleusercontent.com/aida-public/AB6AXuCCYBJ9QyWnTtQ70DHFaTlwGLQUd-vQmjKmBY5Zk2XSMg6SkM2sMoGIm3ZLHVEcxta0KVSLTRR9g0leGIQx0PeVWgx-5bhgTBOrf_yHPJcNYp0nFzUf0tzgVITqjWhop2LrlQYRvQIBdK97Gyn8p0DbZNehhAN1q5x3pDH06R54dCjw3tuRFeDaEzeY-zmBUlmrgCKZr7uDx6y3c9Vv7D3At7n5mH_UKfLSWaSCt0043YzqwNOGTDzFOaTbFHrX_ZOvZRrL_xcHZgsF"
             reversed={true}
             darkBg={true}
+            onGenerateCode={() => navigate('/')}
           />
 
           {/* Event */}
@@ -160,6 +166,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             ]}
             image="https://lh3.googleusercontent.com/aida-public/AB6AXuDpKfS6xeBtJ5OLqeB3Y0QhJEmAr1fUizadQUVtyeGoy4wWmx2tPp2MRszg7WQkiThciG_Lfe1vFmlORnQ08U4WrT44VNhrWzpbriBkR7PcY1YF2fkT1X2RhgtymM6q6y_QpNNIPs0VvHqm5ik6vVc2GWRC4gED3UigbDm-rKLw-IlQ-QAD9aFA2Y_ezJBQBYYJMILOKaA6kDqq5JrrempeNT2yWwet1B-NsHV0hzrHG4_bCJiAfJb2lrB2cqFR6jbKj23uzN6Hpc1p"
             reversed={false}
+            onGenerateCode={() => navigate('/')}
           />
 
         </div>
@@ -188,7 +195,9 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             Join thousands of businesses using StiQR to track engagement and drive conversions through precision QR technology.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button style={{
+            <button
+              onClick={() => navigate('/')}
+              style={{
               background: '#00D9FF',
               color: '#0a0a0a',
               border: 'none',
@@ -204,7 +213,9 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             >
               Create Your First Code
             </button>
-            <button style={{
+            <button
+              onClick={() => navigate('/pricing')}
+              style={{
               background: 'transparent',
               color: '#fff',
               border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -230,7 +241,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
 };
 
 /* Reusable Section Component */
-const Section = ({ id, badge, badgeColor, title, description, features, image, stat, statLabel, reversed, darkBg }) => {
+const Section = ({ id, badge, badgeColor, title, description, features, image, stat, statLabel, reversed, darkBg, onGenerateCode }) => {
   const content = (
     <div style={{
       display: 'flex',
@@ -296,7 +307,9 @@ const Section = ({ id, badge, badgeColor, title, description, features, image, s
             </li>
           ))}
         </ul>
-        <button style={{
+        <button
+          onClick={onGenerateCode}
+          style={{
           background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
           color: '#0a0a0a',
           border: 'none',
