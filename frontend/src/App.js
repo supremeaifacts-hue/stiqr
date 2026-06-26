@@ -12,6 +12,9 @@ import Features from './Features';
 import Weddings from './Weddings';
 import Contact from './Contact';
 import FAQ from './FAQ';
+import Disclaimer from './Disclaimer';
+import TermsOfService from './TermsOfService';
+import PrivacyPolicy from './PrivacyPolicy';
 import Footer from './Footer';
 
 function AppContent() {
@@ -75,6 +78,15 @@ function AppContent() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/faq" element={
         <FAQ onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
+      } />
+      <Route path="/disclaimer" element={
+        <Disclaimer onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
+      } />
+      <Route path="/terms" element={
+        <TermsOfService onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
+      } />
+      <Route path="/privacy" element={
+        <PrivacyPolicy onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
       } />
     </Routes>
   );
