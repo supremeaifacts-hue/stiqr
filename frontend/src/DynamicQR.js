@@ -87,23 +87,6 @@ const DynamicQR = ({ onViewDashboard, onViewPricing }) => {
             >
               Create Dynamic Code
             </button>
-            <button
-              style={{
-                background: 'transparent',
-                color: '#fff',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                padding: '16px 32px',
-                borderRadius: '12px',
-                fontSize: '15px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => { e.target.style.borderColor = '#00D9FF'; e.target.style.color = '#00D9FF'; }}
-              onMouseLeave={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'; e.target.style.color = '#fff'; }}
-            >
-              How it works
-            </button>
           </div>
         </div>
         <div style={{ flex: '1', minWidth: '300px', maxWidth: '540px', position: 'relative' }}>
