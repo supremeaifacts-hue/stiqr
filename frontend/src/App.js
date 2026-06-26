@@ -6,6 +6,7 @@ import EditorPage from './EditorPage';
 import Dashboard from './Dashboard';
 import Pricing from './Pricing';
 import QRCodeTypes from './QRCodeTypes';
+import DynamicQR from './DynamicQR';
 import Weddings from './Weddings';
 import Contact from './Contact';
 import Footer from './Footer';
@@ -46,6 +47,12 @@ function AppContent() {
       } />
       <Route path="/use-cases/weddings" element={
         <Weddings
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewPricing={() => navigate('/pricing')}
+        />
+      } />
+      <Route path="/dynamic-qr-codes" element={
+        <DynamicQR
           onViewDashboard={() => navigate('/dashboard')}
           onViewPricing={() => navigate('/pricing')}
         />
