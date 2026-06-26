@@ -7,6 +7,7 @@ import Dashboard from './Dashboard';
 import Pricing from './Pricing';
 import QRCodeTypes from './QRCodeTypes';
 import Weddings from './Weddings';
+import Contact from './Contact';
 import Footer from './Footer';
 
 function AppContent() {
@@ -49,6 +50,7 @@ function AppContent() {
           onViewPricing={() => navigate('/pricing')}
         />
       } />
+      <Route path="/contact" element={<Contact />} />
     </Routes>
   );
 }

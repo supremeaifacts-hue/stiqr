@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from './TopBar';
-import Footer from './Footer';
 
 const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
   const navigate = useNavigate();
@@ -234,8 +233,6 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };
