@@ -8,6 +8,7 @@ import Pricing from './Pricing';
 import QRCodeTypes from './QRCodeTypes';
 import DynamicQR from './DynamicQR';
 import StaticQR from './StaticQR';
+import Features from './Features';
 import Weddings from './Weddings';
 import Contact from './Contact';
 import Footer from './Footer';
@@ -60,6 +61,12 @@ function AppContent() {
       } />
       <Route path="/static-qr-codes" element={
         <StaticQR
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewPricing={() => navigate('/pricing')}
+        />
+      } />
+      <Route path="/features" element={
+        <Features
           onViewDashboard={() => navigate('/dashboard')}
           onViewPricing={() => navigate('/pricing')}
         />

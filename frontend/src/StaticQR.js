@@ -146,32 +146,30 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
               }}
             />
           </div>
+          {/* MonaLisa overlay - positioned at lower-right corner of the main image */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
+            position: 'absolute',
+            bottom: '-20px',
+            right: '-20px',
+            width: '55%',
+            maxWidth: '280px',
             borderRadius: '24px',
-            border: '2px solid #00D9FF',
+            border: '3px solid #00D9FF',
             overflow: 'hidden',
-            padding: '8px',
-            marginTop: '-40px',
-            marginLeft: '40px',
-            transform: 'rotate(2deg)',
-            transition: 'transform 0.5s',
-            position: 'relative',
+            transform: 'rotate(3deg)',
+            transition: 'transform 0.5s, box-shadow 0.5s',
             zIndex: 2,
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-            display: 'none',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6)',
           }}
-          className="lg:block"
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'rotate(2deg)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.03)'; e.currentTarget.style.boxShadow = '0 24px 80px rgba(0, 217, 255, 0.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'rotate(3deg)'; e.currentTarget.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.6)'; }}
           >
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzhDmQF8mT4kSa4qrih4NWMlK3n0InCPuN7yt4MomC1ucMSDcns0ccvcm0OkXhhVkiK7gZVFyXoyympyRnJykIN6g13aKfnapcoJZwPbRAYm4Ir0OgG0b5GvEuyhw7xAOqQwuEAHFP7LokB9oAUilEGmE3fR2wn7iR-lHrrcrIMjNZOuMQ8pDdYDS9OhAXfyCPEen1P2Mi54hgCZcW3-uahST6sGrVB0ISUz96TZIQAsu-TaQ_Gpm3HwKEK4cGCtOUsxFKkD35eFkH"
-              alt="Smartphone showing QR details"
+              src="/assets/MonaLisa.png"
+              alt="Mona Lisa with QR code"
               style={{
                 width: '100%',
                 height: 'auto',
-                borderRadius: '18px',
                 display: 'block',
                 aspectRatio: '1/1',
                 objectFit: 'cover',
