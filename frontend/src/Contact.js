@@ -41,7 +41,12 @@ const Contact = () => {
   };
 
   return (
-    <>
+    <div style={{
+      minHeight: '100vh',
+      background: '#0a0a0a',
+      color: '#fff',
+      fontFamily: '"Inter", "Segoe UI", sans-serif',
+    }}>
       <TopBar
         onViewDashboard={() => window.location.href = '/dashboard'}
         onViewPricing={() => window.location.href = '/pricing'}
@@ -123,7 +128,7 @@ const Contact = () => {
         </aside>
       </div>
       </main>
-    </>
+    </div>
   );
 };
 

@@ -337,7 +337,7 @@ const Pricing = ({ onViewDashboard, onBack }) => {
               },
               {
                 q: 'Is there a free trial for paid plans?',
-                a: 'Yes, all paid plans come with a 14-day free trial. No credit card required.'
+                a: 'Yes, all paid plans come with a 7-day free trial. No credit card required.'
               },
               {
                 q: 'What payment methods do you accept?',

@@ -11,6 +11,7 @@ import StaticQR from './StaticQR';
 import Features from './Features';
 import Weddings from './Weddings';
 import Contact from './Contact';
+import FAQ from './FAQ';
 import Footer from './Footer';
 
 function AppContent() {
@@ -72,6 +73,9 @@ function AppContent() {
         />
       } />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/faq" element={
+        <FAQ onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
+      } />
     </Routes>
   );
 }
