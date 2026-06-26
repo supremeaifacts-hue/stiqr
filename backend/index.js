@@ -922,6 +922,52 @@ app.use('/api', assetsRoutes);
 app.use('/api', stripeRoutes);
 app.use('/', eventRoutes);
 
+// ============================================================
+// POST /api/contact - Contact form email sending
+// ============================================================
+app.post('/api/contact', async (req, res) => {
+  const { name, email, subject, message } = req.body;
+
+  // Validate input
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: 'Name, email, and message are required.' });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Please provide a valid email address.' });
+  }
+
+  try {
+    const nodemailer = require('nodemailer');
+
+    // Create transporter using environment variables
+    const transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE || 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    });
+
+    const mailOptions = {
+      from: `"${name}" <${email}>`,
+      to: 'contact@stiqr.top',
+      subject: subject || `New Contact Form Submission from ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || 'N/A'}\n\nMessage:\n${message}`,
+      replyTo: email
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Contact email sent from ${name} <${email}>`);
+    res.json({ success: true, message: 'Email sent successfully!' });
+  } catch (error) {
+    console.error('Error sending contact email:', error);
+    res.status(500).json({ error: 'Failed to send email. Please try again later.' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

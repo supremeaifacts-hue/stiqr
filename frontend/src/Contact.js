@@ -7,16 +7,36 @@ const Contact = () => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsSubmitting(true);
+    setStatus('Sending your message...');
 
-    const mailSubject = subject || 'Contact from StiQR';
-    const body = `Name: ${name}\nEmail: ${email}\n\n${message}`;
-    const mailtoLink = `mailto:support@stiqr.top?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(body)}`;
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, message })
+      });
 
-    setStatus('Opening your email app...');
-    window.location.href = mailtoLink;
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setStatus('✅ Message sent successfully! We\'ll get back to you soon.');
+        setName('');
+        setEmail('');
+        setSubject('');
+        setMessage('');
+      } else {
+        setStatus(`❌ ${data.error || 'Failed to send message. Please try again.'}`);
+      }
+    } catch (error) {
+      setStatus('❌ Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -79,7 +99,9 @@ const Contact = () => {
               />
             </label>
 
-            <button className="contact-submit" type="submit">Send Message</button>
+            <button className="contact-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Sending...' : 'Send Message'}
+            </button>
             {status && <p className="contact-status">{status}</p>}
           </form>
         </div>
