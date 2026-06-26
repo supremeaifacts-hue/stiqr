@@ -149,7 +149,7 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
           {/* MonaLisa overlay - positioned at lower-right corner of the main image */}
           <div style={{
             position: 'absolute',
-            bottom: '30px',
+            bottom: '-70px',
             right: '-20px',
             width: '55%',
             maxWidth: '280px',

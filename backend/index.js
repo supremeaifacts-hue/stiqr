@@ -923,57 +923,77 @@ app.use('/api', stripeRoutes);
 app.use('/', eventRoutes);
 
 // ============================================================
-// POST /api/contact - Contact form email sending
+// POST /api/contact - Contact form email sending via Mailtrap API
 // ============================================================
 app.post('/api/contact', async (req, res) => {
-  const { name, email, subject, message } = req.body;
-
-  // Validate input
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: 'Name, email, and message are required.' });
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: 'Please provide a valid email address.' });
-  }
-
   try {
-    const nodemailer = require('nodemailer');
+    const { name, email, message } = req.body;
+    console.log('📧 Contact form submission:', { name, email, message });
 
-    // Create transporter using Mailtrap Live SMTP
-    const transporter = nodemailer.createTransport({
-      host: 'live.smtp.mailtrap.io',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'apismtp@mailtrap.io',
-        pass: process.env.MAILTRAP_PASS
-      },
-      family: 4,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-      tls: {
-        rejectUnauthorized: false
-      }
+    // Validate
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    // Check API token
+    if (!process.env.MAILTRAP_API_TOKEN) {
+      console.error('❌ MAILTRAP_API_TOKEN not set');
+      return res.status(500).json({ error: 'Email service not configured.' });
+    }
+
+    // Initialize Mailtrap client
+    const { MailtrapClient } = require('mailtrap');
+    const client = new MailtrapClient({
+      token: process.env.MAILTRAP_API_TOKEN,
+      endpoint: 'https://send.api.mailtrap.io'
     });
 
-    const mailOptions = {
-      from: `"${name}" <${email}>`,
-      to: 'support@stiqr.top',
-      subject: subject || `New Contact Form Submission from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || 'N/A'}\n\nMessage:\n${message}`,
-      replyTo: email
+    const sender = {
+      email: 'support@stiqr.top',
+      name: 'StiQR Support'
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Contact email sent from ${name} <${email}>`);
-    res.json({ success: true, message: 'Email sent successfully!' });
+    const recipients = [
+      { email: 'support@stiqr.top' }
+    ];
+
+    const response = await client.send({
+      from: sender,
+      to: recipients,
+      subject: `New Contact Form Submission from ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+      html: `
+        <h3>New Contact Form Submission</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+        <hr>
+        <p><small>This message was sent from the StiQR contact form.</small></p>
+      `,
+      reply_to: { email: email, name: name }
+    });
+
+    console.log('✅ Email sent via Mailtrap API');
+    console.log('   Message ID:', response?.id || 'N/A');
+
+    res.json({
+      success: true,
+      message: 'Your message has been sent successfully! We\'ll get back to you soon.'
+    });
+
   } catch (error) {
-    console.error('Error sending contact email:', error);
-    res.status(500).json({ error: 'Failed to send email. Please try again later.' });
+    console.error('❌ Error sending email:', error.message);
+    console.error('   Stack:', error.stack);
+    res.status(500).json({
+      error: 'Failed to send email. Please try again later.'
+    });
   }
 });
 
