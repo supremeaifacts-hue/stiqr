@@ -942,16 +942,16 @@ app.post('/api/contact', async (req, res) => {
   try {
     const nodemailer = require('nodemailer');
 
-    // Create transporter using environment variables
+    // Create transporter using Mailtrap Live SMTP
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: false, // Use STARTTLS
+      host: 'live.smtp.mailtrap.io',
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
+        user: 'apismtp@mailtrap.io',
+        pass: process.env.MAILTRAP_PASS
       },
-      family: 4, // Force IPv4 to avoid IPv6 connection issues
+      family: 4,
       connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 10000,
@@ -962,7 +962,7 @@ app.post('/api/contact', async (req, res) => {
 
     const mailOptions = {
       from: `"${name}" <${email}>`,
-      to: 'contact@stiqr.top',
+      to: 'support@stiqr.top',
       subject: subject || `New Contact Form Submission from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || 'N/A'}\n\nMessage:\n${message}`,
       replyTo: email
