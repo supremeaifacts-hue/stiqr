@@ -128,10 +128,8 @@ const Pricing = ({ onViewDashboard, onBack }) => {
       period: 'per year',
       features: [
         'Everything in Pro tier',
-        'Scan statistic (time and Device used)',
         'Priority support',
-        'Advanced analytics dashboard',
-        'API access'
+        '17% discount'
       ],
       color: '#00FF00',
       popular: false

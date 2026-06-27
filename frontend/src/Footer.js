@@ -14,7 +14,6 @@ const Footer = () => {
             <li><a href="/static-qr-codes">Static QR Codes</a></li>
             <li><a href="/features">Features</a></li>
             <li><a href="/pricing">Pricing</a></li>
-            <li><a href="/api">API</a></li>
           </ul>
         </div>
 
@@ -34,11 +33,8 @@ const Footer = () => {
         <div className="footer-column">
           <h4>Help</h4>
           <ul>
-            <li><a href="/help">Help Center</a></li>
             <li><a href="/faq">FAQ</a></li>
             <li><a href="/contact">Contact Us</a></li>
-            <li><a href="/changelog">Changelog</a></li>
-            <li><a href="/status">Status</a></li>
             <li><a href="/cancel-subscription">Cancel Subscription</a></li>
           </ul>
         </div>

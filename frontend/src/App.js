@@ -15,6 +15,8 @@ import FAQ from './FAQ';
 import Disclaimer from './Disclaimer';
 import TermsOfService from './TermsOfService';
 import PrivacyPolicy from './PrivacyPolicy';
+import RefundPolicy from './RefundPolicy';
+import About from './About';
 import Footer from './Footer';
 
 function AppContent() {
@@ -87,6 +89,12 @@ function AppContent() {
       } />
       <Route path="/privacy" element={
         <PrivacyPolicy onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
+      } />
+      <Route path="/refund" element={
+        <RefundPolicy onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
+      } />
+      <Route path="/about" element={
+        <About onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
       } />
     </Routes>
   );
