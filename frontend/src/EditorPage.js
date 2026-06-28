@@ -4276,33 +4276,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   zIndex: 10,
                 }}></div>
 
-                {/* Navigation Bar */}
-                <div style={{
-                  padding: '32px 16px 12px',
-                  background: 'rgba(255,255,255,0.95)',
-                  borderBottom: '1px solid #e0e3e5',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '20px',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  color: '#3e4944',
-                  fontFamily: '"Hanken Grotesk", sans-serif',
-                  flexShrink: 0,
-                }}>
-                  <span style={{ color: '#4DB695', borderBottom: '2px solid #4DB695', paddingBottom: '2px' }}>Details</span>
-                  {eventData.about && <span style={{ color: '#6e7a74' }}>About</span>}
-                  {(eventData.street || eventData.city) && <span style={{ color: '#6e7a74' }}>Location</span>}
-                  {(eventData.contactName || eventData.contactPhone) && <span style={{ color: '#6e7a74' }}>Contact</span>}
-                </div>
-
                 {/* Scrollable Content */}
                 <div style={{
                   flex: 1,
                   overflowY: 'auto',
                   background: eventPageColor || '#f7f9fb',
                 }}>
-                  {/* Hero Section */}
+                  {/* Hero Section - Image with Title overlay */}
                   <div style={{
                     position: 'relative',
                     height: '180px',
@@ -4322,19 +4302,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       </div>
                     )}
                     <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff', padding: '0 16px' }}>
-                      <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', lineHeight: '1.2', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                      <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', lineHeight: '1.2', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
                         {eventData.title || 'Event Title'}
                       </div>
-                      {eventData.summary && (
-                        <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.85, lineHeight: '1.4' }}>
-                          {eventData.summary}
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  {/* Event Details Card */}
-                  <div style={{ padding: '16px' }}>
+                  {/* Card 1: Event Title + Summary */}
+                  <div style={{ padding: '16px 16px 8px' }}>
                     <div style={{
                       background: '#fff',
                       borderRadius: '10px',
@@ -4342,58 +4317,29 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       border: '1px solid #e0e3e5',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                     }}>
-                      <div style={{ fontSize: '16px', fontWeight: '600', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '16px' }}>
-                        Event Details
+                      <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                        {eventData.title || 'Event Title'}
                       </div>
-                      
-                      {(eventData.dateFrom || eventData.dateTo) && (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '16px', color: '#4DB695' }}>📅</span>
-                            <span style={{ fontSize: '12px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#191c1e' }}>Date</span>
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#3e4944', marginLeft: '24px', marginBottom: '12px' }}>
-                            {eventData.dateFrom ? new Date(eventData.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                            {eventData.dateFrom && eventData.dateTo ? ' - ' : ''}
-                            {eventData.dateTo ? new Date(eventData.dateTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                          </div>
-                        </>
-                      )}
-
-                      {Object.values(eventData.services).some(v => v) && (
-                        <>
-                          <div style={{ height: '1px', background: '#e0e3e5', margin: '12px 0' }}></div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px' }}>
-                            Event Services
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {eventData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>📶</span>}
-                            {eventData.services.bathroom && <span title="Bathroom" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🚻</span>}
-                            {eventData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>♿</span>}
-                            {eventData.services.babies && <span title="Babies Allowed" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>👶</span>}
-                            {eventData.services.dogs && <span title="Dogs Allowed" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🐕</span>}
-                            {eventData.services.parking && <span title="Parking" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🅿️</span>}
-                            {eventData.services.food && <span title="Food" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🍽️</span>}
-                          </div>
-                        </>
+                      {eventData.summary && (
+                        <div style={{ fontSize: '13px', color: '#3e4944', lineHeight: '1.5' }}>
+                          {eventData.summary}
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* About Section */}
+                  {/* Card 2: About */}
                   {eventData.about && (
-                    <div style={{ padding: '0 16px 16px' }}>
+                    <div style={{ padding: '8px 16px' }}>
                       <div style={{
-                        background: '#f2f4f6',
+                        background: '#fff',
                         borderRadius: '10px',
                         padding: '20px',
-                        textAlign: 'center',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4DB695', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
                           About
-                        </div>
-                        <div style={{ fontSize: '16px', fontWeight: '600', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px' }}>
-                          About This Event
                         </div>
                         <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.6' }}>
                           {eventData.about}
@@ -4402,90 +4348,111 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   )}
 
-                  {/* Location Section */}
-                  {(eventData.street || eventData.city || eventData.state || eventData.zip || eventData.country) && (
-                    <div style={{ padding: '0 16px 16px' }}>
-                      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4DB695', marginBottom: '8px' }}>
-                            Destination
-                          </div>
-                          <div style={{ fontSize: '18px', fontWeight: '600', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '16px' }}>
-                            {eventData.city || eventData.country || 'Event Location'}
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            gap: '12px',
-                            padding: '16px',
-                            background: '#fff',
-                            borderRadius: '8px',
-                            border: '1px solid #e0e3e5',
-                          }}>
-                            <span style={{ fontSize: '20px', color: '#4DB695' }}>📍</span>
-                            <div>
-                              <div style={{ fontSize: '12px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#191c1e', marginBottom: '4px' }}>
-                                Event Address
-                              </div>
-                              <div style={{ fontSize: '11px', color: '#3e4944', lineHeight: '1.5' }}>
-                                {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
-                              </div>
+                  {/* Card 3: Date + Time + Services */}
+                  {(eventData.dateFrom || eventData.dateTo || Object.values(eventData.services).some(v => v)) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        {(eventData.dateFrom || eventData.dateTo) && (
+                          <div style={{ marginBottom: Object.values(eventData.services).some(v => v) ? '16px' : '0' }}>
+                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                              Date
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              {eventData.dateFrom ? new Date(eventData.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                              {eventData.dateFrom && eventData.dateTo ? ' - ' : ''}
+                              {eventData.dateTo ? new Date(eventData.dateTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                             </div>
                           </div>
+                        )}
+
+                        {Object.values(eventData.services).some(v => v) && (
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                              Services
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              {eventData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>📶</span>}
+                              {eventData.services.bathroom && <span title="Bathroom" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🚻</span>}
+                              {eventData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>♿</span>}
+                              {eventData.services.babies && <span title="Babies Allowed" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>👶</span>}
+                              {eventData.services.dogs && <span title="Dogs Allowed" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🐕</span>}
+                              {eventData.services.parking && <span title="Parking" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🅿️</span>}
+                              {eventData.services.food && <span title="Food" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🍽️</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card 4: Address */}
+                  {(eventData.street || eventData.city || eventData.state || eventData.zip || eventData.country) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                          Address
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.5' }}>
+                          {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Contact Section */}
+                  {/* Card 5: Contacts */}
                   {(eventData.contactName || eventData.contactPhone || eventData.contactEmail || eventData.contactWebsite) && (
-                    <div style={{ padding: '0 16px 16px' }}>
+                    <div style={{ padding: '8px 16px' }}>
                       <div style={{
-                        background: '#f2f4f6',
+                        background: '#fff',
                         borderRadius: '10px',
                         padding: '20px',
-                        textAlign: 'center',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4DB695', marginBottom: '8px' }}>
-                          Contact
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px' }}>
+                          Contacts
                         </div>
-                        <div style={{ fontSize: '16px', fontWeight: '600', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '16px' }}>
-                          Get In Touch
-                        </div>
-                        <div style={{ textAlign: 'left' }}>
-                          {eventData.contactName && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                              <span style={{ fontSize: '16px', color: '#4DB695' }}>👤</span>
-                              <span style={{ fontSize: '12px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#191c1e' }}>{eventData.contactName}</span>
+                        {eventData.contactName && (
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#191c1e', marginBottom: '8px' }}>
+                            {eventData.contactName}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {eventData.contactPhone && (
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              📞 {eventData.contactPhone}
                             </div>
                           )}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {eventData.contactPhone && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#3e4944' }}>
-                                <span style={{ fontSize: '16px', color: '#4DB695' }}>📞</span>
-                                <span>{eventData.contactPhone}</span>
-                              </div>
-                            )}
-                            {eventData.contactEmail && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#3e4944' }}>
-                                <span style={{ fontSize: '16px', color: '#4DB695' }}>✉️</span>
-                                <span>{eventData.contactEmail}</span>
-                              </div>
-                            )}
-                            {eventData.contactWebsite && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#3e4944' }}>
-                                <span style={{ fontSize: '16px', color: '#4DB695' }}>🌐</span>
-                                <span>{eventData.contactWebsite}</span>
-                              </div>
-                            )}
-                          </div>
+                          {eventData.contactEmail && (
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              ✉️ {eventData.contactEmail}
+                            </div>
+                          )}
+                          {eventData.contactWebsite && (
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              🌐 {eventData.contactWebsite}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* Footer */}
-                  <div style={{ padding: '16px', textAlign: 'center', borderTop: '1px solid #e0e3e5' }}>
-                    <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#191c1e', marginBottom: '4px' }}>
+                  <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#191c1e', marginBottom: '4px' }}>
                       {eventData.title || 'Event'}
                     </div>
                     <div style={{ fontSize: '10px', color: '#6e7a74' }}>
