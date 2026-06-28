@@ -54,36 +54,26 @@ const About = ({ onViewDashboard, onViewPricing, onBack }) => {
         justifyContent: 'center',
         overflow: 'hidden',
       }}>
-        {/* Background gradient overlay */}
+        {/* Background image with overlay */}
+        <img
+          src="/assets/about1.png"
+          alt=""
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.25,
+            zIndex: 0,
+          }}
+        />
+        {/* Dark gradient overlay for readability */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to bottom, rgba(10, 10, 10, 0.85) 0%, rgba(26, 10, 46, 0.5) 50%, rgba(10, 10, 10, 0.85) 100%)',
+          background: 'linear-gradient(to bottom, rgba(10, 10, 10, 0.7) 0%, rgba(26, 10, 46, 0.4) 50%, rgba(10, 10, 10, 0.8) 100%)',
           zIndex: 1,
-        }} />
-        
-        {/* Decorative elements */}
-        <div style={{
-          position: 'absolute',
-          top: '15%',
-          left: '5%',
-          width: '300px',
-          height: '300px',
-          borderRadius: '50%',
-          background: 'rgba(0, 217, 255, 0.04)',
-          filter: 'blur(60px)',
-          zIndex: 0,
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '10%',
-          right: '8%',
-          width: '400px',
-          height: '400px',
-          borderRadius: '50%',
-          background: 'rgba(255, 0, 255, 0.03)',
-          filter: 'blur(80px)',
-          zIndex: 0,
         }} />
 
         <div style={{
@@ -241,7 +231,7 @@ const About = ({ onViewDashboard, onViewPricing, onBack }) => {
             </div>
           </div>
 
-          {/* Right Image Placeholder */}
+          {/* Right Image */}
           <div style={{
             flex: '1 1 400px',
             position: 'relative',
@@ -252,18 +242,18 @@ const About = ({ onViewDashboard, onViewPricing, onBack }) => {
               overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
               aspectRatio: '4/5',
-              background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.08), rgba(255, 0, 255, 0.04))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               border: '1px solid rgba(255, 255, 255, 0.06)',
             }}>
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <span style={{ fontSize: '64px', display: 'block', marginBottom: '16px' }}>📱</span>
-                <p style={{ fontSize: '14px', color: '#a0a0a0', margin: 0 }}>
-                  Premium QR Experience
-                </p>
-              </div>
+              <img
+                src="/assets/about2.png"
+                alt="Premium QR Experience"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
             </div>
             {/* Decorative blurs */}
             <div style={{
