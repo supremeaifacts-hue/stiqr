@@ -229,31 +229,33 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [eventCustomColorInput, setEventCustomColorInput] = useState('#e5e9ec');
   const eventCustomColorInputRef = useRef(null);
   const [eventData, setEventData] = useState({
-    title: '',
-    summary: '',
-    about: '',
+    title: 'Amelia & James',
+    summary: 'Amelia and James are finally getting married',
+    about: 'Come and join us in celebrating our wedding with our family and friends',
     image: null,
     imagePreview: null,
-    dateFrom: '',
+    dateFrom: new Date().toISOString().split('T')[0],
     dateTo: '',
+    timeFrom: '15:00',
+    timeTo: '23:00',
     services: {
-      wifi: false,
-      bathroom: false,
+      wifi: true,
+      bathroom: true,
       handicapped: false,
       babies: false,
       dogs: false,
-      parking: false,
+      parking: true,
       food: false,
     },
-    street: '',
-    city: '',
-    state: '',
+    street: "Villa D'Este, Via Regina 40",
+    city: 'Cernobbio',
+    state: 'Italy',
     zip: '',
     country: '',
-    contactName: '',
-    contactPhone: '',
-    contactEmail: '',
-    contactWebsite: '',
+    contactName: "Villa d'Este",
+    contactPhone: '+39 031 3481',
+    contactEmail: 'weddings@villadeste.com',
+    contactWebsite: 'www.villadeste.com',
   });
 
   const [savingEvent, setSavingEvent] = useState(false);
@@ -271,6 +273,18 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // Open event modal
   const openEventModal = () => {
     console.log('Opening Event modal');
+    // Pre-load the wedding image
+    const img = new Image();
+    img.onload = () => {
+      setEventData(prev => ({
+        ...prev,
+        imagePreview: '/assets/wedding.png',
+      }));
+    };
+    img.onerror = () => {
+      console.log('Wedding image not found, using default gradient');
+    };
+    img.src = '/assets/wedding.png';
     setShowEventModal(true);
   };
 
@@ -4032,6 +4046,51 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   </div>
                   <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Time (24h format)
+                    </label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', color: '#888' }}>From</label>
+                        <input
+                          type="time"
+                          value={eventData.timeFrom}
+                          onChange={(e) => setEventData({...eventData, timeFrom: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            background: 'rgba(0, 217, 255, 0.05)',
+                            border: '1px solid rgba(0, 217, 255, 0.2)',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            boxSizing: 'border-box',
+                            colorScheme: 'dark',
+                          }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', color: '#888' }}>To</label>
+                        <input
+                          type="time"
+                          value={eventData.timeTo}
+                          onChange={(e) => setEventData({...eventData, timeTo: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            background: 'rgba(0, 217, 255, 0.05)',
+                            border: '1px solid rgba(0, 217, 255, 0.2)',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            boxSizing: 'border-box',
+                            colorScheme: 'dark',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
                       Choose the services available at the event
                     </label>
@@ -4349,7 +4408,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   )}
 
                   {/* Card 3: Date + Time + Services */}
-                  {(eventData.dateFrom || eventData.dateTo || Object.values(eventData.services).some(v => v)) && (
+                  {(eventData.dateFrom || eventData.dateTo || eventData.timeFrom || eventData.timeTo || Object.values(eventData.services).some(v => v)) && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
                         background: '#fff',
@@ -4359,7 +4418,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
                         {(eventData.dateFrom || eventData.dateTo) && (
-                          <div style={{ marginBottom: Object.values(eventData.services).some(v => v) ? '16px' : '0' }}>
+                          <div style={{ marginBottom: (eventData.timeFrom || eventData.timeTo || Object.values(eventData.services).some(v => v)) ? '16px' : '0' }}>
                             <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
                               Date
                             </div>
@@ -4371,12 +4430,23 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                           </div>
                         )}
 
+                        {(eventData.timeFrom || eventData.timeTo) && (
+                          <div style={{ marginBottom: Object.values(eventData.services).some(v => v) ? '16px' : '0' }}>
+                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                              Time
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              {eventData.timeFrom || ''}{eventData.timeFrom && eventData.timeTo ? ' - ' : ''}{eventData.timeTo || ''}
+                            </div>
+                          </div>
+                        )}
+
                         {Object.values(eventData.services).some(v => v) && (
                           <div>
-                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px', textAlign: 'center' }}>
                               Services
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                               {eventData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>📶</span>}
                               {eventData.services.bathroom && <span title="Bathroom" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🚻</span>}
                               {eventData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>♿</span>}

@@ -42,7 +42,7 @@ router.get('/event/:id', async (req, res) => {
       `);
     }
 
-    const { title, summary, about, image, dateFrom, dateTo, services, address, contact, pageColor } = eventPage;
+    const { title, summary, about, image, dateFrom, dateTo, timeFrom, timeTo, services, address, contact, pageColor } = eventPage;
     
     // Format dates
     const formatDate = (dateStr) => {
@@ -279,14 +279,21 @@ router.get('/event/:id', async (req, res) => {
               </div>
             ` : ''}
             
-            <!-- Card 3: Date + Services -->
-            ${(dateFrom || dateTo || servicesHtml) ? `
+            <!-- Card 3: Date + Time + Services -->
+            ${(dateFrom || dateTo || timeFrom || timeTo || servicesHtml) ? `
               <div class="section-gap">
                 <div class="card">
                   ${(dateFrom || dateTo) ? `
                     <div class="card-title">Date</div>
-                    <div class="card-text" style="${servicesHtml ? 'margin-bottom:16px;' : ''}">
+                    <div class="card-text" style="${(timeFrom || timeTo || servicesHtml) ? 'margin-bottom:16px;' : ''}">
                       ${dateFromFormatted}${dateFrom && dateTo ? ' - ' : ''}${dateToFormatted}
+                    </div>
+                  ` : ''}
+                  
+                  ${(timeFrom || timeTo) ? `
+                    <div class="card-title">Time</div>
+                    <div class="card-text" style="${servicesHtml ? 'margin-bottom:16px;' : ''}">
+                      ${timeFrom || ''}${timeFrom && timeTo ? ' - ' : ''}${timeTo || ''}
                     </div>
                   ` : ''}
                   

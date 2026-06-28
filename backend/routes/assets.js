@@ -900,7 +900,7 @@ router.get('/user/subscription', isAuthenticated, async (req, res) => {
 // Save/Update an event page
 router.post('/event-pages', async (req, res) => {
   try {
-    const { id, title, summary, about, image, dateFrom, dateTo, services, address, contact, pageColor } = req.body;
+    const { id, title, summary, about, image, dateFrom, dateTo, timeFrom, timeTo, services, address, contact, pageColor } = req.body;
 
     if (!id || !title) {
       return res.status(400).json({ error: 'Event page ID and title are required' });
@@ -932,6 +932,8 @@ router.post('/event-pages', async (req, res) => {
       image: image || null,
       dateFrom: dateFrom || '',
       dateTo: dateTo || '',
+      timeFrom: timeFrom || '',
+      timeTo: timeTo || '',
       services: services || {},
       address: address || {},
       contact: contact || {},
