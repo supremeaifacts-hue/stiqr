@@ -416,6 +416,15 @@ app.get('/track/:id', async (req, res) => {
           console.log(`✅ Redirecting to event page: ${eventUrl}`);
           return res.redirect(eventUrl);
         }
+        
+        // Check menu_pages collection
+        const menuPagesCollection = db.collection('menu_pages');
+        const menuPage = await menuPagesCollection.findOne({ id });
+        if (menuPage) {
+          const menuUrl = `${req.protocol}://${host}/menu/${id}`;
+          console.log(`✅ Redirecting to menu page: ${menuUrl}`);
+          return res.redirect(menuUrl);
+        }
       }
     }
     

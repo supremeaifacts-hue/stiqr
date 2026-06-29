@@ -263,11 +263,164 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [eventConfigSaved, setEventConfigSaved] = useState(false);
   const eventImageInputRef = useRef(null);
 
+  // Menu QR Code state
+  const [showMenuModal, setShowMenuModal] = useState(false);
+  const [menuPageColor, setMenuPageColor] = useState('#e5e9ec');
+  const [menuCustomColorInput, setMenuCustomColorInput] = useState('#e5e9ec');
+  const menuCustomColorInputRef = useRef(null);
+  const [menuData, setMenuData] = useState({
+    title: 'Our Menu',
+    summary: 'Discover our delicious selection',
+    about: 'Fresh ingredients, authentic recipes, and a warm atmosphere await you.',
+    image: null,
+    imagePreview: null,
+    services: {
+      wifi: true,
+      bathroom: true,
+      handicapped: false,
+      babies: false,
+      dogs: false,
+      parking: true,
+      food: true,
+    },
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    contactName: '',
+    contactPhone: '',
+    contactEmail: '',
+    contactWebsite: '',
+  });
+
+  const [savingMenu, setSavingMenu] = useState(false);
+  const [menuPageId, setMenuPageId] = useState(null);
+  const [menuConfigSaved, setMenuConfigSaved] = useState(false);
+  const menuImageInputRef = useRef(null);
+
 
   // Open social modal (separate handler for easier debugging)
   const openSocialModal = () => {
     console.log('Opening Social Media modal');
     setShowSocialModal(true);
+  };
+
+  // Open menu modal
+  const openMenuModal = () => {
+    console.log('Opening Menu modal');
+    // Pre-load the restaurant image
+    const img = new Image();
+    img.onload = () => {
+      setMenuData(prev => ({
+        ...prev,
+        imagePreview: '/assets/wedding.png',
+      }));
+    };
+    img.onerror = () => {
+      console.log('Restaurant image not found, using default gradient');
+    };
+    img.src = '/assets/wedding.png';
+    setShowMenuModal(true);
+  };
+
+  // Get the menu landing page URL
+  const getMenuLandingUrl = (pageId) => {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+      return `http://localhost:3000/menu/${pageId}`;
+    } else {
+      const protocol = window.location.protocol;
+      return `${protocol}//${hostname}/menu/${pageId}`;
+    }
+  };
+
+  // Handle saving menu configuration
+  const handleSaveMenuConfig = async () => {
+    // Validate required fields
+    if (!menuData.title.trim()) {
+      alert('Please enter a menu title.');
+      return;
+    }
+
+    setSavingMenu(true);
+
+    try {
+      const newMenuPageId = menuPageId || generateId();
+
+      // Build the menu data payload
+      const menuPayload = {
+        id: newMenuPageId,
+        title: menuData.title,
+        summary: menuData.summary,
+        about: menuData.about,
+        image: menuData.imagePreview,
+        services: menuData.services,
+        address: {
+          street: menuData.street,
+          city: menuData.city,
+          state: menuData.state,
+          zip: menuData.zip,
+          country: menuData.country,
+        },
+        contact: {
+          name: menuData.contactName,
+          phone: menuData.contactPhone,
+          email: menuData.contactEmail,
+          website: menuData.contactWebsite,
+        },
+        pageColor: menuPageColor,
+      };
+
+      // Save to backend
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const token = localStorage.getItem('jwtToken');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🔍 Saving menu page:', JSON.stringify(menuPayload));
+
+      const response = await fetch(`${baseUrl}/api/menu-pages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(menuPayload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save menu page:', errorText);
+        throw new Error('Failed to save menu configuration');
+      }
+
+      const result = await response.json();
+      console.log('✅ Menu page saved:', result);
+
+      // Store the menu page ID
+      setMenuPageId(newMenuPageId);
+      setMenuConfigSaved(true);
+
+      // Generate the menu landing page URL and set it as the QR data
+      const menuUrl = getMenuLandingUrl(newMenuPageId);
+      setQrData(menuUrl);
+      
+      // Close the modal
+      setShowMenuModal(false);
+
+      // Show success message
+      alert(`✅ Menu page created successfully!\n\nYour landing page URL: ${menuUrl}\n\nThe QR code will now encode this URL. You can customize the QR code design (frames, colors, logos) and then save it to your collection.`);
+
+    } catch (error) {
+      console.error('Error saving menu configuration:', error);
+      alert('Failed to save menu configuration. Please try again.');
+    } finally {
+      setSavingMenu(false);
+    }
   };
 
   // Open event modal
@@ -1871,6 +2024,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {type.id === 'pdf' && '📄'}
                   {type.id === 'social' && '🔗'}
                   {type.id === 'event' && '📅'}
+                  {type.id === 'menu' && '🍽️'}
                 </span>
                 {type.label}
               </button>
@@ -2095,10 +2249,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   )}
                 </div>
-              ) : selectedType === 'social' || selectedType === 'event' ? (
+              ) : selectedType === 'social' || selectedType === 'event' || selectedType === 'menu' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <button
-                    onClick={selectedType === 'social' ? openSocialModal : openEventModal}
+                    onClick={selectedType === 'social' ? openSocialModal : selectedType === 'event' ? openEventModal : openMenuModal}
                     style={{
                       padding: '14px',
                       background: 'linear-gradient(135deg, #FF00FF 0%, #00D9FF 100%)',
@@ -4570,6 +4724,744 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     );
   })();
 
+  const renderMenuModal = (() => {
+    if (!showMenuModal) return null;
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        backdropFilter: 'blur(5px)',
+      }}>
+        <div style={{
+          position: 'relative',
+          background: 'rgba(20, 20, 40, 0.95)',
+          border: '2px solid rgba(0, 217, 255, 0.3)',
+          borderRadius: '20px',
+          padding: '30px',
+          maxWidth: '1100px',
+          width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          display: 'block',
+        }}>
+          <div className="modal-layout">
+            <div className="modal-editor">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#00D9FF', fontSize: '24px', fontWeight: '700' }}>
+                Menu QR Code
+              </h2>
+              <button
+                onClick={() => setShowMenuModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ccc',
+                  fontSize: '28px',
+                  cursor: 'pointer',
+                  padding: 0,
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              {/* Page Color */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', color: '#fff', fontWeight: '600' }}>
+                  Page Color
+                </label>
+                <div style={{ marginBottom: '10px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#aaa' }}>Choose which color your page should have</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {['#e5e9ec', '#edcbc0', '#fff5cd', '#8cd7ff', '#dad0f0', '#305971', '#25501a'].map((color) => (
+                      <div
+                        key={color}
+                        onClick={() => {
+                          setMenuPageColor(color);
+                          setMenuCustomColorInput(color);
+                        }}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          background: color,
+                          border: menuPageColor === color ? '3px solid white' : '2px solid rgba(255,255,255,0.3)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: menuPageColor === color ? '0 0 12px rgba(0,0,0,0.5)' : 'none',
+                        }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#ccc', marginBottom: '6px', display: 'block' }}>Choose Custom Color</label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={menuCustomColorInput}
+                      onChange={(e) => {
+                        setMenuCustomColorInput(e.target.value);
+                        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                          setMenuPageColor(e.target.value);
+                        }
+                      }}
+                      placeholder="#RRGGBB"
+                      style={{
+                        padding: '8px 12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        flex: 1,
+                      }}
+                    />
+                    <div style={{ position: 'relative', width: '40px', height: '40px' }}>
+                      <button
+                        type="button"
+                        onClick={() => menuCustomColorInputRef.current?.click()}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '8px',
+                          background: menuCustomColorInput,
+                          border: '2px solid rgba(0, 217, 255, 0.3)',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      />
+                      <input
+                        ref={menuCustomColorInputRef}
+                        type="color"
+                        value={menuCustomColorInput}
+                        onChange={(e) => {
+                          setMenuCustomColorInput(e.target.value);
+                          setMenuPageColor(e.target.value);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Menu
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Restaurant Image
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        ref={menuImageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setMenuData(prev => ({
+                                ...prev,
+                                image: file,
+                                imagePreview: ev.target.result,
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => menuImageInputRef.current?.click()}
+                        style={{
+                          padding: '8px 16px',
+                          background: 'rgba(0, 217, 255, 0.2)',
+                          border: '1px solid rgba(0, 217, 255, 0.3)',
+                          borderRadius: '6px',
+                          color: '#00D9FF',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        📁 Browse
+                      </button>
+                      {menuData.imagePreview && (
+                        <button
+                          onClick={() => setMenuData(prev => ({...prev, image: null, imagePreview: null}))}
+                          style={{
+                            padding: '8px 16px',
+                            background: 'rgba(255, 0, 0, 0.2)',
+                            border: '1px solid rgba(255, 0, 0, 0.3)',
+                            borderRadius: '6px',
+                            color: '#ff6b6b',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          🗑 Delete
+                        </button>
+                      )}
+                    </div>
+                    {menuData.imagePreview && (
+                      <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={menuData.imagePreview} alt="Restaurant preview" style={{ width: '60px', height: '60px', objectFit: 'contain', borderRadius: '6px' }} />
+                        <span style={{ fontSize: '11px', color: '#aaa' }}>Image uploaded</span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Menu Title
+                    </label>
+                    <input
+                      type="text"
+                      value={menuData.title}
+                      onChange={(e) => setMenuData({...menuData, title: e.target.value})}
+                      placeholder="Enter menu title"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '16px',
+                        fontWeight: '700',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Summary
+                    </label>
+                    <textarea
+                      value={menuData.summary}
+                      onChange={(e) => setMenuData({...menuData, summary: e.target.value})}
+                      placeholder="Brief summary of the menu"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        minHeight: '60px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      About
+                    </label>
+                    <textarea
+                      value={menuData.about}
+                      onChange={(e) => setMenuData({...menuData, about: e.target.value})}
+                      placeholder="Tell more about the restaurant"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        minHeight: '80px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Details
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Choose the services available at the restaurant
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                      {[
+                        { key: 'wifi', label: 'Wi-Fi', emoji: '📶' },
+                        { key: 'bathroom', label: 'Bathroom', emoji: '🚻' },
+                        { key: 'handicapped', label: 'Handicapped Facilities', emoji: '♿' },
+                        { key: 'babies', label: 'Babies Allowed', emoji: '👶' },
+                        { key: 'dogs', label: 'Dogs Allowed', emoji: '🐕' },
+                        { key: 'parking', label: 'Parking', emoji: '🅿️' },
+                        { key: 'food', label: 'Food', emoji: '🍽️' },
+                      ].map((service) => (
+                        <label
+                          key={service.key}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            background: menuData.services[service.key] ? 'rgba(0, 217, 255, 0.15)' : 'rgba(0, 217, 255, 0.05)',
+                            border: menuData.services[service.key] ? '1px solid rgba(0, 217, 255, 0.5)' : '1px solid rgba(0, 217, 255, 0.15)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            color: menuData.services[service.key] ? '#00D9FF' : '#ccc',
+                            fontWeight: menuData.services[service.key] ? '600' : '400',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={menuData.services[service.key]}
+                            onChange={(e) => setMenuData({
+                              ...menuData,
+                              services: {...menuData.services, [service.key]: e.target.checked}
+                            })}
+                            style={{ accentColor: '#00D9FF' }}
+                          />
+                          <span>{service.emoji}</span>
+                          <span>{service.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Address
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    type="text"
+                    value={menuData.street}
+                    onChange={(e) => setMenuData({...menuData, street: e.target.value})}
+                    placeholder="Street address"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={menuData.city}
+                      onChange={(e) => setMenuData({...menuData, city: e.target.value})}
+                      placeholder="City"
+                      style={{
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={menuData.state}
+                      onChange={(e) => setMenuData({...menuData, state: e.target.value})}
+                      placeholder="State"
+                      style={{
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={menuData.zip}
+                      onChange={(e) => setMenuData({...menuData, zip: e.target.value})}
+                      placeholder="ZIP"
+                      style={{
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={menuData.country}
+                      onChange={(e) => setMenuData({...menuData, country: e.target.value})}
+                      placeholder="Country"
+                      style={{
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.05)',
+                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contacts Section */}
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ margin: '0 0 12px 0', color: '#00D9FF', fontSize: '16px', fontWeight: '700', borderBottom: '1px solid rgba(0, 217, 255, 0.2)', paddingBottom: '8px' }}>
+                  Contacts
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    type="text"
+                    value={menuData.contactName}
+                    onChange={(e) => setMenuData({...menuData, contactName: e.target.value})}
+                    placeholder="Name"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <input
+                    type="tel"
+                    value={menuData.contactPhone}
+                    onChange={(e) => setMenuData({...menuData, contactPhone: e.target.value})}
+                    placeholder="Phone"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <input
+                    type="email"
+                    value={menuData.contactEmail}
+                    onChange={(e) => setMenuData({...menuData, contactEmail: e.target.value})}
+                    placeholder="Email"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <input
+                    type="url"
+                    value={menuData.contactWebsite}
+                    onChange={(e) => setMenuData({...menuData, contactWebsite: e.target.value})}
+                    placeholder="Website"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      border: '1px solid rgba(0, 217, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            </div>
+            <div className="modal-preview">
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '320px',
+                height: '600px',
+                background: '#f7f9fb',
+                borderRadius: '40px',
+                border: '12px solid #1a1a1a',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(255,255,255,0.1)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                fontFamily: '"Nunito Sans", "Inter", sans-serif',
+              }}>
+                {/* Notch */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '150px',
+                  height: '25px',
+                  background: '#000',
+                  borderRadius: '0 0 20px 20px',
+                  zIndex: 10,
+                }}></div>
+
+                {/* Scrollable Content */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  background: menuPageColor || '#f7f9fb',
+                }}>
+                  {/* Hero Section - Image with Title overlay */}
+                  <div style={{
+                    position: 'relative',
+                    height: '180px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}>
+                    {menuData.imagePreview ? (
+                      <>
+                        <img src={menuData.imagePreview} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(30,48,79,0.3), rgba(30,48,79,0.1))' }}></div>
+                      </>
+                    ) : (
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1E304F, #2a4a7a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '40px', opacity: 0.3 }}>🍽️</span>
+                      </div>
+                    )}
+                    <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff', padding: '0 16px' }}>
+                      <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', lineHeight: '1.2', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                        {menuData.title || 'Menu Title'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 1: Menu Title + Summary */}
+                  <div style={{ padding: '16px 16px 8px' }}>
+                    <div style={{
+                      background: '#fff',
+                      borderRadius: '10px',
+                      padding: '20px',
+                      border: '1px solid #e0e3e5',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    }}>
+                      <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                        {menuData.title || 'Menu Title'}
+                      </div>
+                      {menuData.summary && (
+                        <div style={{ fontSize: '13px', color: '#3e4944', lineHeight: '1.5' }}>
+                          {menuData.summary}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card 2: About */}
+                  {menuData.about && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                          About
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.6' }}>
+                          {menuData.about}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card 3: Services */}
+                  {Object.values(menuData.services).some(v => v) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px', textAlign: 'center' }}>
+                          Services
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                          {menuData.services.wifi && <span title="Wi-Fi" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>📶</span>}
+                          {menuData.services.bathroom && <span title="Bathroom" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🚻</span>}
+                          {menuData.services.handicapped && <span title="Handicapped Facilities" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>♿</span>}
+                          {menuData.services.babies && <span title="Babies Allowed" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>👶</span>}
+                          {menuData.services.dogs && <span title="Dogs Allowed" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🐕</span>}
+                          {menuData.services.parking && <span title="Parking" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🅿️</span>}
+                          {menuData.services.food && <span title="Food" style={{ fontSize: '20px', filter: 'grayscale(100%)' }}>🍽️</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card 4: Address */}
+                  {(menuData.street || menuData.city || menuData.state || menuData.zip || menuData.country) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                          Address
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.5' }}>
+                          {[menuData.street, menuData.city, menuData.state, menuData.zip, menuData.country].filter(Boolean).join(', ')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card 5: Contacts */}
+                  {(menuData.contactName || menuData.contactPhone || menuData.contactEmail || menuData.contactWebsite) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px' }}>
+                          Contacts
+                        </div>
+                        {menuData.contactName && (
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#191c1e', marginBottom: '8px' }}>
+                            {menuData.contactName}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {menuData.contactPhone && (
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              📞 {menuData.contactPhone}
+                            </div>
+                          )}
+                          {menuData.contactEmail && (
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              ✉️ {menuData.contactEmail}
+                            </div>
+                          )}
+                          {menuData.contactWebsite && (
+                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                              🌐 {menuData.contactWebsite}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#191c1e', marginBottom: '4px' }}>
+                      {menuData.title || 'Menu'}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#6e7a74' }}>
+                      Powered by Stiqr.top
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Save Configuration Button */}
+              <button
+                onClick={handleSaveMenuConfig}
+                disabled={savingMenu}
+                style={{
+                  width: '100%',
+                  maxWidth: '320px',
+                  padding: '14px 20px',
+                  background: savingMenu ? 'rgba(0, 217, 255, 0.3)' : 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: savingMenu ? '#888' : '#000',
+                  fontWeight: '700',
+                  cursor: savingMenu ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  boxShadow: savingMenu ? 'none' : '0 0 20px rgba(0, 217, 255, 0.4)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {savingMenu ? '⏳ Saving...' : '💾 Save Configuration'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })();
+
 
   return (
     <div className="editor-page-wrapper">
@@ -4629,6 +5521,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       {stickerPicker}
       {renderSocialModal}
       {renderEventModal}
+      {renderMenuModal}
     </div>
   );
 };

@@ -70,7 +70,7 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             maxWidth: '700px',
             margin: '0 auto',
           }}>
-            {['Website URL', 'Wi-Fi', 'PDF', 'Social Media', 'Event'].map((tag) => (
+            {['Website URL', 'Wi-Fi', 'PDF', 'Social Media', 'Event', 'Menu'].map((tag) => (
               <a key={tag} href={`#${tag.toLowerCase().replace(/\s+/g, '-')}`} style={{
                 padding: '8px 20px',
                 background: 'rgba(255, 255, 255, 0.05)',
@@ -153,18 +153,19 @@ const QRCodeTypes = ({ onViewDashboard, onViewPricing }) => {
             onGenerateCode={() => navigate('/')}
           />
 
-          {/* Event */}
-          <Section id="event"
-            badge="LIVE EVENTS"
+          {/* Menu */}
+          <Section id="menu"
+            badge="RESTAURANT"
             badgeColor="#F3B036"
-            title="Event Management"
-            description="Spice up your event marketing with a QR code for events. Share the name, location, date, and time, and even allow users to add it directly to their calendar with a single scan."
+            title="Menu QR Code"
+            description="Transform your restaurant experience with a QR code for your menu. Share your menu, restaurant info, location, and contact details — all in one beautiful landing page."
             features={[
-              'Google Maps Integration: Provide direct navigation to your venue',
-              'Auto-Reminders: Help attendees save the date instantly',
+              'Restaurant Image & Branding: Showcase your restaurant with a hero image',
+              'Services & Amenities: Display Wi-Fi, parking, and other amenities',
+              'Address & Contacts: Provide directions and contact info in one place',
             ]}
             image="https://lh3.googleusercontent.com/aida-public/AB6AXuDpKfS6xeBtJ5OLqeB3Y0QhJEmAr1fUizadQUVtyeGoy4wWmx2tPp2MRszg7WQkiThciG_Lfe1vFmlORnQ08U4WrT44VNhrWzpbriBkR7PcY1YF2fkT1X2RhgtymM6q6y_QpNNIPs0VvHqm5ik6vVc2GWRC4gED3UigbDm-rKLw-IlQ-QAD9aFA2Y_ezJBQBYYJMILOKaA6kDqq5JrrempeNT2yWwet1B-NsHV0hzrHG4_bCJiAfJb2lrB2cqFR6jbKj23uzN6Hpc1p"
-            reversed={false}
+            reversed={true}
             onGenerateCode={() => navigate('/')}
           />
 
