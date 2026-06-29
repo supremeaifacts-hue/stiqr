@@ -5120,104 +5120,97 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             { key: 'sunday', label: 'Sunday' },
                           ].map((day) => {
                             const hours = menuData.businessHours[day.key];
+                            const hourOptions = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+                            const minuteOptions = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+                            const renderTimeSelect = (field, value) => {
+                              const hour = value ? value.split(':')[0] : '';
+                              const minute = value ? value.split(':')[1] : '';
+                              return (
+                                <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                                  <select
+                                    value={hour}
+                                    onChange={(e) => {
+                                      const newHour = e.target.value;
+                                      const newValue = newHour && minute ? `${newHour}:${minute}` : newHour || '';
+                                      setMenuData({
+                                        ...menuData,
+                                        businessHours: {
+                                          ...menuData.businessHours,
+                                          [day.key]: { ...hours, [field]: newValue }
+                                        }
+                                      });
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: '4px 2px',
+                                      background: 'rgba(0, 217, 255, 0.05)',
+                                      border: '1px solid rgba(0, 217, 255, 0.15)',
+                                      borderRadius: '4px',
+                                      color: '#fff',
+                                      fontSize: '10px',
+                                      boxSizing: 'border-box',
+                                      colorScheme: 'dark',
+                                      cursor: 'pointer',
+                                      minWidth: '0',
+                                    }}
+                                  >
+                                    <option value="" style={{ background: '#1a1a2e', color: '#fff' }}>--</option>
+                                    {hourOptions.map(h => (
+                                      <option key={h} value={h} style={{ background: '#1a1a2e', color: '#fff' }}>{h}</option>
+                                    ))}
+                                    <option value="Closed" style={{ background: '#1a1a2e', color: '#ff6b6b' }}>Closed</option>
+                                  </select>
+                                  {hour && hour !== 'Closed' && (
+                                    <select
+                                      value={minute}
+                                      onChange={(e) => {
+                                        const newMinute = e.target.value;
+                                        const newValue = hour && newMinute ? `${hour}:${newMinute}` : '';
+                                        setMenuData({
+                                          ...menuData,
+                                          businessHours: {
+                                            ...menuData.businessHours,
+                                            [day.key]: { ...hours, [field]: newValue }
+                                          }
+                                        });
+                                      }}
+                                      style={{
+                                        flex: 1,
+                                        padding: '4px 2px',
+                                        background: 'rgba(0, 217, 255, 0.05)',
+                                        border: '1px solid rgba(0, 217, 255, 0.15)',
+                                        borderRadius: '4px',
+                                        color: '#fff',
+                                        fontSize: '10px',
+                                        boxSizing: 'border-box',
+                                        colorScheme: 'dark',
+                                        cursor: 'pointer',
+                                        minWidth: '0',
+                                      }}
+                                    >
+                                      <option value="" style={{ background: '#1a1a2e', color: '#fff' }}>--</option>
+                                      {minuteOptions.map(m => (
+                                        <option key={m} value={m} style={{ background: '#1a1a2e', color: '#fff' }}>{m}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              );
+                            };
                             return (
                               <tr key={day.key}>
                                 <td style={{ padding: '4px 8px', color: '#fff', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.08)', whiteSpace: 'nowrap' }}>{day.label}</td>
                                 <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
-                                  <input
-                                    type="time"
-                                    value={hours.morningOpen}
-                                    onChange={(e) => setMenuData({
-                                      ...menuData,
-                                      businessHours: {
-                                        ...menuData.businessHours,
-                                        [day.key]: { ...hours, morningOpen: e.target.value }
-                                      }
-                                    })}
-                                    style={{
-                                      width: '100%',
-                                      padding: '4px',
-                                      background: 'rgba(0, 217, 255, 0.05)',
-                                      border: '1px solid rgba(0, 217, 255, 0.15)',
-                                      borderRadius: '4px',
-                                      color: '#fff',
-                                      fontSize: '10px',
-                                      boxSizing: 'border-box',
-                                      colorScheme: 'dark',
-                                    }}
-                                  />
+                                  {renderTimeSelect('morningOpen', hours.morningOpen)}
                                 </td>
                                 <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
-                                  <input
-                                    type="time"
-                                    value={hours.morningClose}
-                                    onChange={(e) => setMenuData({
-                                      ...menuData,
-                                      businessHours: {
-                                        ...menuData.businessHours,
-                                        [day.key]: { ...hours, morningClose: e.target.value }
-                                      }
-                                    })}
-                                    style={{
-                                      width: '100%',
-                                      padding: '4px',
-                                      background: 'rgba(0, 217, 255, 0.05)',
-                                      border: '1px solid rgba(0, 217, 255, 0.15)',
-                                      borderRadius: '4px',
-                                      color: '#fff',
-                                      fontSize: '10px',
-                                      boxSizing: 'border-box',
-                                      colorScheme: 'dark',
-                                    }}
-                                  />
+                                  {renderTimeSelect('morningClose', hours.morningClose)}
                                 </td>
                                 <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
-                                  <input
-                                    type="time"
-                                    value={hours.eveningOpen}
-                                    onChange={(e) => setMenuData({
-                                      ...menuData,
-                                      businessHours: {
-                                        ...menuData.businessHours,
-                                        [day.key]: { ...hours, eveningOpen: e.target.value }
-                                      }
-                                    })}
-                                    style={{
-                                      width: '100%',
-                                      padding: '4px',
-                                      background: 'rgba(0, 217, 255, 0.05)',
-                                      border: '1px solid rgba(0, 217, 255, 0.15)',
-                                      borderRadius: '4px',
-                                      color: '#fff',
-                                      fontSize: '10px',
-                                      boxSizing: 'border-box',
-                                      colorScheme: 'dark',
-                                    }}
-                                  />
+                                  {renderTimeSelect('eveningOpen', hours.eveningOpen)}
                                 </td>
                                 <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
-                                  <input
-                                    type="time"
-                                    value={hours.eveningClose}
-                                    onChange={(e) => setMenuData({
-                                      ...menuData,
-                                      businessHours: {
-                                        ...menuData.businessHours,
-                                        [day.key]: { ...hours, eveningClose: e.target.value }
-                                      }
-                                    })}
-                                    style={{
-                                      width: '100%',
-                                      padding: '4px',
-                                      background: 'rgba(0, 217, 255, 0.05)',
-                                      border: '1px solid rgba(0, 217, 255, 0.15)',
-                                      borderRadius: '4px',
-                                      color: '#fff',
-                                      fontSize: '10px',
-                                      boxSizing: 'border-box',
-                                      colorScheme: 'dark',
-                                    }}
-                                  />
+                                  {renderTimeSelect('eveningClose', hours.eveningClose)}
                                 </td>
                               </tr>
                             );
