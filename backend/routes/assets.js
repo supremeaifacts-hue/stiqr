@@ -1069,7 +1069,7 @@ router.get('/event/:id', async (req, res) => {
         .filter(([key]) => services[key])
         .map(([key, emoji]) => `<span title="${serviceLabels[key]}" style="font-size:24px;filter:grayscale(100%)">${emoji}</span>`);
       if (activeServices.length > 0) {
-        servicesHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${activeServices.join('')}</div>`;
+        servicesHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;justify-content:center">${activeServices.join('')}</div>`;
       }
     }
 
@@ -1098,6 +1098,7 @@ router.get('/event/:id', async (req, res) => {
             display: flex;
             flex-direction: column;
             gap: 16px;
+            text-align: center;
           }
           .event-image {
             width: 100%;
@@ -1147,6 +1148,7 @@ router.get('/event/:id', async (req, res) => {
           .date-row {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             font-size: 13px;
             color: #000;
@@ -1154,7 +1156,8 @@ router.get('/event/:id', async (req, res) => {
           }
           .address-row {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
             font-size: 13px;
             color: #000;
@@ -1164,6 +1167,7 @@ router.get('/event/:id', async (req, res) => {
             color: #333;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
           }
           .contact-name {

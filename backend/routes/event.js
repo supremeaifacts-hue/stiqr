@@ -173,6 +173,7 @@ router.get('/event/:id', async (req, res) => {
             max-width: 640px;
             margin: 0 auto;
             padding: 0 16px;
+            text-align: center;
           }
           
           /* ===== Cards ===== */
@@ -207,6 +208,7 @@ router.get('/event/:id', async (req, res) => {
             gap: 8px;
             flex-wrap: wrap;
             margin-top: 8px;
+            justify-content: center;
           }
           
           .service-icon {
@@ -321,7 +323,7 @@ router.get('/event/:id', async (req, res) => {
                 <div class="card">
                   <div class="card-title">Contacts</div>
                   ${contact?.name ? `<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">${contact.name}</div>` : ''}
-                  <div style="display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
                     ${contact?.phone ? `<div style="font-size:12px;color:var(--text-secondary);">📞 ${contact.phone}</div>` : ''}
                     ${contact?.email ? `<div style="font-size:12px;color:var(--text-secondary);">✉️ ${contact.email}</div>` : ''}
                     ${contact?.website ? `<div style="font-size:12px;color:var(--text-secondary);">🌐 ${contact.website}</div>` : ''}
