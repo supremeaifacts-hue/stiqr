@@ -183,6 +183,13 @@ router.get('/event/:id', async (req, res) => {
             padding: 20px;
             border: 1px solid var(--border-color);
             box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+          }
+          
+          .card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
           }
           
           .card-title {
