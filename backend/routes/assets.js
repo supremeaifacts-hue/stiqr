@@ -993,6 +993,100 @@ router.get('/event-pages/:id', async (req, res) => {
   }
 });
 
+// ============================================================
+// Menu Pages API
+// ============================================================
+
+// Save/Update a menu page
+router.post('/menu-pages', async (req, res) => {
+  try {
+    const { id, title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = req.body;
+
+    if (!id || !title) {
+      return res.status(400).json({ error: 'Menu page ID and title are required' });
+    }
+
+    // Find user by JWT token
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.userId;
+      } catch (e) {
+        // Token invalid, but we still save the menu page
+      }
+    }
+
+    const menuPageData = {
+      id,
+      title,
+      summary: summary || '',
+      about: about || '',
+      image: image || null,
+      pdfFile: pdfFile || null,
+      pdfFileName: pdfFileName || '',
+      businessHours: businessHours || {},
+      services: services || {},
+      address: address || {},
+      contact: contact || {},
+      pageColor: pageColor || '#e5e9ec',
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Store in MongoDB menu_pages collection
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    if (db) {
+      const collection = db.collection('menu_pages');
+      
+      // Upsert the menu page
+      await collection.updateOne(
+        { id },
+        { $set: menuPageData },
+        { upsert: true }
+      );
+      
+      console.log(`✅ Menu page saved to MongoDB: ${id}`);
+    }
+
+    res.json({ success: true, id, message: 'Menu page saved successfully' });
+  } catch (error) {
+    console.error('Error saving menu page:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a menu page by ID (public endpoint)
+router.get('/menu-pages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    
+    if (!db) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+    
+    const collection = db.collection('menu_pages');
+    
+    const menuPage = await collection.findOne({ id });
+    
+    if (!menuPage) {
+      return res.status(404).json({ error: 'Menu page not found' });
+    }
+    
+    res.json(menuPage);
+  } catch (error) {
+    console.error('Error fetching menu page:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Serve event landing page HTML
 router.get('/event/:id', async (req, res) => {
   try {
@@ -1647,465 +1741,5 @@ router.post('/qrcodes/:id/increment', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-
-
-// ============================================================
-// Menu Pages API
-// ============================================================
-
-// Save/Update a menu page
-router.post('/menu-pages', async (req, res) => {
-  try {
-    const { id, title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = req.body;
-
-    if (!id || !title) {
-      return res.status(400).json({ error: 'Menu page ID and title are required' });
-    }
-
-    // Find user by JWT token
-    const authHeader = req.headers.authorization;
-    let userId = null;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        userId = decoded.userId;
-      } catch (e) {
-        // Token invalid, but we still save the menu page
-      }
-    }
-
-    const menuPageData = {
-      id,
-      title,
-      summary: summary || '',
-      about: about || '',
-      image: image || null,
-      pdfFile: pdfFile || null,
-      pdfFileName: pdfFileName || '',
-      businessHours: businessHours || {},
-      services: services || {},
-      address: address || {},
-      contact: contact || {},
-      pageColor: pageColor || '#e5e9ec',
-      userId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    // Store in MongoDB menu_pages collection
-    const mongoose = require('mongoose');
-    const db = mongoose.connection.db;
-    if (db) {
-      const collection = db.collection('menu_pages');
-      
-      // Upsert the menu page
-      await collection.updateOne(
-        { id },
-        { $set: menuPageData },
-        { upsert: true }
-      );
-      
-      console.log(`✅ Menu page saved to MongoDB: ${id}`);
-    }
-
-    res.json({ success: true, id, message: 'Menu page saved successfully' });
-  } catch (error) {
-    console.error('Error saving menu page:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Get a menu page by ID (public endpoint)
-router.get('/menu-pages/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const mongoose = require('mongoose');
-    const db = mongoose.connection.db;
-    
-    if (!db) {
-      return res.status(500).json({ error: 'Database not configured' });
-    }
-    
-    const collection = db.collection('menu_pages');
-    
-    const menuPage = await collection.findOne({ id });
-    
-    if (!menuPage) {
-      return res.status(404).json({ error: 'Menu page not found' });
-    }
-    
-    res.json(menuPage);
-  } catch (error) {
-    console.error('Error fetching menu page:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Serve menu landing page HTML
-router.get('/menu/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const mongoose = require('mongoose');
-    const db = mongoose.connection.db;
-    
-    let menuPage = null;
-    
-    if (db) {
-      const collection = db.collection('menu_pages');
-      menuPage = await collection.findOne({ id });
-    }
-    
-    if (!menuPage) {
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html>
-        <head><title>Menu Not Found</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0a0a0a; color: #fff; }
-          .container { text-align: center; padding: 40px; }
-          h1 { color: #FF00FF; }
-          p { color: #a0a0a0; }
-        </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Menu Not Found</h1>
-            <p>The menu you're looking for doesn't exist or has been removed.</p>
-          </div>
-        </body>
-        </html>
-      `);
-    }
-
-    const { title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = menuPage;
-    
-    // Build address string
-    const addressParts = [];
-    if (address?.street) addressParts.push(address.street);
-    if (address?.city) addressParts.push(address.city);
-    if (address?.state) addressParts.push(address.state);
-    if (address?.zip) addressParts.push(address.zip);
-    if (address?.country) addressParts.push(address.country);
-    const addressStr = addressParts.join(', ');
-    
-    // Build services HTML
-    const serviceEmojis = {
-      wifi: '📶', bathroom: '🚻', handicapped: '♿', babies: '👶',
-      dogs: '🐕', parking: '🅿️', food: '🍽️'
-    };
-    const serviceLabels = {
-      wifi: 'Wi-Fi', bathroom: 'Bathroom', handicapped: 'Handicapped Facilities',
-      babies: 'Babies Allowed', dogs: 'Dogs Allowed', parking: 'Parking', food: 'Food'
-    };
-    
-    let servicesHtml = '';
-    if (services) {
-      const activeServices = Object.entries(serviceEmojis)
-        .filter(([key]) => services[key])
-        .map(([key, emoji]) => `<span title="${serviceLabels[key]}" class="service-icon">${emoji}</span>`);
-      if (activeServices.length > 0) {
-        servicesHtml = `<div class="services-row">${activeServices.join('')}</div>`;
-      }
-    }
-
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>${title ? title + ' - Menu' : 'Menu'}</title>
-        <meta name="description" content="${summary || 'Menu page'}">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          
-          :root {
-            --bg-color: ${pageColor || '#f7f9fb'};
-            --text-primary: #191c1e;
-            --text-secondary: #3e4944;
-            --text-muted: #6e7a74;
-            --card-bg: #ffffff;
-            --border-color: #e0e3e5;
-            --accent: #4DB695;
-            --surface-low: #f2f4f6;
-          }
-          
-          body {
-            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-          }
-          
-          h1, h2, h3, h4, h5, h6 {
-            font-family: 'Hanken Grotesk', sans-serif;
-          }
-          
-          /* ===== Hero Section ===== */
-          .hero {
-            position: relative;
-            height: 280px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-          }
-          
-          .hero-image {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-          }
-          
-          .hero-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-          
-          .hero-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(30, 48, 79, 0.3), rgba(30, 48, 79, 0.1));
-            z-index: 1;
-          }
-          
-          .hero-content {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            color: #fff;
-            padding: 0 20px;
-          }
-          
-          .hero-title {
-            font-family: 'Hanken Grotesk', sans-serif;
-            font-size: clamp(28px, 6vw, 42px);
-            font-weight: 700;
-            line-height: 1.1;
-            letter-spacing: -0.02em;
-            text-shadow: 0 2px 20px rgba(0,0,0,0.3);
-          }
-          
-          /* ===== Main Content ===== */
-          .main-content {
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 0 16px;
-            text-align: center;
-          }
-          
-          /* ===== Cards ===== */
-          .card {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-          }
-          
-          .card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            cursor: pointer;
-          }
-          
-          .card-title {
-            font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            color: #1E304F;
-            margin-bottom: 8px;
-          }
-          
-          .card-text {
-            font-size: 12px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-          }
-          
-          .section-gap {
-            padding: 8px 0;
-          }
-          
-          .services-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-            justify-content: center;
-          }
-          
-          .service-icon {
-            font-size: 20px;
-            filter: grayscale(100%);
-          }
-          
-          /* ===== Footer ===== */
-          .footer {
-            padding: 24px 16px;
-            text-align: center;
-          }
-          
-          .footer .brand {
-            font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-          }
-          
-          .footer p {
-            font-size: 10px;
-            color: var(--text-muted);
-          }
-          
-          /* ===== Responsive ===== */
-          @media (min-width: 768px) {
-            .hero {
-              height: 350px;
-            }
-            
-            .main-content {
-              padding: 0 24px;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <main>
-          <!-- Hero Section - Image with Title overlay -->
-          <section class="hero">
-            <div class="hero-image">
-              ${image ? `<img src="${image}" alt="${title || 'Menu'}">` : `<div style="width:100%;height:100%;background:linear-gradient(135deg, #1E304F, #2a4a7a);display:flex;align-items:center;justify-content:center;"><span style="font-size:60px;opacity:0.3;">🍽️</span></div>`}
-              <div class="hero-overlay"></div>
-            </div>
-            <div class="hero-content">
-              <h1 class="hero-title">${title || 'Menu'}</h1>
-            </div>
-          </section>
-          
-          <div class="main-content">
-            <!-- Card 1: Menu Title + Summary -->
-            <div class="section-gap" style="padding-top:16px;">
-              <div class="card">
-                <div style="font-size:18px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;color:#1E304F;margin-bottom:8px;">
-                  ${title || 'Menu Title'}
-                </div>
-                ${summary ? `<div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${summary}</div>` : ''}
-              </div>
-            </div>
-            
-            <!-- Card 2: Menu PDF -->
-            ${pdfFileName ? `
-              <div class="section-gap">
-                <div class="card" style="text-align:center;">
-                  <div class="card-title">Menu PDF</div>
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <span style="font-size:32px;">📄</span>
-                    <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">${pdfFileName}</div>
-                    <a href="${pdfFile}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
-                  </div>
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Card 3: About -->
-            ${about ? `
-              <div class="section-gap">
-                <div class="card">
-                  <div class="card-title">About</div>
-                  <div class="card-text">${about}</div>
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Card: Business Hours -->
-            ${businessHours && Object.values(businessHours).some(h => h.morningOpen || h.morningClose || h.eveningOpen || h.eveningClose) ? `
-              <div class="section-gap">
-                <div class="card">
-                  <div class="card-title" style="text-align:center;">Business Hours</div>
-                  <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-                    ${['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(day => {
-                      const h = businessHours[day];
-                      const hasMorning = h && h.morningOpen && h.morningClose;
-                      const hasEvening = h && h.eveningOpen && h.eveningClose;
-                      if (!hasMorning && !hasEvening) return '';
-                      const dayLabel = day.charAt(0).toUpperCase() + day.slice(1,3);
-                      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.04);width:100%;max-width:280px;">
-                        <span style="font-weight:700;color:#1E304F;min-width:32px;">${dayLabel}</span>
-                        <span style="color:var(--text-secondary);">
-                          ${hasMorning ? h.morningOpen + ' - ' + h.morningClose : 'Closed'}
-                          ${hasMorning && hasEvening ? '  |  ' : ''}
-                          ${hasEvening ? h.eveningOpen + ' - ' + h.eveningClose : ''}
-                        </span>
-                      </div>`;
-                    }).filter(Boolean).join('')}
-                  </div>
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Card: Services -->
-            ${servicesHtml ? `
-              <div class="section-gap">
-                <div class="card">
-                  <div class="card-title">Services</div>
-                  ${servicesHtml}
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Card 4: Address -->
-            ${addressStr ? `
-              <div class="section-gap">
-                <div class="card">
-                  <div class="card-title">Address</div>
-                  <div class="card-text">${addressStr}</div>
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Card 5: Contacts -->
-            ${(contact?.name || contact?.phone || contact?.email || contact?.website) ? `
-              <div class="section-gap">
-                <div class="card">
-                  <div class="card-title">Contacts</div>
-                  ${contact?.name ? `<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">${contact.name}</div>` : ''}
-                  <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
-                    ${contact?.phone ? `<div style="font-size:12px;color:var(--text-secondary);">📞 ${contact.phone}</div>` : ''}
-                    ${contact?.email ? `<div style="font-size:12px;color:var(--text-secondary);">✉️ ${contact.email}</div>` : ''}
-                    ${contact?.website ? `<div style="font-size:12px;color:var(--text-secondary);">🌐 ${contact.website}</div>` : ''}
-                  </div>
-                </div>
-              </div>
-            ` : ''}
-            
-            <!-- Footer -->
-            <footer class="footer">
-              <div class="brand">${title || 'Menu'}</div>
-              <p>Powered by Stiqr.top</p>
-            </footer>
-          </div>
-        </main>
-      </body>
-      </html>
-    `);
-  } catch (error) {
-    console.error('Error serving menu page:', error);
-    res.status(500).send('Server error');
-  }
-});
-
-module.exports = router;
+module.exports = router;
 
