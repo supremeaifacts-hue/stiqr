@@ -1656,7 +1656,7 @@ router.post('/qrcodes/:id/increment', async (req, res) => {
 // Save/Update a menu page
 router.post('/menu-pages', async (req, res) => {
   try {
-    const { id, title, summary, about, image, services, address, contact, pageColor } = req.body;
+    const { id, title, summary, about, image, pdfFile, pdfFileName, services, address, contact, pageColor } = req.body;
 
     if (!id || !title) {
       return res.status(400).json({ error: 'Menu page ID and title are required' });
@@ -1681,6 +1681,8 @@ router.post('/menu-pages', async (req, res) => {
       summary: summary || '',
       about: about || '',
       image: image || null,
+      pdfFile: pdfFile || null,
+      pdfFileName: pdfFileName || '',
       services: services || {},
       address: address || {},
       contact: contact || {},
@@ -1778,7 +1780,7 @@ router.get('/menu/:id', async (req, res) => {
       `);
     }
 
-    const { title, summary, about, image, services, address, contact, pageColor } = menuPage;
+    const { title, summary, about, image, pdfFile, pdfFileName, services, address, contact, pageColor } = menuPage;
     
     // Build address string
     const addressParts = [];
@@ -2003,7 +2005,21 @@ router.get('/menu/:id', async (req, res) => {
               </div>
             </div>
             
-            <!-- Card 2: About -->
+            <!-- Card 2: Menu PDF -->
+            ${pdfFileName ? `
+              <div class="section-gap">
+                <div class="card" style="text-align:center;">
+                  <div class="card-title">Menu PDF</div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                    <span style="font-size:32px;">📄</span>
+                    <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">${pdfFileName}</div>
+                    <a href="${pdfFile}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+            
+            <!-- Card 3: About -->
             ${about ? `
               <div class="section-gap">
                 <div class="card">

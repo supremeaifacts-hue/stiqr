@@ -271,9 +271,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [menuData, setMenuData] = useState({
     title: 'Our Menu',
     summary: 'Discover our delicious selection',
-    about: 'Fresh ingredients, authentic recipes, and a warm atmosphere await you.',
+    about: '',
     image: null,
     imagePreview: null,
+    pdfFile: null,
+    pdfFileName: '',
     services: {
       wifi: true,
       bathroom: true,
@@ -298,6 +300,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [menuPageId, setMenuPageId] = useState(null);
   const [menuConfigSaved, setMenuConfigSaved] = useState(false);
   const menuImageInputRef = useRef(null);
+  const menuPdfInputRef = useRef(null);
 
 
   // Open social modal (separate handler for easier debugging)
@@ -314,13 +317,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     img.onload = () => {
       setMenuData(prev => ({
         ...prev,
-        imagePreview: '/assets/wedding.png',
+        imagePreview: '/assets/restaurant.png',
       }));
     };
     img.onerror = () => {
       console.log('Restaurant image not found, using default gradient');
     };
-    img.src = '/assets/wedding.png';
+    img.src = '/assets/restaurant.png';
     setShowMenuModal(true);
   };
 
@@ -357,6 +360,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         summary: menuData.summary,
         about: menuData.about,
         image: menuData.imagePreview,
+        pdfFile: menuData.pdfFile,
+        pdfFileName: menuData.pdfFileName,
         services: menuData.services,
         address: {
           street: menuData.street,
@@ -4991,25 +4996,78 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
-                      About
+                      Menu PDF File
                     </label>
-                    <textarea
-                      value={menuData.about}
-                      onChange={(e) => setMenuData({...menuData, about: e.target.value})}
-                      placeholder="Tell more about the restaurant"
+                    <input
+                      ref={menuPdfInputRef}
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setMenuData(prev => ({
+                              ...prev,
+                              pdfFile: ev.target.result,
+                              pdfFileName: file.name,
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      onClick={() => menuPdfInputRef.current?.click()}
                       style={{
                         width: '100%',
-                        padding: '10px',
-                        background: 'rgba(0, 217, 255, 0.05)',
-                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                        padding: '14px',
+                        background: 'rgba(0, 217, 255, 0.1)',
+                        border: '2px dashed rgba(0, 217, 255, 0.3)',
                         borderRadius: '8px',
-                        color: '#fff',
+                        color: '#00D9FF',
+                        cursor: 'pointer',
                         fontSize: '13px',
-                        boxSizing: 'border-box',
-                        minHeight: '80px',
-                        resize: 'vertical',
+                        fontWeight: '600',
+                        textAlign: 'center',
+                        display: 'block',
                       }}
-                    />
+                    >
+                      📁 Upload PDF File
+                    </button>
+                    {menuData.pdfFileName && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px',
+                        background: 'rgba(0, 217, 255, 0.1)',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '16px' }}>📄</span>
+                          <span style={{ fontSize: '12px', color: '#00D9FF', fontWeight: '600' }}>{menuData.pdfFileName}</span>
+                        </div>
+                        <button
+                          onClick={() => setMenuData(prev => ({...prev, pdfFile: null, pdfFileName: ''}))}
+                          style={{
+                            padding: '4px 10px',
+                            background: 'rgba(255, 0, 0, 0.2)',
+                            border: '1px solid rgba(255, 0, 0, 0.3)',
+                            borderRadius: '4px',
+                            color: '#ff6b6b',
+                            cursor: 'pointer',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          ✕ Remove
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -5317,8 +5375,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   </div>
 
-                  {/* Card 2: About */}
-                  {menuData.about && (
+                  {/* Card 2: Menu PDF */}
+                  {menuData.pdfFileName && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
                         background: '#fff',
@@ -5326,12 +5384,31 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         padding: '20px',
                         border: '1px solid #e0e3e5',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        textAlign: 'center',
                       }}>
-                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
-                          About
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px' }}>
+                          Menu PDF
                         </div>
-                        <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.6' }}>
-                          {menuData.about}
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}>
+                          <span style={{ fontSize: '32px' }}>📄</span>
+                          <div style={{ fontSize: '12px', color: '#3e4944', fontWeight: '600' }}>
+                            {menuData.pdfFileName}
+                          </div>
+                          <div style={{
+                            padding: '8px 20px',
+                            background: '#1E304F',
+                            borderRadius: '20px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}>
+                            View Menu PDF
+                          </div>
                         </div>
                       </div>
                     </div>
