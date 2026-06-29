@@ -1005,6 +1005,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         }
       }
       
+      // Handle Menu QR code editing
+      const menuUrl = qrCodeToEdit.data || qrCodeToEdit.destination || '';
+      if (menuUrl.includes('/menu/')) {
+        setSelectedType('menu');
+        if (qrCodeToEdit.openMenuModal) {
+          setShowMenuModal(true);
+        }
+      }
+      
       // Try to get design characteristics from qrCodeToEdit.design first
       let designCharacteristics = qrCodeToEdit.design;
       

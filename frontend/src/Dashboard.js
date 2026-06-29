@@ -1485,6 +1485,11 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
               onEditQrCode(qrCode, { openEventModal: true });
             }
           }}
+          onOpenMenuEditor={(qrCode) => {
+            if (onEditQrCode) {
+              onEditQrCode(qrCode, { openMenuModal: true });
+            }
+          }}
         />
       )}
     </div>

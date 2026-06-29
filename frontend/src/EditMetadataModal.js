@@ -11,6 +11,7 @@ const detectQrType = (data) => {
   if (data.startsWith('PDF:')) return 'pdf';
   if (data.includes('/social/')) return 'social';
   if (data.includes('/event/')) return 'event';
+  if (data.includes('/menu/')) return 'menu';
   // Check if it's a PDF URL (uploaded PDF)
   if (data.includes('/uploads/') && data.toLowerCase().endsWith('.pdf')) return 'pdf';
   return 'url';
@@ -98,6 +99,9 @@ const parseDestinationData = (data) => {
   if (type === 'event') {
     return { type: 'event', fields: { destination: data } };
   }
+  if (type === 'menu') {
+    return { type: 'menu', fields: { destination: data } };
+  }
 
   return { type: 'url', fields: { destination: data } };
 };
@@ -128,7 +132,7 @@ const formatDestinationData = (type, fields) => {
   }
 };
 
-const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpenEventEditor }) => {
+const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpenEventEditor, onOpenMenuEditor }) => {
   const [destination, setDestination] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -327,6 +331,7 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
       pdf: 'PDF',
       social: 'Social Media',
       event: 'Event',
+      menu: 'Menu',
     };
     return labels[qrType] || 'URL';
   };
@@ -754,6 +759,68 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
               </button>
               <div style={{ fontSize: '12px', color: '#888', lineHeight: '1.4' }}>
                 The Event landing page is managed separately. Open the page editor to update the saved event details, date, address, and contacts.
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'menu':
+        return (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '13px',
+              color: '#aaa',
+              marginBottom: '6px',
+              fontWeight: '600',
+            }}>
+              Destination URL <span style={{ color: '#FF00FF' }}>*</span>
+            </label>
+            <input
+              type="url"
+              value={destination}
+              readOnly
+              placeholder="https://example.com"
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: '#bbb',
+                fontSize: '14px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s',
+                cursor: 'not-allowed',
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+            />
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenMenuEditor) {
+                    onOpenMenuEditor(qrCode);
+                  }
+                  onClose();
+                }}
+                style={{
+                  width: 'fit-content',
+                  padding: '10px 16px',
+                  background: '#00D9FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#000',
+                  fontWeight: '700',
+                  cursor: onOpenMenuEditor ? 'pointer' : 'not-allowed',
+                }}
+              >
+                🎛️ Open Menu Page Editor
+              </button>
+              <div style={{ fontSize: '12px', color: '#888', lineHeight: '1.4' }}>
+                The Menu landing page is managed separately. Open the page editor to update the saved menu details, restaurant image, and items.
               </div>
             </div>
           </div>
