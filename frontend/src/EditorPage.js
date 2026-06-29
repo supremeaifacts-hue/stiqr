@@ -942,6 +942,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     { id: 'pdf', label: 'PDF' },
     { id: 'social', label: 'Social Media' },
     { id: 'event', label: 'Event' },
+    { id: 'menu', label: 'Menu' },
   ];
 
   // Social Media platforms for "Add more links" feature
