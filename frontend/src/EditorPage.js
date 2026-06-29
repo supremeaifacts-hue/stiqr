@@ -269,7 +269,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [menuCustomColorInput, setMenuCustomColorInput] = useState('#e5e9ec');
   const menuCustomColorInputRef = useRef(null);
   const [menuData, setMenuData] = useState({
-    title: 'Our Menu',
+    title: 'Bistro Elegant',
     summary: 'Discover our delicious selection',
     about: '',
     image: null,
@@ -294,14 +294,14 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       parking: true,
       food: true,
     },
-    street: '',
-    city: '',
+    street: '123 Gourmet Street',
+    city: 'New York',
     state: '',
-    zip: '',
+    zip: '45321',
     country: '',
-    contactName: '',
-    contactPhone: '',
-    contactEmail: '',
+    contactName: 'Bistro Elegant',
+    contactPhone: '111-324 4567',
+    contactEmail: 'bistro@elegant.com',
     contactWebsite: '',
   });
 
@@ -5091,7 +5091,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {/* Business Days Section */}
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
-                      Business days
+                      Business Hours
                     </label>
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
@@ -5582,49 +5582,51 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   )}
 
-                  {/* Card 3: Business Hours */}
-                  <div style={{ padding: '8px 16px' }}>
-                    <div style={{
-                      background: '#fff',
-                      borderRadius: '10px',
-                      padding: '20px',
-                      border: '1px solid #e0e3e5',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                    }}>
-                      <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px', textAlign: 'center' }}>
-                        Business Hours
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {[
-                          { key: 'monday', label: 'Mon' },
-                          { key: 'tuesday', label: 'Tue' },
-                          { key: 'wednesday', label: 'Wed' },
-                          { key: 'thursday', label: 'Thu' },
-                          { key: 'friday', label: 'Fri' },
-                          { key: 'saturday', label: 'Sat' },
-                          { key: 'sunday', label: 'Sun' },
-                        ].map((day) => {
-                          const h = menuData.businessHours[day.key];
-                          const hasMorning = h.morningOpen && h.morningClose;
-                          const hasEvening = h.eveningOpen && h.eveningClose;
-                          return (
-                            <div key={day.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                              <span style={{ fontWeight: '700', color: '#1E304F', minWidth: '32px' }}>{day.label}</span>
-                              <span style={{ color: h.closed ? '#e74c3c' : '#3e4944' }}>
-                                {h.closed ? 'Closed' : (
-                                  <>
-                                    {hasMorning ? `${h.morningOpen} - ${h.morningClose}` : ''}
-                                    {hasMorning && hasEvening ? '  |  ' : ''}
-                                    {hasEvening ? `${h.eveningOpen} - ${h.eveningClose}` : ''}
-                                  </>
-                                )}
-                              </span>
-                            </div>
-                          );
-                        })}
+                  {/* Card 3: Business Hours - only show if at least one day has hours or is marked closed */}
+                  {Object.values(menuData.businessHours).some(h => h.closed || (h.morningOpen && h.morningClose) || (h.eveningOpen && h.eveningClose)) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px', textAlign: 'center' }}>
+                          Business Hours
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {[
+                            { key: 'monday', label: 'Mon' },
+                            { key: 'tuesday', label: 'Tue' },
+                            { key: 'wednesday', label: 'Wed' },
+                            { key: 'thursday', label: 'Thu' },
+                            { key: 'friday', label: 'Fri' },
+                            { key: 'saturday', label: 'Sat' },
+                            { key: 'sunday', label: 'Sun' },
+                          ].map((day) => {
+                            const h = menuData.businessHours[day.key];
+                            const hasMorning = h.morningOpen && h.morningClose;
+                            const hasEvening = h.eveningOpen && h.eveningClose;
+                            return (
+                              <div key={day.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                                <span style={{ fontWeight: '700', color: '#1E304F', minWidth: '32px' }}>{day.label}</span>
+                                <span style={{ color: h.closed ? '#e74c3c' : '#3e4944' }}>
+                                  {h.closed ? 'Closed' : (
+                                    <>
+                                      {hasMorning ? `${h.morningOpen} - ${h.morningClose}` : ''}
+                                      {hasMorning && hasEvening ? '  |  ' : ''}
+                                      {hasEvening ? `${h.eveningOpen} - ${h.eveningClose}` : ''}
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Card 4: Services */}
                   {Object.values(menuData.services).some(v => v) && (
