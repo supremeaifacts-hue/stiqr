@@ -276,6 +276,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     imagePreview: null,
     pdfFile: null,
     pdfFileName: '',
+    businessHours: {
+      monday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      tuesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      wednesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      thursday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      friday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      saturday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      sunday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+    },
     services: {
       wifi: true,
       bathroom: true,
@@ -362,6 +371,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         image: menuData.imagePreview,
         pdfFile: menuData.pdfFile,
         pdfFileName: menuData.pdfFileName,
+        businessHours: menuData.businessHours,
         services: menuData.services,
         address: {
           street: menuData.street,
@@ -5078,6 +5088,144 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   Details
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* Business Days Section */}
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
+                      Business days
+                    </label>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ padding: '6px 8px', textAlign: 'left', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }}>Day</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'center', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }} colSpan="2">Morning</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'center', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }} colSpan="2">Evening</th>
+                          </tr>
+                          <tr>
+                            <th style={{ padding: '2px 8px' }}></th>
+                            <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Open</th>
+                            <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Close</th>
+                            <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Open</th>
+                            <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Close</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { key: 'monday', label: 'Monday' },
+                            { key: 'tuesday', label: 'Tuesday' },
+                            { key: 'wednesday', label: 'Wednesday' },
+                            { key: 'thursday', label: 'Thursday' },
+                            { key: 'friday', label: 'Friday' },
+                            { key: 'saturday', label: 'Saturday' },
+                            { key: 'sunday', label: 'Sunday' },
+                          ].map((day) => {
+                            const hours = menuData.businessHours[day.key];
+                            return (
+                              <tr key={day.key}>
+                                <td style={{ padding: '4px 8px', color: '#fff', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.08)', whiteSpace: 'nowrap' }}>{day.label}</td>
+                                <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
+                                  <input
+                                    type="time"
+                                    value={hours.morningOpen}
+                                    onChange={(e) => setMenuData({
+                                      ...menuData,
+                                      businessHours: {
+                                        ...menuData.businessHours,
+                                        [day.key]: { ...hours, morningOpen: e.target.value }
+                                      }
+                                    })}
+                                    style={{
+                                      width: '100%',
+                                      padding: '4px',
+                                      background: 'rgba(0, 217, 255, 0.05)',
+                                      border: '1px solid rgba(0, 217, 255, 0.15)',
+                                      borderRadius: '4px',
+                                      color: '#fff',
+                                      fontSize: '10px',
+                                      boxSizing: 'border-box',
+                                      colorScheme: 'dark',
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
+                                  <input
+                                    type="time"
+                                    value={hours.morningClose}
+                                    onChange={(e) => setMenuData({
+                                      ...menuData,
+                                      businessHours: {
+                                        ...menuData.businessHours,
+                                        [day.key]: { ...hours, morningClose: e.target.value }
+                                      }
+                                    })}
+                                    style={{
+                                      width: '100%',
+                                      padding: '4px',
+                                      background: 'rgba(0, 217, 255, 0.05)',
+                                      border: '1px solid rgba(0, 217, 255, 0.15)',
+                                      borderRadius: '4px',
+                                      color: '#fff',
+                                      fontSize: '10px',
+                                      boxSizing: 'border-box',
+                                      colorScheme: 'dark',
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
+                                  <input
+                                    type="time"
+                                    value={hours.eveningOpen}
+                                    onChange={(e) => setMenuData({
+                                      ...menuData,
+                                      businessHours: {
+                                        ...menuData.businessHours,
+                                        [day.key]: { ...hours, eveningOpen: e.target.value }
+                                      }
+                                    })}
+                                    style={{
+                                      width: '100%',
+                                      padding: '4px',
+                                      background: 'rgba(0, 217, 255, 0.05)',
+                                      border: '1px solid rgba(0, 217, 255, 0.15)',
+                                      borderRadius: '4px',
+                                      color: '#fff',
+                                      fontSize: '10px',
+                                      boxSizing: 'border-box',
+                                      colorScheme: 'dark',
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
+                                  <input
+                                    type="time"
+                                    value={hours.eveningClose}
+                                    onChange={(e) => setMenuData({
+                                      ...menuData,
+                                      businessHours: {
+                                        ...menuData.businessHours,
+                                        [day.key]: { ...hours, eveningClose: e.target.value }
+                                      }
+                                    })}
+                                    style={{
+                                      width: '100%',
+                                      padding: '4px',
+                                      background: 'rgba(0, 217, 255, 0.05)',
+                                      border: '1px solid rgba(0, 217, 255, 0.15)',
+                                      borderRadius: '4px',
+                                      color: '#fff',
+                                      fontSize: '10px',
+                                      boxSizing: 'border-box',
+                                      colorScheme: 'dark',
+                                    }}
+                                  />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', color: '#ccc', fontWeight: '600' }}>
                       Choose the services available at the restaurant
@@ -5414,7 +5562,50 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     </div>
                   )}
 
-                  {/* Card 3: Services */}
+                  {/* Card 3: Business Hours */}
+                  {Object.values(menuData.businessHours).some(h => h.morningOpen || h.morningClose || h.eveningOpen || h.eveningClose) && (
+                    <div style={{ padding: '8px 16px' }}>
+                      <div style={{
+                        background: '#fff',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        border: '1px solid #e0e3e5',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px', textAlign: 'center' }}>
+                          Business Hours
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {[
+                            { key: 'monday', label: 'Mon' },
+                            { key: 'tuesday', label: 'Tue' },
+                            { key: 'wednesday', label: 'Wed' },
+                            { key: 'thursday', label: 'Thu' },
+                            { key: 'friday', label: 'Fri' },
+                            { key: 'saturday', label: 'Sat' },
+                            { key: 'sunday', label: 'Sun' },
+                          ].map((day) => {
+                            const h = menuData.businessHours[day.key];
+                            const hasMorning = h.morningOpen && h.morningClose;
+                            const hasEvening = h.eveningOpen && h.eveningClose;
+                            if (!hasMorning && !hasEvening) return null;
+                            return (
+                              <div key={day.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                                <span style={{ fontWeight: '700', color: '#1E304F', minWidth: '32px' }}>{day.label}</span>
+                                <span style={{ color: '#3e4944' }}>
+                                  {hasMorning ? `${h.morningOpen} - ${h.morningClose}` : 'Closed'}
+                                  {hasMorning && hasEvening ? '  |  ' : ''}
+                                  {hasEvening ? `${h.eveningOpen} - ${h.eveningClose}` : ''}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card 4: Services */}
                   {Object.values(menuData.services).some(v => v) && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
