@@ -1480,6 +1480,11 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
               onEditQrCode(qrCode, { openSocialModal: true });
             }
           }}
+          onOpenEventEditor={(qrCode) => {
+            if (onEditQrCode) {
+              onEditQrCode(qrCode, { openEventModal: true });
+            }
+          }}
         />
       )}
     </div>

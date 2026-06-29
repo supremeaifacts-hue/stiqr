@@ -828,6 +828,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         }
       }
       
+      // Handle Event QR code editing
+      const eventUrl = qrCodeToEdit.data || qrCodeToEdit.destination || '';
+      if (eventUrl.includes('/event/')) {
+        setSelectedType('event');
+        if (qrCodeToEdit.openEventModal) {
+          setShowEventModal(true);
+        }
+      }
+      
       // Try to get design characteristics from qrCodeToEdit.design first
       let designCharacteristics = qrCodeToEdit.design;
       

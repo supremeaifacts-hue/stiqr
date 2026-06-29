@@ -39,7 +39,7 @@ function AppContent() {
           onViewPricing={() => navigate('/pricing')}
           onBack={() => navigate('/')}
           onEditQrCode={(qrCode, options = {}) => {
-            setQrCodeToEdit({ ...qrCode, openSocialModal: !!options.openSocialModal });
+            setQrCodeToEdit({ ...qrCode, openSocialModal: !!options.openSocialModal, openEventModal: !!options.openEventModal });
             navigate('/');
           }}
         />
