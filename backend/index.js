@@ -1067,30 +1067,29 @@ app.get('/menu/:id', async (req, res) => {
             ` : ''}
             
             <!-- Card: Business Hours -->
-            ${businessHours && Object.values(businessHours).some(h => h.morningOpen || h.morningClose || h.eveningOpen || h.eveningClose) ? `
-              <div class="section-gap">
-                <div class="card">
-                  <div class="card-title" style="text-align:center;">Business Hours</div>
-                  <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-                    ${['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(day => {
-                      const h = businessHours[day];
-                      const hasMorning = h && h.morningOpen && h.morningClose;
-                      const hasEvening = h && h.eveningOpen && h.eveningClose;
-                      if (!hasMorning && !hasEvening) return '';
-                      const dayLabel = day.charAt(0).toUpperCase() + day.slice(1,3);
-                      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.04);width:100%;max-width:280px;">
-                        <span style="font-weight:700;color:#1E304F;min-width:32px;">${dayLabel}</span>
-                        <span style="color:var(--text-secondary);">
-                          ${hasMorning ? h.morningOpen + ' - ' + h.morningClose : 'Closed'}
-                          ${hasMorning && hasEvening ? '  |  ' : ''}
-                          ${hasEvening ? h.eveningOpen + ' - ' + h.eveningClose : ''}
-                        </span>
-                      </div>`;
-                    }).filter(Boolean).join('')}
-                  </div>
+            <div class="section-gap">
+              <div class="card">
+                <div class="card-title" style="text-align:center;">Business Hours</div>
+                <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+                  ${['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(day => {
+                    const h = businessHours && businessHours[day] ? businessHours[day] : {};
+                    const hasMorning = h.morningOpen && h.morningClose;
+                    const hasEvening = h.eveningOpen && h.eveningClose;
+                    const isClosed = !hasMorning && !hasEvening;
+                    const dayLabel = day.charAt(0).toUpperCase() + day.slice(1,3);
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.04);width:100%;max-width:280px;">
+                      <span style="font-weight:700;color:#1E304F;min-width:32px;">${dayLabel}</span>
+                      <span style="color:${isClosed ? '#e74c3c' : 'var(--text-secondary)'};">
+                        ${isClosed ? 'Closed' : ''}
+                        ${!isClosed && hasMorning ? h.morningOpen + ' - ' + h.morningClose : ''}
+                        ${!isClosed && hasMorning && hasEvening ? '  |  ' : ''}
+                        ${!isClosed && hasEvening ? h.eveningOpen + ' - ' + h.eveningClose : ''}
+                      </span>
+                    </div>`;
+                  }).join('')}
                 </div>
               </div>
-            ` : ''}
+            </div>
             
             <!-- Card: Services -->
             ${servicesHtml ? `

@@ -277,13 +277,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     pdfFile: null,
     pdfFileName: '',
     businessHours: {
-      monday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
-      tuesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
-      wednesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
-      thursday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
-      friday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
-      saturday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
-      sunday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '' },
+      monday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+      tuesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+      wednesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+      thursday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+      friday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+      saturday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+      sunday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
     },
     services: {
       wifi: true,
@@ -5100,6 +5100,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             <th style={{ padding: '6px 8px', textAlign: 'left', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }}>Day</th>
                             <th style={{ padding: '6px 8px', textAlign: 'center', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }} colSpan="2">Morning</th>
                             <th style={{ padding: '6px 8px', textAlign: 'center', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }} colSpan="2">Evening</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'center', color: '#aaa', fontWeight: '600', borderBottom: '1px solid rgba(0,217,255,0.2)', fontSize: '10px' }}>Closed</th>
                           </tr>
                           <tr>
                             <th style={{ padding: '2px 8px' }}></th>
@@ -5107,6 +5108,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Close</th>
                             <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Open</th>
                             <th style={{ padding: '2px 8px', textAlign: 'center', color: '#888', fontWeight: '400', fontSize: '9px', borderBottom: '1px solid rgba(0,217,255,0.1)' }}>Close</th>
+                            <th style={{ padding: '2px 8px' }}></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -5158,7 +5160,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                                     {hourOptions.map(h => (
                                       <option key={h} value={h} style={{ background: '#1a1a2e', color: '#fff' }}>{h}</option>
                                     ))}
-                                    <option value="Closed" style={{ background: '#1a1a2e', color: '#ff6b6b' }}>Closed</option>
                                   </select>
                                   {hour && hour !== 'Closed' && (
                                     <select
@@ -5211,6 +5212,32 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                                 </td>
                                 <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)' }}>
                                   {renderTimeSelect('eveningClose', hours.eveningClose)}
+                                </td>
+                                <td style={{ padding: '4px 4px', borderBottom: '1px solid rgba(0,217,255,0.08)', textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => {
+                                      setMenuData({
+                                        ...menuData,
+                                        businessHours: {
+                                          ...menuData.businessHours,
+                                          [day.key]: { ...hours, closed: !hours.closed }
+                                        }
+                                      });
+                                    }}
+                                    style={{
+                                      padding: '4px 8px',
+                                      background: hours.closed ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 217, 255, 0.1)',
+                                      border: hours.closed ? '1px solid rgba(255, 0, 0, 0.5)' : '1px solid rgba(0, 217, 255, 0.2)',
+                                      borderRadius: '4px',
+                                      color: hours.closed ? '#ff6b6b' : '#888',
+                                      cursor: 'pointer',
+                                      fontSize: '9px',
+                                      fontWeight: '600',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {hours.closed ? '✓ Closed' : 'Closed'}
+                                  </button>
                                 </td>
                               </tr>
                             );
@@ -5556,47 +5583,48 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   )}
 
                   {/* Card 3: Business Hours */}
-                  {Object.values(menuData.businessHours).some(h => h.morningOpen || h.morningClose || h.eveningOpen || h.eveningClose) && (
-                    <div style={{ padding: '8px 16px' }}>
-                      <div style={{
-                        background: '#fff',
-                        borderRadius: '10px',
-                        padding: '20px',
-                        border: '1px solid #e0e3e5',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                      }}>
-                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px', textAlign: 'center' }}>
-                          Business Hours
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {[
-                            { key: 'monday', label: 'Mon' },
-                            { key: 'tuesday', label: 'Tue' },
-                            { key: 'wednesday', label: 'Wed' },
-                            { key: 'thursday', label: 'Thu' },
-                            { key: 'friday', label: 'Fri' },
-                            { key: 'saturday', label: 'Sat' },
-                            { key: 'sunday', label: 'Sun' },
-                          ].map((day) => {
-                            const h = menuData.businessHours[day.key];
-                            const hasMorning = h.morningOpen && h.morningClose;
-                            const hasEvening = h.eveningOpen && h.eveningClose;
-                            if (!hasMorning && !hasEvening) return null;
-                            return (
-                              <div key={day.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                                <span style={{ fontWeight: '700', color: '#1E304F', minWidth: '32px' }}>{day.label}</span>
-                                <span style={{ color: '#3e4944' }}>
-                                  {hasMorning ? `${h.morningOpen} - ${h.morningClose}` : 'Closed'}
-                                  {hasMorning && hasEvening ? '  |  ' : ''}
-                                  {hasEvening ? `${h.eveningOpen} - ${h.eveningClose}` : ''}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                  <div style={{ padding: '8px 16px' }}>
+                    <div style={{
+                      background: '#fff',
+                      borderRadius: '10px',
+                      padding: '20px',
+                      border: '1px solid #e0e3e5',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px', textAlign: 'center' }}>
+                        Business Hours
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {[
+                          { key: 'monday', label: 'Mon' },
+                          { key: 'tuesday', label: 'Tue' },
+                          { key: 'wednesday', label: 'Wed' },
+                          { key: 'thursday', label: 'Thu' },
+                          { key: 'friday', label: 'Fri' },
+                          { key: 'saturday', label: 'Sat' },
+                          { key: 'sunday', label: 'Sun' },
+                        ].map((day) => {
+                          const h = menuData.businessHours[day.key];
+                          const hasMorning = h.morningOpen && h.morningClose;
+                          const hasEvening = h.eveningOpen && h.eveningClose;
+                          return (
+                            <div key={day.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', padding: '2px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                              <span style={{ fontWeight: '700', color: '#1E304F', minWidth: '32px' }}>{day.label}</span>
+                              <span style={{ color: h.closed ? '#e74c3c' : '#3e4944' }}>
+                                {h.closed ? 'Closed' : (
+                                  <>
+                                    {hasMorning ? `${h.morningOpen} - ${h.morningClose}` : ''}
+                                    {hasMorning && hasEvening ? '  |  ' : ''}
+                                    {hasEvening ? `${h.eveningOpen} - ${h.eveningClose}` : ''}
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  )}
+                  </div>
 
                   {/* Card 4: Services */}
                   {Object.values(menuData.services).some(v => v) && (
