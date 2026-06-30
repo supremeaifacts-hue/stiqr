@@ -482,7 +482,8 @@ export const AuthProvider = ({ children }) => {
         headers,  // Use the same headers with Authorization token
         body: JSON.stringify({
           id: qrCodeId,
-          data: qrData
+          data: qrData,
+          type: qrType // Include the QR type (pdf, url, wifi, email, sms, whatsapp, social, event, menu)
         })
       });
 

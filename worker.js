@@ -111,6 +111,30 @@ export default {
     }
     
     // ============================================================
+    // MENU LANDING PAGES
+    // ============================================================
+    if (pathname.startsWith('/menu/')) {
+      const menuId = pathname.substring(6);
+      console.log(`🍽️ Menu page request: ${menuId}`);
+      
+      // Forward to Render backend
+      const backendUrl = `https://stiqr-backend.onrender.com/menu/${menuId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`✅ Menu page response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`❌ Menu page error: ${error.message}`);
+        return new Response('Menu page not found', { status: 404 });
+      }
+    }
+    
+    // ============================================================
     // PDF ROUTES - Forward to Render backend
     // ============================================================
     if (pathname.startsWith('/api/pdf/')) {

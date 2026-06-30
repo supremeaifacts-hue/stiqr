@@ -244,16 +244,17 @@ router.post('/assets/qrcodes', isAuthenticated, async (req, res) => {
 // Saves QR code to a standalone 'qrcodes' collection.
 // This is the collection that the EdgeOne function queries
 // when handling /track/:id redirects.
-// No authentication required - accepts { id, data } directly.
+// No authentication required - accepts { id, data, type } directly.
 // ============================================================
 router.post('/qrcodes', async (req, res) => {
   try {
-    const { id, data } = req.body;
+    const { id, data, type } = req.body;
     
     console.log('=== POST /api/qrcodes REQUEST RECEIVED ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     console.log('id:', id);
     console.log('data:', data ? data.substring(0, 100) : 'MISSING');
+    console.log('type:', type || 'not provided');
     
     if (!id || !data) {
       console.log('❌ Missing required fields: id=' + !!id + ', data=' + !!data);
@@ -265,15 +266,23 @@ router.post('/qrcodes', async (req, res) => {
     const db = mongoose.connection.db;
     const collection = db.collection('qrcodes');
     
+    // Build update object with optional type field
+    const updateFields = {
+      id: id,
+      data: data,
+      updatedAt: new Date()
+    };
+    
+    // Store the type if provided (pdf, url, wifi, email, sms, whatsapp, social, event, menu)
+    if (type) {
+      updateFields.type = type;
+    }
+    
     // Upsert: insert if not exists, update if exists
     const result = await collection.updateOne(
       { id: id },
       { 
-        $set: { 
-          id: id,
-          data: data,
-          updatedAt: new Date()
-        },
+        $set: updateFields,
         $setOnInsert: {
           createdAt: new Date(),
           scan_count: 0
@@ -287,12 +296,14 @@ router.post('/qrcodes', async (req, res) => {
     console.log('   Modified:', result.modifiedCount);
     console.log('   Upserted:', result.upsertedCount);
     console.log('   Upserted ID:', result.upsertedId ? result.upsertedId._id : 'N/A');
+    console.log('   Type:', type || 'not set');
     
     res.json({
       success: true,
       message: 'QR code saved successfully',
       id: id,
-      data: data
+      data: data,
+      type: type
     });
     
   } catch (error) {

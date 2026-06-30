@@ -445,11 +445,12 @@ app.get('/track/:id', async (req, res) => {
 // ============================================================
 app.post('/qrcodes', async (req, res) => {
   try {
-    const { id, data } = req.body;
+    const { id, data, type } = req.body;
     
     console.log('=== POST /qrcodes REQUEST RECEIVED ===');
     console.log('id:', id);
     console.log('data:', data ? data.substring(0, 100) : 'MISSING');
+    console.log('type:', type || 'not provided');
     
     if (!id || !data) {
       return res.status(400).json({ error: 'Both id and data are required' });
@@ -464,15 +465,23 @@ app.post('/qrcodes', async (req, res) => {
     
     const collection = db.collection('qrcodes');
     
+    // Build update object with optional type field
+    const updateFields = {
+      id: id,
+      data: data,
+      updatedAt: new Date()
+    };
+    
+    // Store the type if provided (pdf, url, wifi, email, sms, whatsapp, social, event, menu)
+    if (type) {
+      updateFields.type = type;
+    }
+    
     // Upsert: insert if not exists, update if exists
     const result = await collection.updateOne(
       { id: id },
       { 
-        $set: { 
-          id: id,
-          data: data,
-          updatedAt: new Date()
-        },
+        $set: updateFields,
         $setOnInsert: {
           createdAt: new Date(),
           scan_count: 0
@@ -485,12 +494,14 @@ app.post('/qrcodes', async (req, res) => {
     console.log('   Matched:', result.matchedCount);
     console.log('   Modified:', result.modifiedCount);
     console.log('   Upserted:', result.upsertedCount);
+    console.log('   Type:', type || 'not set');
     
     res.json({
       success: true,
       message: 'QR code saved successfully',
       id: id,
-      data: data
+      data: data,
+      type: type
     });
   } catch (error) {
     console.error('Error saving QR code to qrcodes collection:', error);

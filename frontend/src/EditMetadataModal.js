@@ -12,6 +12,8 @@ const detectQrType = (data) => {
   if (data.includes('/social/')) return 'social';
   if (data.includes('/event/')) return 'event';
   if (data.includes('/menu/')) return 'menu';
+  // Check if it's a PDF URL (uploaded PDF via /api/pdf/ endpoint)
+  if (data.includes('/api/pdf/')) return 'pdf';
   // Check if it's a PDF URL (uploaded PDF)
   if (data.includes('/uploads/') && data.toLowerCase().endsWith('.pdf')) return 'pdf';
   return 'url';
@@ -82,6 +84,14 @@ const parseDestinationData = (data) => {
   if (data.startsWith('PDF:')) {
     const pdfName = data.substring(4);
     return { type: 'pdf', fields: { pdfName } };
+  }
+
+  // Check if it's a PDF URL (uploaded PDF via /api/pdf/ endpoint)
+  if (data.includes('/api/pdf/')) {
+    // Extract the MongoDB ID from the URL
+    const urlParts = data.split('/');
+    const pdfId = urlParts[urlParts.length - 1] || '';
+    return { type: 'pdf', fields: { pdfName: `PDF (${pdfId.substring(0, 8)}...)` } };
   }
 
   // Check if it's a PDF URL (uploaded PDF)

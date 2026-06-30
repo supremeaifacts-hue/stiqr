@@ -3517,7 +3517,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
                     method: 'POST',
                     headers: qrcodesHeaders,
-                    body: JSON.stringify({ id: qrCodeId, data: qrContent })
+                    body: JSON.stringify({ id: qrCodeId, data: qrContent, type: selectedType })
                   });
                   if (qrcodesResponse.ok) {
                     const qrcodesResult = await qrcodesResponse.json();
