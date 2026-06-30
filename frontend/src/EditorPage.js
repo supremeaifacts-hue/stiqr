@@ -200,6 +200,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   
   // PDF file state
   const [pdfFile, setPdfFile] = useState(null);
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [pdfUploaded, setPdfUploaded] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   // Social Media QR Code state
   const [showSocialModal, setShowSocialModal] = useState(false);
@@ -557,6 +560,101 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     }
   };
 
+
+  // Handle PDF file selection - upload immediately
+  const handlePdfFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Store the file object immediately so the UI shows it
+    setPdfFile(file);
+    setIsUploadingPdf(true);
+    setPdfUploaded(false);
+    setUploadProgress(0);
+
+    try {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const token = localStorage.getItem('jwtToken');
+
+      const formData = new FormData();
+      formData.append('pdfFile', file);
+      formData.append('qrCodeId', qrCodeId);
+
+      const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const uploadError = await uploadResponse.text();
+        console.error('❌ PDF upload failed:', uploadError);
+        alert('Failed to upload PDF file. Please try again.');
+        setIsUploadingPdf(false);
+        setPdfFile(null);
+        return;
+      }
+
+      const { jobId } = await uploadResponse.json();
+      console.log('📄 PDF uploaded to disk, job ID:', jobId);
+      setUploadProgress(30);
+
+      // Poll for background processing completion
+      let status = 'pending';
+      let attempts = 0;
+      const maxAttempts = 60;
+
+      while (status !== 'completed' && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setUploadProgress(30 + Math.min(attempts * 1, 60));
+
+        const statusResponse = await fetch(`${baseUrl}/api/upload/status/${jobId}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          status = statusData.status;
+          attempts++;
+
+          if (status === 'completed') {
+            console.log('✅ PDF saved to GridFS:', statusData.fileUrl);
+            setPdfFile(prev => {
+              const updated = { ...prev };
+              updated.uploadedUrl = statusData.fileUrl;
+              return updated;
+            });
+            file.uploadedUrl = statusData.fileUrl;
+            setPdfUploaded(true);
+            setUploadProgress(100);
+            break;
+          }
+
+          if (status === 'failed') {
+            console.error('❌ PDF processing failed:', statusData.error);
+            alert('PDF processing failed. Please try again.');
+            setIsUploadingPdf(false);
+            setPdfFile(null);
+            return;
+          }
+        } else {
+          attempts++;
+        }
+      }
+
+      if (status !== 'completed') {
+        console.error('❌ PDF processing timed out');
+        alert('PDF processing is taking longer than expected. The file will be available shortly. Please check back.');
+        setPdfUploaded(true);
+      }
+    } catch (error) {
+      console.error('PDF upload error:', error);
+      alert('PDF upload failed. Please try again.');
+      setPdfFile(null);
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  };
 
   // Get the social landing page URL
   const getSocialLandingUrl = (pageId) => {
@@ -2235,32 +2333,73 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     type="file"
                     id="pdf-upload"
                     accept=".pdf"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        setPdfFile(file);
-                      }
-                    }}
+                    onChange={handlePdfFileSelect}
                     style={{ display: 'none' }}
                   />
                   <label
                     htmlFor="pdf-upload"
                     style={{
                       padding: '14px',
-                      background: 'rgba(0, 217, 255, 0.1)',
-                      border: '2px dashed rgba(0, 217, 255, 0.3)',
+                      background: isUploadingPdf ? 'rgba(0, 217, 255, 0.05)' : 'rgba(0, 217, 255, 0.1)',
+                      border: isUploadingPdf ? '2px dashed rgba(0, 217, 255, 0.15)' : '2px dashed rgba(0, 217, 255, 0.3)',
                       borderRadius: '8px',
-                      color: '#00D9FF',
-                      cursor: 'pointer',
+                      color: isUploadingPdf ? '#666' : '#00D9FF',
+                      cursor: isUploadingPdf ? 'not-allowed' : 'pointer',
                       fontSize: '14px',
                       fontWeight: '600',
                       textAlign: 'center',
                       display: 'block',
                     }}
                   >
-                    📁 Upload PDF File
+                    {isUploadingPdf ? '⏳ Uploading...' : '📁 Upload PDF File'}
                   </label>
-                  {pdfFile && (
+                  
+                  {/* Upload progress bar */}
+                  {isUploadingPdf && (
+                    <div style={{
+                      padding: '10px',
+                      background: 'rgba(0, 217, 255, 0.05)',
+                      borderRadius: '8px',
+                    }}>
+                      <div style={{ fontSize: '11px', color: '#00D9FF', fontWeight: '600', marginBottom: '6px', textAlign: 'center' }}>
+                        Uploading PDF... {uploadProgress}%
+                      </div>
+                      <div style={{
+                        width: '100%',
+                        height: '6px',
+                        background: 'rgba(0, 217, 255, 0.1)',
+                        borderRadius: '3px',
+                        overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          width: `${uploadProgress}%`,
+                          height: '100%',
+                          background: 'linear-gradient(90deg, #00D9FF, #FF00FF)',
+                          borderRadius: '3px',
+                          transition: 'width 0.5s ease',
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Upload success indicator */}
+                  {!isUploadingPdf && pdfUploaded && pdfFile && (
+                    <div style={{
+                      padding: '10px',
+                      background: 'rgba(0, 255, 100, 0.1)',
+                      border: '1px solid rgba(0, 255, 100, 0.3)',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      color: '#00ff64',
+                      textAlign: 'center',
+                      fontWeight: '600',
+                    }}>
+                      ✅ PDF uploaded: {pdfFile.name}
+                    </div>
+                  )}
+                  
+                  {/* Show selected file name when not yet uploaded */}
+                  {!isUploadingPdf && !pdfUploaded && pdfFile && (
                     <div style={{
                       padding: '10px',
                       background: 'rgba(0, 217, 255, 0.1)',
@@ -3343,75 +3482,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
                   const token = localStorage.getItem('jwtToken');
                   
-                  if (selectedType === 'pdf' && pdfFile && !pdfFile.uploadedUrl) {
-                    console.log('📄 Uploading PDF file (two-step process):', pdfFile.name);
-                    
-                    // Step 1: Upload file to disk (fast, using FormData)
-                    const formData = new FormData();
-                    formData.append('pdfFile', pdfFile);
-                    formData.append('qrCodeId', qrCodeId);
-                    
-                    const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${token}` },
-                      body: formData
-                    });
-                    
-                    if (!uploadResponse.ok) {
-                      const uploadError = await uploadResponse.text();
-                      console.error('❌ PDF upload failed:', uploadError);
-                      alert('Failed to upload PDF file. Please try again.');
-                      return;
-                    }
-                    
-                    const { jobId } = await uploadResponse.json();
-                    console.log('📄 PDF uploaded to disk, job ID:', jobId);
-                    
-                    // Step 2: Poll for background processing completion
-                    let status = 'pending';
-                    let attempts = 0;
-                    const maxAttempts = 60; // 60 seconds max wait
-                    
-                    while (status !== 'completed' && attempts < maxAttempts) {
-                      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-                      
-                      const statusResponse = await fetch(`${baseUrl}/api/upload/status/${jobId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      
-                      if (statusResponse.ok) {
-                        const statusData = await statusResponse.json();
-                        status = statusData.status;
-                        attempts++;
-                        
-                        if (status === 'completed') {
-                          console.log('✅ PDF saved to GridFS:', statusData.fileUrl);
-                          setPdfFile(prev => { 
-                            const updated = { ...prev }; 
-                            updated.uploadedUrl = statusData.fileUrl; 
-                            return updated; 
-                          });
-                          pdfFile.uploadedUrl = statusData.fileUrl;
-                          break;
-                        }
-                        
-                        if (status === 'failed') {
-                          console.error('❌ PDF processing failed:', statusData.error);
-                          alert('PDF processing failed. Please try again.');
-                          return;
-                        }
-                      } else {
-                        attempts++;
-                      }
-                    }
-                    
-                    if (status !== 'completed') {
-                      console.error('❌ PDF processing timed out');
-                      alert('PDF processing is taking longer than expected. The file will be available shortly. Please check back.');
-                      // Don't return - allow the QR code to be saved without the PDF URL
-                    }
-                  }
-
                   
                   const qrContent = getQrContent();
                   console.log('📡 STEP 1: Saving to standalone qrcodes collection...');

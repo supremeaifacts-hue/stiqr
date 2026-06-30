@@ -1355,12 +1355,26 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
       size: req.file.size
     });
 
+    // ✅ Save to PDFFile model (status: 'pending')
+    const PDFFile = require('./models/PDFFile');
+    const pdfRecord = await PDFFile.create({
+      qrCodeId: qrCodeId || null,
+      filename: req.file.filename,
+      originalName: originalName,
+      filePath: tempFilePath,
+      size: req.file.size,
+      status: 'pending'
+    });
+
+    console.log(`📄 PDF record created in MongoDB: ${pdfRecord._id}`);
+
     // Generate a unique job ID
     const jobId = `pdf-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-    // Store job info in memory
+    // Store job info in memory (for polling status)
     const job = {
       id: jobId,
+      recordId: pdfRecord._id,
       qrCodeId: qrCodeId || null,
       tempFilePath: tempFilePath,
       originalName: originalName,
@@ -1377,10 +1391,11 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
       console.error(`❌ Background PDF processing failed for job ${jobId}:`, err);
     });
 
-    // Return immediate response with job ID
+    // Return immediate response with job ID and pdfId
     res.json({
       success: true,
       jobId: jobId,
+      pdfId: pdfRecord._id,
       message: 'PDF uploaded successfully. Processing in background.'
     });
 
@@ -1389,6 +1404,7 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
     res.status(500).json({ error: 'Failed to upload PDF', details: error.message });
   }
 });
+
 
 // GET /api/upload/status/:jobId - Check upload processing status
 app.get('/api/upload/status/:jobId', (req, res) => {
@@ -1461,6 +1477,22 @@ async function processPDFInBackground(jobId) {
     job.fileId = fileId.toString();
     job.fileUrl = fileUrl;
 
+    // ✅ Update PDFFile model record in MongoDB
+    try {
+      const PDFFile = require('./models/PDFFile');
+      await PDFFile.findByIdAndUpdate(job.recordId, {
+        fileId: fileId,
+        fileUrl: fileUrl,
+        status: 'completed',
+        updatedAt: new Date()
+      });
+      console.log(`✅ PDFFile record updated in MongoDB: ${job.recordId}`);
+      console.log(`   Collection: pdfs (in ClusterStiQR)`);
+      console.log(`   GridFS files: pdfs.files, pdfs.chunks`);
+    } catch (dbErr) {
+      console.error(`⚠️ Failed to update PDFFile record: ${dbErr.message}`);
+    }
+
     // Clean up temporary file from disk
     try {
       fs.unlinkSync(job.tempFilePath);
@@ -1475,8 +1507,21 @@ async function processPDFInBackground(jobId) {
     console.error(`❌ Error processing PDF job ${jobId}:`, error);
     job.status = 'failed';
     job.error = error.message;
+
+    // ✅ Update PDFFile model record as failed
+    try {
+      const PDFFile = require('./models/PDFFile');
+      await PDFFile.findByIdAndUpdate(job.recordId, {
+        status: 'failed',
+        error: error.message,
+        updatedAt: new Date()
+      });
+    } catch (dbErr) {
+      console.error(`⚠️ Failed to update PDFFile record as failed: ${dbErr.message}`);
+    }
   }
 }
+
 
 // Cleanup old jobs every 5 minutes
 setInterval(() => {
