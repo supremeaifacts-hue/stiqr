@@ -1298,11 +1298,215 @@ app.use('/api', stripeRoutes);
 app.use('/', eventRoutes);
 
 // ============================================================
+// PDF Upload/Download/Delete Routes using MongoDB GridFS
+// ============================================================
+const multer = require('multer');
+const { GridFSBucket } = require('mongodb');
+const crypto = require('crypto');
+
+// Configure multer for memory storage (we'll stream to GridFS)
+const pdfStorage = multer.memoryStorage();
+const pdfFileFilter = (req, file, cb) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'), false);
+  }
+};
+
+const uploadPdf = multer({
+  storage: pdfStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: pdfFileFilter
+});
+
+// POST /api/upload/pdf - Upload PDF to MongoDB GridFS
+// Supports both multipart/form-data (multer) and JSON (base64) formats
+app.post('/api/upload/pdf', async (req, res) => {
+  try {
+    let fileBuffer;
+    let originalName;
+    let qrCodeId;
+
+    // Check if the request is multipart/form-data (file upload via form)
+    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+      // Use multer for multipart uploads
+      return new Promise((resolve, reject) => {
+        uploadPdf.single('pdfFile')(req, res, async (err) => {
+          if (err) {
+            console.error('❌ Multer error:', err.message);
+            return res.status(400).json({ error: err.message });
+          }
+          if (!req.file) {
+            return res.status(400).json({ error: 'No PDF file uploaded' });
+          }
+          fileBuffer = req.file.buffer;
+          originalName = req.file.originalname;
+          qrCodeId = req.body.qrCodeId || null;
+          
+          try {
+            const result = await savePdfToGridFS(fileBuffer, originalName, qrCodeId, req);
+            resolve(res.json(result));
+          } catch (saveErr) {
+            reject(saveErr);
+          }
+        });
+      });
+    }
+
+    // Handle JSON/base64 upload (current frontend format)
+    const { fileData, fileName, qrCodeId: bodyQrCodeId } = req.body;
+    
+    if (!fileData) {
+      return res.status(400).json({ error: 'No PDF file data provided' });
+    }
+
+    // Decode base64 data (remove data:application/pdf;base64, prefix if present)
+    const base64Data = fileData.includes('base64,') 
+      ? fileData.split('base64,')[1] 
+      : fileData;
+    
+    fileBuffer = Buffer.from(base64Data, 'base64');
+    originalName = fileName || `pdf-${Date.now()}.pdf`;
+    qrCodeId = bodyQrCodeId || null;
+
+    const result = await savePdfToGridFS(fileBuffer, originalName, qrCodeId, req);
+    res.json(result);
+
+  } catch (error) {
+    console.error('❌ Error uploading PDF:', error);
+    res.status(500).json({ 
+      error: 'Failed to upload PDF', 
+      details: error.message 
+    });
+  }
+});
+
+// Helper function to save PDF to GridFS
+async function savePdfToGridFS(fileBuffer, originalName, qrCodeId, req) {
+  const db = mongoose.connection.db;
+  const bucket = new GridFSBucket(db, { bucketName: 'pdfs' });
+
+  // Generate unique filename
+  const filename = `pdf-${qrCodeId || crypto.randomUUID()}-${Date.now()}.pdf`;
+
+  // Create upload stream
+  const uploadStream = bucket.openUploadStream(filename, {
+    contentType: 'application/pdf',
+    metadata: {
+      qrCodeId: qrCodeId || null,
+      originalName: originalName,
+      uploadedAt: new Date(),
+      size: fileBuffer.length
+    }
+  });
+
+  // Write the file buffer to GridFS
+  uploadStream.end(fileBuffer);
+
+  // Wait for upload to complete
+  const fileId = await new Promise((resolve, reject) => {
+    uploadStream.on('finish', () => resolve(uploadStream.id));
+    uploadStream.on('error', reject);
+  });
+
+  const fileUrl = `${req.protocol}://${req.get('host')}/api/pdf/${fileId}`;
+
+  console.log('✅ PDF saved to GridFS:', {
+    fileId: fileId,
+    filename: filename,
+    originalName: originalName,
+    size: fileBuffer.length
+  });
+
+  return {
+    success: true,
+    fileId: fileId,
+    url: fileUrl,
+    filename: filename,
+    originalName: originalName
+  };
+}
+
+// GET /api/pdf/:id - Retrieve PDF from GridFS
+app.get('/api/pdf/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = mongoose.connection.db;
+    const bucket = new GridFSBucket(db, { bucketName: 'pdfs' });
+
+    // Validate ObjectId
+    let objectId;
+    try {
+      objectId = new mongoose.Types.ObjectId(id);
+    } catch (err) {
+      return res.status(400).json({ error: 'Invalid PDF ID format' });
+    }
+
+    // Find the file by ID
+    const files = await bucket.find({ _id: objectId }).toArray();
+    
+    if (files.length === 0) {
+      return res.status(404).json({ error: 'PDF not found' });
+    }
+
+    const file = files[0];
+    
+    // Set headers for PDF download/inline display
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="${file.filename}"`,
+      'Content-Length': file.length
+    });
+
+    // Stream the PDF to the response
+    const downloadStream = bucket.openDownloadStream(objectId);
+    downloadStream.pipe(res);
+
+  } catch (error) {
+    console.error('❌ Error retrieving PDF:', error);
+    res.status(500).json({ error: 'Failed to retrieve PDF' });
+  }
+});
+
+// DELETE /api/pdf/:id - Delete PDF from GridFS
+app.delete('/api/pdf/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = mongoose.connection.db;
+    const bucket = new GridFSBucket(db, { bucketName: 'pdfs' });
+
+    // Validate ObjectId
+    let objectId;
+    try {
+      objectId = new mongoose.Types.ObjectId(id);
+    } catch (err) {
+      return res.status(400).json({ error: 'Invalid PDF ID format' });
+    }
+
+    // Delete the file from GridFS
+    await bucket.delete(objectId);
+    
+    console.log('🗑️ PDF deleted from GridFS:', id);
+    res.json({ success: true, message: 'PDF deleted successfully' });
+
+  } catch (error) {
+    console.error('❌ Error deleting PDF:', error);
+    res.status(500).json({ error: 'Failed to delete PDF' });
+  }
+});
+
+// ============================================================
 // POST /api/contact - Contact form email sending via Mailtrap API
 // ============================================================
 app.post('/api/contact', async (req, res) => {
+
   try {
+
     const { name, email, message } = req.body;
+
+
+
     console.log('📧 Contact form submission:', { name, email, message });
 
     // Validate
