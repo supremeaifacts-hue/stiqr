@@ -3344,30 +3344,74 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const token = localStorage.getItem('jwtToken');
                   
                   if (selectedType === 'pdf' && pdfFile && !pdfFile.uploadedUrl) {
-                    console.log('📄 Uploading PDF file:', pdfFile.name);
-                    const pdfReader = new FileReader();
-                    const pdfBase64 = await new Promise((resolve, reject) => {
-                      pdfReader.onload = () => resolve(pdfReader.result);
-                      pdfReader.onerror = reject;
-                      pdfReader.readAsDataURL(pdfFile);
-                    });
+                    console.log('📄 Uploading PDF file (two-step process):', pdfFile.name);
+                    
+                    // Step 1: Upload file to disk (fast, using FormData)
+                    const formData = new FormData();
+                    formData.append('pdfFile', pdfFile);
+                    formData.append('qrCodeId', qrCodeId);
+                    
                     const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                      body: JSON.stringify({ fileData: pdfBase64, fileName: pdfFile.name })
+                      headers: { 'Authorization': `Bearer ${token}` },
+                      body: formData
                     });
-                    if (uploadResponse.ok) {
-                      const uploadResult = await uploadResponse.json();
-                      console.log('✅ PDF uploaded successfully:', uploadResult.url);
-                      setPdfFile(prev => { const updated = prev; updated.uploadedUrl = uploadResult.url; return updated; });
-                      pdfFile.uploadedUrl = uploadResult.url;
-                    } else {
+                    
+                    if (!uploadResponse.ok) {
                       const uploadError = await uploadResponse.text();
                       console.error('❌ PDF upload failed:', uploadError);
                       alert('Failed to upload PDF file. Please try again.');
                       return;
                     }
+                    
+                    const { jobId } = await uploadResponse.json();
+                    console.log('📄 PDF uploaded to disk, job ID:', jobId);
+                    
+                    // Step 2: Poll for background processing completion
+                    let status = 'pending';
+                    let attempts = 0;
+                    const maxAttempts = 60; // 60 seconds max wait
+                    
+                    while (status !== 'completed' && attempts < maxAttempts) {
+                      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+                      
+                      const statusResponse = await fetch(`${baseUrl}/api/upload/status/${jobId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      });
+                      
+                      if (statusResponse.ok) {
+                        const statusData = await statusResponse.json();
+                        status = statusData.status;
+                        attempts++;
+                        
+                        if (status === 'completed') {
+                          console.log('✅ PDF saved to GridFS:', statusData.fileUrl);
+                          setPdfFile(prev => { 
+                            const updated = { ...prev }; 
+                            updated.uploadedUrl = statusData.fileUrl; 
+                            return updated; 
+                          });
+                          pdfFile.uploadedUrl = statusData.fileUrl;
+                          break;
+                        }
+                        
+                        if (status === 'failed') {
+                          console.error('❌ PDF processing failed:', statusData.error);
+                          alert('PDF processing failed. Please try again.');
+                          return;
+                        }
+                      } else {
+                        attempts++;
+                      }
+                    }
+                    
+                    if (status !== 'completed') {
+                      console.error('❌ PDF processing timed out');
+                      alert('PDF processing is taking longer than expected. The file will be available shortly. Please check back.');
+                      // Don't return - allow the QR code to be saved without the PDF URL
+                    }
                   }
+
                   
                   const qrContent = getQrContent();
                   console.log('📡 STEP 1: Saving to standalone qrcodes collection...');

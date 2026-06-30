@@ -1299,134 +1299,200 @@ app.use('/', eventRoutes);
 
 // ============================================================
 // PDF Upload/Download/Delete Routes using MongoDB GridFS
+// Two-step process to avoid Cloudflare timeouts:
+// Step 1: Upload to disk (fast, immediate response with jobId)
+// Step 2: Background processing to GridFS
 // ============================================================
 const multer = require('multer');
 const { GridFSBucket } = require('mongodb');
 const crypto = require('crypto');
+const fs = require('fs');
 
-// Configure multer for memory storage (we'll stream to GridFS)
-const pdfStorage = multer.memoryStorage();
-const pdfFileFilter = (req, file, cb) => {
-  if (file.mimetype === 'application/pdf') {
-    cb(null, true);
-  } else {
-    cb(new Error('Only PDF files are allowed'), false);
+// Temporary storage on disk for fast uploads
+const tempStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, 'uploads', 'temp');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
-};
-
-const uploadPdf = multer({
-  storage: pdfStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: pdfFileFilter
 });
 
-// POST /api/upload/pdf - Upload PDF to MongoDB GridFS
-// Supports both multipart/form-data (multer) and JSON (base64) formats
-app.post('/api/upload/pdf', async (req, res) => {
+const uploadPdf = multer({
+  storage: tempStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'), false);
+    }
+  }
+});
+
+// Initialize global PDF jobs store
+if (!global.pdfJobs) global.pdfJobs = {};
+
+// POST /api/upload/pdf - Step 1: Temporary upload to disk (fast, immediate response)
+app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
   try {
-    let fileBuffer;
-    let originalName;
-    let qrCodeId;
-
-    // Check if the request is multipart/form-data (file upload via form)
-    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
-      // Use multer for multipart uploads
-      return new Promise((resolve, reject) => {
-        uploadPdf.single('pdfFile')(req, res, async (err) => {
-          if (err) {
-            console.error('❌ Multer error:', err.message);
-            return res.status(400).json({ error: err.message });
-          }
-          if (!req.file) {
-            return res.status(400).json({ error: 'No PDF file uploaded' });
-          }
-          fileBuffer = req.file.buffer;
-          originalName = req.file.originalname;
-          qrCodeId = req.body.qrCodeId || null;
-          
-          try {
-            const result = await savePdfToGridFS(fileBuffer, originalName, qrCodeId, req);
-            resolve(res.json(result));
-          } catch (saveErr) {
-            reject(saveErr);
-          }
-        });
-      });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No PDF file uploaded' });
     }
 
-    // Handle JSON/base64 upload (current frontend format)
-    const { fileData, fileName, qrCodeId: bodyQrCodeId } = req.body;
-    
-    if (!fileData) {
-      return res.status(400).json({ error: 'No PDF file data provided' });
-    }
+    const { qrCodeId } = req.body;
+    const tempFilePath = req.file.path;
+    const originalName = req.file.originalname;
 
-    // Decode base64 data (remove data:application/pdf;base64, prefix if present)
-    const base64Data = fileData.includes('base64,') 
-      ? fileData.split('base64,')[1] 
-      : fileData;
-    
-    fileBuffer = Buffer.from(base64Data, 'base64');
-    originalName = fileName || `pdf-${Date.now()}.pdf`;
-    qrCodeId = bodyQrCodeId || null;
+    console.log('📄 PDF temporarily uploaded to disk:', {
+      tempPath: tempFilePath,
+      originalName: originalName,
+      size: req.file.size
+    });
 
-    const result = await savePdfToGridFS(fileBuffer, originalName, qrCodeId, req);
-    res.json(result);
+    // Generate a unique job ID
+    const jobId = `pdf-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    // Store job info in memory
+    const job = {
+      id: jobId,
+      qrCodeId: qrCodeId || null,
+      tempFilePath: tempFilePath,
+      originalName: originalName,
+      status: 'pending',
+      fileUrl: null,
+      fileId: null,
+      createdAt: new Date()
+    };
+
+    global.pdfJobs[jobId] = job;
+
+    // Start background processing (fire and forget - don't await)
+    processPDFInBackground(jobId).catch(err => {
+      console.error(`❌ Background PDF processing failed for job ${jobId}:`, err);
+    });
+
+    // Return immediate response with job ID
+    res.json({
+      success: true,
+      jobId: jobId,
+      message: 'PDF uploaded successfully. Processing in background.'
+    });
 
   } catch (error) {
     console.error('❌ Error uploading PDF:', error);
-    res.status(500).json({ 
-      error: 'Failed to upload PDF', 
-      details: error.message 
-    });
+    res.status(500).json({ error: 'Failed to upload PDF', details: error.message });
   }
 });
 
-// Helper function to save PDF to GridFS
-async function savePdfToGridFS(fileBuffer, originalName, qrCodeId, req) {
-  const db = mongoose.connection.db;
-  const bucket = new GridFSBucket(db, { bucketName: 'pdfs' });
+// GET /api/upload/status/:jobId - Check upload processing status
+app.get('/api/upload/status/:jobId', (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const job = global.pdfJobs?.[jobId];
 
-  // Generate unique filename
-  const filename = `pdf-${qrCodeId || crypto.randomUUID()}-${Date.now()}.pdf`;
-
-  // Create upload stream
-  const uploadStream = bucket.openUploadStream(filename, {
-    contentType: 'application/pdf',
-    metadata: {
-      qrCodeId: qrCodeId || null,
-      originalName: originalName,
-      uploadedAt: new Date(),
-      size: fileBuffer.length
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
     }
-  });
 
-  // Write the file buffer to GridFS
-  uploadStream.end(fileBuffer);
+    res.json({
+      success: true,
+      status: job.status,
+      fileUrl: job.fileUrl,
+      fileId: job.fileId,
+      error: job.error || null
+    });
 
-  // Wait for upload to complete
-  const fileId = await new Promise((resolve, reject) => {
-    uploadStream.on('finish', () => resolve(uploadStream.id));
-    uploadStream.on('error', reject);
-  });
+  } catch (error) {
+    console.error('❌ Error checking PDF job status:', error);
+    res.status(500).json({ error: 'Failed to check status' });
+  }
+});
 
-  const fileUrl = `${req.protocol}://${req.get('host')}/api/pdf/${fileId}`;
+// Background processing function - saves PDF from disk to GridFS
+async function processPDFInBackground(jobId) {
+  const job = global.pdfJobs?.[jobId];
+  if (!job) {
+    console.error(`❌ Job ${jobId} not found for background processing`);
+    return;
+  }
 
-  console.log('✅ PDF saved to GridFS:', {
-    fileId: fileId,
-    filename: filename,
-    originalName: originalName,
-    size: fileBuffer.length
-  });
+  try {
+    console.log(`🔄 Processing PDF job ${jobId} in background...`);
 
-  return {
-    success: true,
-    fileId: fileId,
-    url: fileUrl,
-    filename: filename,
-    originalName: originalName
-  };
+    const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    const bucket = new GridFSBucket(db, { bucketName: 'pdfs' });
+
+    // Read the temporary file from disk
+    const fileBuffer = fs.readFileSync(job.tempFilePath);
+    const filename = `pdf-${job.qrCodeId || jobId}-${Date.now()}.pdf`;
+
+    // Upload to GridFS
+    const uploadStream = bucket.openUploadStream(filename, {
+      contentType: 'application/pdf',
+      metadata: {
+        qrCodeId: job.qrCodeId,
+        originalName: job.originalName,
+        uploadedAt: new Date(),
+        size: fileBuffer.length
+      }
+    });
+
+    uploadStream.end(fileBuffer);
+
+    const fileId = await new Promise((resolve, reject) => {
+      uploadStream.on('finish', () => resolve(uploadStream.id));
+      uploadStream.on('error', reject);
+    });
+
+    const fileUrl = `/api/pdf/${fileId}`;
+
+    // Update job status
+    job.status = 'completed';
+    job.fileId = fileId.toString();
+    job.fileUrl = fileUrl;
+
+    // Clean up temporary file from disk
+    try {
+      fs.unlinkSync(job.tempFilePath);
+      console.log(`🗑️ Temporary file deleted: ${job.tempFilePath}`);
+    } catch (cleanupErr) {
+      console.error(`⚠️ Failed to delete temp file ${job.tempFilePath}:`, cleanupErr.message);
+    }
+
+    console.log(`✅ PDF job ${jobId} completed. File ID: ${fileId}, URL: ${fileUrl}`);
+
+  } catch (error) {
+    console.error(`❌ Error processing PDF job ${jobId}:`, error);
+    job.status = 'failed';
+    job.error = error.message;
+  }
 }
+
+// Cleanup old jobs every 5 minutes
+setInterval(() => {
+  if (!global.pdfJobs) return;
+  const now = Date.now();
+  const fiveMinutesAgo = now - 5 * 60 * 1000;
+  
+  for (const [key, job] of Object.entries(global.pdfJobs)) {
+    if ((job.status === 'completed' || job.status === 'failed') && 
+        new Date(job.createdAt).getTime() < fiveMinutesAgo) {
+      delete global.pdfJobs[key];
+      console.log(`🧹 Cleaned up old PDF job: ${key}`);
+    }
+  }
+}, 60 * 1000); // Run every minute
+
 
 // GET /api/pdf/:id - Retrieve PDF from GridFS
 app.get('/api/pdf/:id', async (req, res) => {
