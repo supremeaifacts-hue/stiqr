@@ -1392,8 +1392,9 @@ async function processPDFInBackground(jobId, buffer, req) {
       createdAt: new Date()
     });
 
-    // Generate a URL to access the PDF
-    const fileUrl = `${req.protocol}://${req.get('host')}/api/pdf/${pdfRecord._id}`;
+    // Generate a URL to access the PDF via the frontend
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.stiqr.top';
+    const fileUrl = `${frontendUrl}/api/pdf/${pdfRecord._id}`;
 
     console.log(`✅ PDF saved directly to MongoDB: ${pdfRecord._id}`);
     console.log(`   URL: ${fileUrl}`);

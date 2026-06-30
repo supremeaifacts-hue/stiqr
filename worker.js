@@ -111,6 +111,28 @@ export default {
     }
     
     // ============================================================
+    // PDF ROUTES - Forward to Render backend
+    // ============================================================
+    if (pathname.startsWith('/api/pdf/')) {
+      const pdfId = pathname.substring(9);
+      const backendUrl = `https://stiqr-backend.onrender.com/api/pdf/${pdfId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`✅ PDF route response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`❌ PDF route error: ${error.message}`);
+        return new Response('PDF not found', { status: 404 });
+      }
+    }
+    
+    // ============================================================
     // API, AUTH, TRACKING - Forward to Render backend
     // ============================================================
     if (pathname.startsWith('/auth/') ||
