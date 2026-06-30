@@ -598,18 +598,80 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       }
 
       const result = await uploadResponse.json();
-      console.log('✅ PDF saved directly to MongoDB:', result.pdfId, result.fileUrl);
+      console.log('✅ PDF upload response:', result);
 
-      // Store the uploaded URL on the file object
-      file.uploadedUrl = result.fileUrl;
-      setPdfFile(prev => {
-        const updated = { ...prev };
-        updated.uploadedUrl = result.fileUrl;
-        return updated;
-      });
-
-      setPdfUploaded(true);
-      setUploadProgress(100);
+      // If we get a jobId, poll for completion
+      if (result.jobId) {
+        console.log('🔄 Polling PDF job:', result.jobId);
+        
+        // Poll for job completion
+        let pollAttempts = 0;
+        const maxPollAttempts = 30; // 30 seconds max
+        const pollInterval = 1000; // 1 second
+        
+        const pollJob = async () => {
+          while (pollAttempts < maxPollAttempts) {
+            pollAttempts++;
+            try {
+              const jobResponse = await fetch(`${baseUrl}/api/pdf/job/${result.jobId}`);
+              if (jobResponse.ok) {
+                const jobData = await jobResponse.json();
+                console.log(`📊 Job status (attempt ${pollAttempts}):`, jobData.status);
+                
+                if (jobData.status === 'completed') {
+                  console.log('✅ PDF job completed:', jobData.fileUrl);
+                  file.uploadedUrl = jobData.fileUrl;
+                  setPdfFile(prev => {
+                    const updated = { ...prev };
+                    updated.uploadedUrl = jobData.fileUrl;
+                    return updated;
+                  });
+                  setPdfUploaded(true);
+                  setUploadProgress(100);
+                  return;
+                } else if (jobData.status === 'failed') {
+                  console.error('❌ PDF job failed:', jobData.error);
+                  alert('PDF processing failed: ' + (jobData.error || 'Unknown error'));
+                  setPdfFile(null);
+                  return;
+                }
+              }
+            } catch (pollErr) {
+              console.error('⚠️ Poll error:', pollErr);
+            }
+            // Wait before next poll
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+          }
+          // If we get here, polling timed out - fall back to direct response
+          console.warn('⚠️ PDF job polling timed out, using direct response');
+          if (result.fileUrl) {
+            file.uploadedUrl = result.fileUrl;
+            setPdfFile(prev => {
+              const updated = { ...prev };
+              updated.uploadedUrl = result.fileUrl;
+              return updated;
+            });
+            setPdfUploaded(true);
+            setUploadProgress(100);
+          } else {
+            alert('PDF upload timed out. Please try again.');
+            setPdfFile(null);
+          }
+        };
+        
+        pollJob();
+      } else {
+        // Direct response (no jobId) - use fileUrl directly
+        console.log('✅ PDF saved directly to MongoDB:', result.pdfId, result.fileUrl);
+        file.uploadedUrl = result.fileUrl;
+        setPdfFile(prev => {
+          const updated = { ...prev };
+          updated.uploadedUrl = result.fileUrl;
+          return updated;
+        });
+        setPdfUploaded(true);
+        setUploadProgress(100);
+      }
 
     } catch (error) {
       console.error('PDF upload error:', error);

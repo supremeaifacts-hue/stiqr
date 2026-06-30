@@ -1317,6 +1317,7 @@ const uploadPdf = multer({
 });
 
 // POST /api/upload/pdf - Direct MongoDB storage (no GridFS)
+// Returns a jobId so the frontend can poll for upload status
 app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
   try {
     if (!req.file) {
@@ -1325,19 +1326,68 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
 
     const { qrCodeId } = req.body;
     
+    // Generate a unique job ID
+    const jobId = `pdf-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
     console.log('📄 PDF received:', {
       originalName: req.file.originalname,
       size: req.file.size,
-      qrCodeId: qrCodeId
+      qrCodeId: qrCodeId,
+      jobId: jobId
     });
+
+    // Store job info in memory
+    const job = {
+      id: jobId,
+      qrCodeId: qrCodeId,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    if (!global.pdfJobs) global.pdfJobs = {};
+    global.pdfJobs[jobId] = job;
+
+    // Start background processing
+    processPDFInBackground(jobId, req.file.buffer, req);
+
+    // ✅ Return jobId so frontend can poll status
+    res.json({
+      success: true,
+      jobId: jobId,
+      message: 'PDF uploaded successfully. Processing in background.'
+    });
+
+  } catch (error) {
+    console.error('❌ Error uploading PDF:', error);
+    res.status(500).json({ error: 'Failed to upload PDF', details: error.message });
+  }
+});
+
+// Background PDF processing function
+async function processPDFInBackground(jobId, buffer, req) {
+  try {
+    const job = global.pdfJobs?.[jobId];
+    if (!job) {
+      console.error(`❌ Job ${jobId} not found`);
+      return;
+    }
+
+    console.log(`🔄 Processing PDF job ${jobId}...`);
+    console.log(`   QR Code ID: ${job.qrCodeId}`);
+    console.log(`   File size: ${job.size} bytes`);
+
+    // Update status to processing
+    job.status = 'processing';
 
     // Store the file directly in MongoDB as binary
     const PDFFile = require('./models/PDFFile');
     const pdfRecord = await PDFFile.create({
-      qrCodeId: qrCodeId,
-      originalName: req.file.originalname,
-      data: req.file.buffer, // Store the binary data directly
-      size: req.file.size,
+      qrCodeId: job.qrCodeId,
+      originalName: job.originalName,
+      data: buffer,
+      size: job.size,
       status: 'completed',
       createdAt: new Date()
     });
@@ -1348,17 +1398,50 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
     console.log(`✅ PDF saved directly to MongoDB: ${pdfRecord._id}`);
     console.log(`   URL: ${fileUrl}`);
 
+    // Update job with results
+    job.status = 'completed';
+    job.pdfId = pdfRecord._id.toString();
+    job.fileUrl = fileUrl;
+    job.completedAt = new Date();
+
+    console.log(`✅ PDF job ${jobId} completed successfully`);
+
+  } catch (error) {
+    console.error(`❌ Error processing PDF job ${jobId}:`, error);
+    const job = global.pdfJobs?.[jobId];
+    if (job) {
+      job.status = 'failed';
+      job.error = error.message;
+    }
+  }
+}
+
+// GET /api/pdf/job/:jobId - Poll job status
+app.get('/api/pdf/job/:jobId', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const job = global.pdfJobs?.[jobId];
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
     res.json({
       success: true,
-      pdfId: pdfRecord._id,
-      fileUrl: fileUrl,
-      originalName: req.file.originalname,
-      size: req.file.size
+      jobId: job.id,
+      status: job.status,
+      pdfId: job.pdfId || null,
+      fileUrl: job.fileUrl || null,
+      originalName: job.originalName,
+      size: job.size,
+      error: job.error || null,
+      createdAt: job.createdAt,
+      completedAt: job.completedAt || null
     });
 
   } catch (error) {
-    console.error('❌ Error saving PDF:', error);
-    res.status(500).json({ error: 'Failed to save PDF', details: error.message });
+    console.error('❌ Error fetching job status:', error);
+    res.status(500).json({ error: 'Failed to fetch job status' });
   }
 });
 
