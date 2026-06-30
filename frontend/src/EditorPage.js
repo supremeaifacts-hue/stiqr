@@ -561,7 +561,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   };
 
 
-  // Handle PDF file selection - upload immediately
+  // Handle PDF file selection - upload immediately to MongoDB
   const handlePdfFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -580,6 +580,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       formData.append('pdfFile', file);
       formData.append('qrCodeId', qrCodeId);
 
+      setUploadProgress(50);
+
       const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
@@ -595,58 +597,20 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         return;
       }
 
-      const { jobId } = await uploadResponse.json();
-      console.log('📄 PDF uploaded to disk, job ID:', jobId);
-      setUploadProgress(30);
+      const result = await uploadResponse.json();
+      console.log('✅ PDF saved directly to MongoDB:', result.pdfId, result.fileUrl);
 
-      // Poll for background processing completion
-      let status = 'pending';
-      let attempts = 0;
-      const maxAttempts = 60;
+      // Store the uploaded URL on the file object
+      file.uploadedUrl = result.fileUrl;
+      setPdfFile(prev => {
+        const updated = { ...prev };
+        updated.uploadedUrl = result.fileUrl;
+        return updated;
+      });
 
-      while (status !== 'completed' && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setUploadProgress(30 + Math.min(attempts * 1, 60));
+      setPdfUploaded(true);
+      setUploadProgress(100);
 
-        const statusResponse = await fetch(`${baseUrl}/api/upload/status/${jobId}`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-          status = statusData.status;
-          attempts++;
-
-          if (status === 'completed') {
-            console.log('✅ PDF saved to GridFS:', statusData.fileUrl);
-            setPdfFile(prev => {
-              const updated = { ...prev };
-              updated.uploadedUrl = statusData.fileUrl;
-              return updated;
-            });
-            file.uploadedUrl = statusData.fileUrl;
-            setPdfUploaded(true);
-            setUploadProgress(100);
-            break;
-          }
-
-          if (status === 'failed') {
-            console.error('❌ PDF processing failed:', statusData.error);
-            alert('PDF processing failed. Please try again.');
-            setIsUploadingPdf(false);
-            setPdfFile(null);
-            return;
-          }
-        } else {
-          attempts++;
-        }
-      }
-
-      if (status !== 'completed') {
-        console.error('❌ PDF processing timed out');
-        alert('PDF processing is taking longer than expected. The file will be available shortly. Please check back.');
-        setPdfUploaded(true);
-      }
     } catch (error) {
       console.error('PDF upload error:', error);
       alert('PDF upload failed. Please try again.');
@@ -655,6 +619,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       setIsUploadingPdf(false);
     }
   };
+
 
   // Get the social landing page URL
   const getSocialLandingUrl = (pageId) => {
