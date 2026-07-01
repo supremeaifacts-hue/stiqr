@@ -49,13 +49,27 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         const plan = session.metadata?.plan || 'pro';
 
         if (userId) {
+          // Retrieve the subscription from Stripe to get the actual current_period_end
+          // session.expires_at is the checkout session expiry, NOT the subscription period end
+          let currentPeriodEnd = null;
+          try {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+            if (session.subscription) {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription);
+              currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+              console.log(`✅ Retrieved subscription period end: ${currentPeriodEnd.toISOString()}`);
+            }
+          } catch (stripeError) {
+            console.error('❌ Failed to retrieve subscription from Stripe:', stripeError.message);
+          }
+
           await User.findByIdAndUpdate(userId, {
             'subscription.plan': plan,
             'subscription.isActive': true,
             'subscription.stripeSubscriptionId': session.subscription,
             'subscription.stripeCustomerId': session.customer,
             'subscription.subscribedAt': new Date(),
-            'subscription.stripeCurrentPeriodEnd': new Date(session.expires_at * 1000),
+            'subscription.stripeCurrentPeriodEnd': currentPeriodEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Fallback: 30 days from now
             'subscription.stripeCancelAtPeriodEnd': false
           });
           console.log(`✅ User ${userId} upgraded to ${plan}`);

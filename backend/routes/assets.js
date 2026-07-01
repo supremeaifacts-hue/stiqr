@@ -866,6 +866,22 @@ router.get('/user/subscription', isAuthenticated, async (req, res) => {
     let subscriptionEndDate = null;
     if (user.subscription.stripeCurrentPeriodEnd) {
       subscriptionEndDate = user.subscription.stripeCurrentPeriodEnd;
+      
+      // FIX: Detect if stripeCurrentPeriodEnd is incorrectly set to the subscription start date
+      // (This happens when session.expires_at was used instead of subscription.current_period_end)
+      // If the period end is before or on the subscribedAt date, it's wrong - add 30 days
+      if (user.subscription.subscribedAt) {
+        const periodEnd = new Date(subscriptionEndDate);
+        const subscribedAt = new Date(user.subscription.subscribedAt);
+        const diffDays = Math.floor((periodEnd - subscribedAt) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 1 && diffDays >= -1) {
+          // Period end is essentially the same day as subscription start - this is wrong
+          // It should be ~30 days later. Fix it by adding 30 days.
+          const correctedEnd = new Date(subscribedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+          console.log(`⚠️ Detected incorrect stripeCurrentPeriodEnd (${subscriptionEndDate}), correcting to ${correctedEnd.toISOString()}`);
+          subscriptionEndDate = correctedEnd;
+        }
+      }
     } else if (user.subscription.expiresAt) {
       subscriptionEndDate = user.subscription.expiresAt;
     } else if (user.subscription.trialEndsAt) {
@@ -1386,30 +1402,39 @@ router.get('/menu/:id', async (req, res) => {
               </div>
             ` : ''}
             
-            <!-- Card: Business Hours -->
-            <div class="section-gap">
-              <div class="card">
-                <div class="card-title" style="text-align:center;">Business Hours</div>
-                <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-                  ${['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(day => {
-                    const h = businessHours && businessHours[day] ? businessHours[day] : {};
-                    const hasMorning = h.morningOpen && h.morningClose;
-                    const hasEvening = h.eveningOpen && h.eveningClose;
-                    const isClosed = !hasMorning && !hasEvening;
-                    const dayLabel = day.charAt(0).toUpperCase() + day.slice(1,3);
-                    return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.04);width:100%;max-width:280px;">
-                      <span style="font-weight:700;color:#1E304F;min-width:32px;">${dayLabel}</span>
-                      <span style="color:${isClosed ? '#e74c3c' : 'var(--text-secondary)'};">
-                        ${isClosed ? 'Closed' : ''}
-                        ${!isClosed && hasMorning ? h.morningOpen + ' - ' + h.morningClose : ''}
-                        ${!isClosed && hasMorning && hasEvening ? '  |  ' : ''}
-                        ${!isClosed && hasEvening ? h.eveningOpen + ' - ' + h.eveningClose : ''}
-                      </span>
-                    </div>`;
-                  }).join('')}
+            <!-- Card: Business Hours (only show if user provided data) -->
+            ${(() => {
+              // Check if any business hours data was actually provided
+              const hasBusinessHours = businessHours && ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].some(day => {
+                const h = businessHours[day];
+                return h && (h.morningOpen || h.morningClose || h.eveningOpen || h.eveningClose);
+              });
+              return hasBusinessHours ? `
+              <div class="section-gap">
+                <div class="card">
+                  <div class="card-title" style="text-align:center;">Business Hours</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+                    ${['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(day => {
+                      const h = businessHours && businessHours[day] ? businessHours[day] : {};
+                      const hasMorning = h.morningOpen && h.morningClose;
+                      const hasEvening = h.eveningOpen && h.eveningClose;
+                      const isClosed = !hasMorning && !hasEvening;
+                      const dayLabel = day.charAt(0).toUpperCase() + day.slice(1,3);
+                      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.04);width:100%;max-width:280px;">
+                        <span style="font-weight:700;color:#1E304F;min-width:32px;">${dayLabel}</span>
+                        <span style="color:${isClosed ? '#e74c3c' : 'var(--text-secondary)'};">
+                          ${isClosed ? 'Closed' : ''}
+                          ${!isClosed && hasMorning ? h.morningOpen + ' - ' + h.morningClose : ''}
+                          ${!isClosed && hasMorning && hasEvening ? '  |  ' : ''}
+                          ${!isClosed && hasEvening ? h.eveningOpen + ' - ' + h.eveningClose : ''}
+                        </span>
+                      </div>`;
+                    }).join('')}
+                  </div>
                 </div>
               </div>
-            </div>
+              ` : '';
+            })()}
             
             <!-- Card: Services -->
             ${servicesHtml ? `
