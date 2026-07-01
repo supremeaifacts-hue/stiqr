@@ -1125,6 +1125,52 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       const eventUrl = qrCodeToEdit.data || qrCodeToEdit.destination || '';
       if (eventUrl.includes('/event/')) {
         setSelectedType('event');
+        // Extract event page ID from URL
+        const eventPageIdMatch = eventUrl.match(/\/event\/([^\/?#]+)/);
+        const eventPageId = eventPageIdMatch ? eventPageIdMatch[1] : null;
+        if (eventPageId) {
+          // Fetch the event page data from backend to restore image and all fields
+          const loadEventPage = async () => {
+            try {
+              const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+              const response = await fetch(`${baseUrl}/api/event-pages/${eventPageId}`);
+              if (response.ok) {
+                const page = await response.json();
+                setEventPageColor(page.pageColor || '#e5e9ec');
+                setEventCustomColorInput(page.pageColor || '#e5e9ec');
+                setEventData({
+                  title: page.title || '',
+                  summary: page.summary || '',
+                  about: page.about || '',
+                  image: page.image || null,
+                  imagePreview: page.image || null,
+                  dateFrom: page.dateFrom || new Date().toISOString().split('T')[0],
+                  dateTo: page.dateTo || '',
+                  timeFrom: page.timeFrom || '',
+                  timeTo: page.timeTo || '',
+                  services: page.services || {
+                    wifi: false, bathroom: false, handicapped: false,
+                    babies: false, dogs: false, parking: false, food: false
+                  },
+                  street: page.address?.street || '',
+                  city: page.address?.city || '',
+                  state: page.address?.state || '',
+                  zip: page.address?.zip || '',
+                  country: page.address?.country || '',
+                  contactName: page.contact?.name || '',
+                  contactPhone: page.contact?.phone || '',
+                  contactEmail: page.contact?.email || '',
+                  contactWebsite: page.contact?.website || '',
+                });
+                setEventPageId(eventPageId);
+                setEventConfigSaved(true);
+              }
+            } catch (error) {
+              console.error('Failed to load event page data:', error);
+            }
+          };
+          loadEventPage();
+        }
         if (qrCodeToEdit.openEventModal) {
           setShowEventModal(true);
         }
@@ -1134,6 +1180,59 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       const menuUrl = qrCodeToEdit.data || qrCodeToEdit.destination || '';
       if (menuUrl.includes('/menu/')) {
         setSelectedType('menu');
+        // Extract menu page ID from URL
+        const menuPageIdMatch = menuUrl.match(/\/menu\/([^\/?#]+)/);
+        const menuPageId = menuPageIdMatch ? menuPageIdMatch[1] : null;
+        if (menuPageId) {
+          // Fetch the menu page data from backend to restore image and all fields
+          const loadMenuPage = async () => {
+            try {
+              const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+              const response = await fetch(`${baseUrl}/api/menu-pages/${menuPageId}`);
+              if (response.ok) {
+                const page = await response.json();
+                setMenuPageColor(page.pageColor || '#e5e9ec');
+                setMenuCustomColorInput(page.pageColor || '#e5e9ec');
+                setMenuData({
+                  title: page.title || '',
+                  summary: page.summary || '',
+                  about: page.about || '',
+                  image: page.image || null,
+                  imagePreview: page.image || null,
+                  pdfFile: page.pdfFile || null,
+                  pdfFileName: page.pdfFileName || '',
+                  businessHours: page.businessHours || {
+                    monday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                    tuesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                    wednesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                    thursday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                    friday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                    saturday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                    sunday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
+                  },
+                  services: page.services || {
+                    wifi: false, bathroom: false, handicapped: false,
+                    babies: false, dogs: false, parking: false, food: false
+                  },
+                  street: page.address?.street || '',
+                  city: page.address?.city || '',
+                  state: page.address?.state || '',
+                  zip: page.address?.zip || '',
+                  country: page.address?.country || '',
+                  contactName: page.contact?.name || '',
+                  contactPhone: page.contact?.phone || '',
+                  contactEmail: page.contact?.email || '',
+                  contactWebsite: page.contact?.website || '',
+                });
+                setMenuPageId(menuPageId);
+                setMenuConfigSaved(true);
+              }
+            } catch (error) {
+              console.error('Failed to load menu page data:', error);
+            }
+          };
+          loadMenuPage();
+        }
         if (qrCodeToEdit.openMenuModal) {
           setShowMenuModal(true);
         }

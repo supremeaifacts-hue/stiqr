@@ -1091,6 +1091,7 @@ app.get('/menu/:id', async (req, res) => {
               </div>
             ` : ''}
             
+            ${businessHours && Object.values(businessHours).some(h => h && (h.closed || h.morningOpen || h.morningClose || h.eveningOpen || h.eveningClose)) ? `
             <!-- Card: Business Hours -->
             <div class="section-gap">
               <div class="card">
@@ -1115,6 +1116,7 @@ app.get('/menu/:id', async (req, res) => {
                 </div>
               </div>
             </div>
+            ` : ''}
             
             <!-- Card: Services -->
             ${servicesHtml ? `
