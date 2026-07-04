@@ -73,7 +73,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
         </div>
 
         {/* Main Heading - Single H1 */}
-        <h1 style={{
+        <h1 className="landing-hero-title" style={{
           fontSize: '56px',
           fontWeight: '900',
           lineHeight: '1.1',

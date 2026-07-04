@@ -14,3 +14,10 @@ html, body {
 body {
   background: #0a0a0a;
 }
+
+/* Mobile: reduce hero title size by half */
+@media (max-width: 768px) {
+  .landing-hero-title {
+    font-size: 28px !important;
+  }
+}
