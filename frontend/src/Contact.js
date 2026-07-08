@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Contact.css';
 import TopBar from './TopBar';
 
 const Contact = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -50,7 +52,7 @@ const Contact = () => {
       <TopBar
         onViewDashboard={() => window.location.href = '/dashboard'}
         onViewPricing={() => window.location.href = '/pricing'}
-        onGoToLanding={() => window.location.href = '/'}
+        onGoToLanding={() => navigate('/')}
       />
       <main className="contact-page">
         <section className="contact-hero">

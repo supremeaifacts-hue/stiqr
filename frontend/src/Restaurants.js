@@ -15,7 +15,7 @@ const Restaurants = ({ onViewDashboard, onViewPricing }) => {
       <TopBar
         onViewDashboard={onViewDashboard}
         onViewPricing={onViewPricing}
-        onGoToLanding={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onGoToLanding={() => navigate('/')}
       />
 
       {/* Hero Section */}
