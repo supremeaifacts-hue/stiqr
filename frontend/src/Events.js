@@ -45,7 +45,7 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
           <div style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to right, rgba(30, 48, 79, 0.8) 0%, rgba(30, 48, 79, 0.4) 50%, transparent 100%)',
+            background: 'linear-gradient(to right, rgba(26, 10, 46, 0.85) 0%, rgba(26, 10, 46, 0.4) 50%, transparent 100%)',
           }} />
         </div>
         <div style={{
@@ -57,35 +57,41 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
           margin: '0 auto',
         }}>
           <div style={{ maxWidth: '600px' }}>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '12px',
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              border: '1px solid rgba(0, 217, 255, 0.3)',
+              borderRadius: '30px',
+              color: '#00D9FF',
+              fontSize: '11px',
               fontWeight: '700',
-              letterSpacing: '0.05em',
+              letterSpacing: '1.5px',
               textTransform: 'uppercase',
-              background: '#4DB695',
-              color: '#fff',
-              padding: '4px 12px',
-              borderRadius: '9999px',
-              marginBottom: '24px',
+              marginBottom: '16px',
             }}>
+              <span style={{ fontSize: '16px' }}>✦</span>
               NEW: EVENT SOLUTIONS
-            </span>
+            </div>
             <h1 style={{
               fontSize: '48px',
-              fontWeight: '700',
-              lineHeight: '1.2',
-              marginBottom: '24px',
-              letterSpacing: '-0.02em',
+              fontWeight: '900',
+              lineHeight: '1.1',
+              margin: '0 0 20px',
+              letterSpacing: '-1px',
             }}>
-              Transform Your Event Experience in a Single Scan
+              Transform Your Event Experience{' '}
+              <span style={{ color: '#00D9FF', textShadow: '0 0 24px rgba(0, 217, 255, 0.5)' }}>
+                in a Single Scan
+              </span>
             </h1>
             <p style={{
               fontSize: '18px',
               lineHeight: '1.6',
-              color: '#e6e8ea',
-              opacity: 0.9,
-              marginBottom: '40px',
+              color: '#a0a0a0',
+              maxWidth: '500px',
+              marginBottom: '30px',
             }}>
               From town festivals to intimate birthdays, provide your guests with instant access to schedules, maps, and live updates with our precision-engineered QR ecosystem.
             </p>
@@ -93,45 +99,39 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
               <button
                 onClick={() => navigate('/')}
                 style={{
-                  background: '#4DB695',
-                  color: '#fff',
+                  background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                  color: '#0a0a0a',
                   border: 'none',
                   padding: '16px 32px',
                   borderRadius: '12px',
-                  fontSize: '14px',
+                  fontSize: '15px',
                   fontWeight: '700',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   transition: 'all 0.2s',
-                  boxShadow: '0 4px 16px rgba(77, 182, 149, 0.3)',
                 }}
-                onMouseEnter={(e) => { e.target.style.filter = 'brightness(1.1)'; e.target.style.transform = 'scale(0.95)'; }}
-                onMouseLeave={(e) => { e.target.style.filter = 'brightness(1)'; e.target.style.transform = 'scale(1)'; }}
+                onMouseEnter={(e) => { e.target.style.boxShadow = '0 8px 24px rgba(0, 217, 255, 0.3)'; }}
+                onMouseLeave={(e) => { e.target.style.boxShadow = 'none'; }}
               >
                 Create Your Event Code
                 <span style={{ fontSize: '18px' }}>→</span>
               </button>
               <button
                 style={{
-                  background: 'rgba(255, 255, 255, 0.7)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  color: '#191c1e',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#fff',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
                   padding: '16px 32px',
                   borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '700',
+                  fontSize: '15px',
+                  fontWeight: '600',
                   cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
                   transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.9)'; }}
-                onMouseLeave={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.7)'; }}
+                onMouseEnter={(e) => { e.target.style.borderColor = '#00D9FF'; e.target.style.color = '#00D9FF'; }}
+                onMouseLeave={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'; e.target.style.color = '#fff'; }}
               >
                 View Live Demo
               </button>
@@ -142,18 +142,16 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
 
       {/* Workflow Section */}
       <section style={{
-        padding: '96px 64px',
-        background: '#fff',
-        color: '#191c1e',
-        position: 'relative',
-        overflow: 'hidden',
+        padding: '80px 20px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        background: 'rgba(255, 255, 255, 0.02)',
       }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 80px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <h2 style={{
               fontSize: '32px',
-              fontWeight: '600',
-              color: '#1E304F',
+              fontWeight: '700',
               marginBottom: '16px',
             }}>
               A Streamlined 3-Step Workflow
@@ -161,7 +159,9 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
             <p style={{
               fontSize: '16px',
               lineHeight: '1.6',
-              color: '#3e4944',
+              color: '#a0a0a0',
+              maxWidth: '600px',
+              margin: '0 auto',
             }}>
               Launch your event connectivity in minutes, not hours. StiQR handles the complexity so you can focus on the experience.
             </p>
@@ -169,8 +169,7 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '48px',
-            position: 'relative',
+            gap: '24px',
           }}>
             {[
               {
@@ -190,47 +189,41 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
               },
             ].map((item, i) => (
               <div key={i} style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '16px',
                 padding: '32px',
-                borderRadius: '12px',
-                background: '#fff',
-                border: '1px solid #bdc9c2',
-                transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                textAlign: 'center',
+                transition: 'all 0.3s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 217, 255, 0.1)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 <div style={{
                   width: '80px',
                   height: '80px',
-                  background: '#4DB695',
-                  color: '#004333',
+                  background: 'rgba(0, 217, 255, 0.1)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '24px',
+                  margin: '0 auto 24px',
                   fontSize: '32px',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+                  color: '#00D9FF',
                 }}>
                   {item.icon}
                 </div>
                 <h3 style={{
                   fontSize: '24px',
-                  fontWeight: '600',
-                  color: '#1E304F',
+                  fontWeight: '700',
                   marginBottom: '12px',
                 }}>
                   {item.title}
                 </h3>
                 <p style={{
-                  fontSize: '16px',
-                  lineHeight: '1.6',
-                  color: '#3e4944',
+                  fontSize: '15px',
+                  lineHeight: '1.7',
+                  color: '#a0a0a0',
                 }}>
                   {item.desc}
                 </p>
@@ -242,16 +235,14 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
 
       {/* Why Use QR Codes for Events? Section */}
       <section style={{
-        padding: '96px 64px',
-        background: '#f2f4f6',
-        color: '#191c1e',
+        padding: '80px 20px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
       }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <h2 style={{
               fontSize: '32px',
-              fontWeight: '600',
-              color: '#1E304F',
+              fontWeight: '700',
               marginBottom: '16px',
             }}>
               Why Use QR Codes for Events?
@@ -259,7 +250,7 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
             <p style={{
               fontSize: '16px',
               lineHeight: '1.6',
-              color: '#3e4944',
+              color: '#a0a0a0',
               maxWidth: '600px',
               margin: '0 auto',
             }}>
@@ -269,7 +260,7 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '32px',
+            gap: '24px',
           }}>
             {[
               {
@@ -289,42 +280,40 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
               },
             ].map((item, i) => (
               <div key={i} style={{
-                padding: '32px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '16px',
-                background: '#fff',
-                border: '1px solid #bdc9c2',
-                transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                padding: '32px',
+                transition: 'all 0.3s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.3)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 217, 255, 0.1)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 <div style={{
                   width: '48px',
                   height: '48px',
-                  background: 'rgba(77, 182, 149, 0.2)',
-                  color: '#006c53',
-                  borderRadius: '8px',
+                  background: 'rgba(0, 217, 255, 0.1)',
+                  borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '24px',
                   fontSize: '24px',
+                  color: '#00D9FF',
                 }}>
                   {item.icon}
                 </div>
                 <h3 style={{
                   fontSize: '20px',
-                  fontWeight: '600',
-                  color: '#1E304F',
-                  marginBottom: '16px',
+                  fontWeight: '700',
+                  marginBottom: '12px',
                 }}>
                   {item.title}
                 </h3>
                 <p style={{
-                  fontSize: '16px',
-                  lineHeight: '1.6',
-                  color: '#3e4944',
+                  fontSize: '15px',
+                  lineHeight: '1.7',
+                  color: '#a0a0a0',
                 }}>
                   {item.desc}
                 </p>
@@ -336,9 +325,10 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
 
       {/* Data-Driven Event Planning Section */}
       <section style={{
-        padding: '96px 64px',
-        background: '#1E304F',
-        color: '#fff',
+        padding: '80px 20px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        background: 'rgba(255, 255, 255, 0.02)',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -348,21 +338,21 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
           right: 0,
           width: '33%',
           height: '100%',
-          opacity: 0.1,
+          opacity: 0.05,
           pointerEvents: 'none',
         }}>
           <svg fill="none" viewBox="0 0 400 800" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-            <circle cx="400" cy="400" r="399" stroke="white" strokeWidth="2" />
-            <circle cx="400" cy="400" r="299" stroke="white" strokeWidth="2" />
-            <circle cx="400" cy="400" r="199" stroke="white" strokeWidth="2" />
+            <circle cx="400" cy="400" r="399" stroke="#00D9FF" strokeWidth="2" />
+            <circle cx="400" cy="400" r="299" stroke="#00D9FF" strokeWidth="2" />
+            <circle cx="400" cy="400" r="199" stroke="#00D9FF" strokeWidth="2" />
           </svg>
         </div>
         <div style={{
-          maxWidth: '1280px',
+          maxWidth: '1200px',
           margin: '0 auto',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '64px',
+          gap: '60px',
           alignItems: 'center',
         }}>
           <div style={{ flex: '1', minWidth: '300px' }}>
@@ -370,36 +360,35 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '4px 12px',
-              background: 'rgba(114, 217, 182, 0.3)',
-              color: '#8ef6d2',
-              fontSize: '12px',
+              padding: '6px 14px',
+              background: 'rgba(0, 217, 255, 0.1)',
+              borderRadius: '30px',
+              color: '#00D9FF',
+              fontSize: '11px',
               fontWeight: '700',
-              letterSpacing: '0.05em',
+              letterSpacing: '1.5px',
               textTransform: 'uppercase',
-              borderRadius: '9999px',
-              marginBottom: '24px',
+              marginBottom: '16px',
             }}>
               <span style={{ fontSize: '14px' }}>📊</span>
               DATA-DRIVEN INSIGHTS
             </div>
             <h2 style={{
               fontSize: '32px',
-              fontWeight: '600',
-              marginBottom: '24px',
+              fontWeight: '700',
+              marginBottom: '16px',
             }}>
               Data-Driven Event Planning
             </h2>
             <p style={{
-              fontSize: '18px',
-              lineHeight: '1.6',
-              color: '#e6e8ea',
-              opacity: 0.8,
-              marginBottom: '40px',
+              fontSize: '16px',
+              lineHeight: '1.7',
+              color: '#a0a0a0',
+              marginBottom: '30px',
             }}>
               Stop guessing how your event touchpoints are performing. StiQR provides granular analytics to help you optimize the guest experience and plan better future events.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {[
                 { label: 'SCAN VOLUME', desc: 'Identify which posters or locations drove the most engagement.' },
                 { label: 'PEAK ATTENDANCE', desc: 'Track when scans peak to understand high-traffic event windows.' },
@@ -409,28 +398,30 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '16px',
-                  borderLeft: `4px solid ${i === 0 ? '#4DB695' : 'rgba(77, 182, 149, 0.5)'}`,
-                  padding: '8px 24px',
+                  borderLeft: `4px solid ${i === 0 ? '#00D9FF' : 'rgba(0, 217, 255, 0.3)'}`,
+                  padding: '12px 24px',
                   borderRadius: '0 8px 8px 0',
+                  background: 'rgba(255, 255, 255, 0.02)',
                   transition: 'background 0.2s',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0, 217, 255, 0.05)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'; }}
                 >
                   <div>
                     <span style={{
-                      fontSize: '14px',
+                      fontSize: '12px',
                       fontWeight: '700',
-                      color: i === 0 ? '#4DB695' : '#e6e8ea',
+                      letterSpacing: '1px',
+                      color: i === 0 ? '#00D9FF' : '#a0a0a0',
                       display: 'block',
                       marginBottom: '2px',
                     }}>
                       {item.label}
                     </span>
                     <span style={{
-                      fontSize: '16px',
-                      lineHeight: '1.6',
-                      color: 'rgba(255,255,255,0.7)',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      color: '#888',
                     }}>
                       {item.desc}
                     </span>
@@ -446,64 +437,61 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
               gap: '16px',
             }}>
               <div style={{
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
                 padding: '32px',
                 borderRadius: '16px',
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 textAlign: 'center',
               }}>
                 <div style={{
                   fontSize: '36px',
-                  fontWeight: '700',
-                  color: '#4DB695',
+                  fontWeight: '900',
+                  color: '#00D9FF',
                   marginBottom: '8px',
                 }}>
                   4.8k
                 </div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '700',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '1.5px',
                   textTransform: 'uppercase',
-                  opacity: 0.6,
+                  color: '#666',
                 }}>
                   TOTAL SCANS
                 </div>
               </div>
               <div style={{
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
                 padding: '32px',
                 borderRadius: '16px',
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 textAlign: 'center',
               }}>
                 <div style={{
                   fontSize: '36px',
-                  fontWeight: '700',
-                  color: '#4DB695',
+                  fontWeight: '900',
+                  color: '#00D9FF',
                   marginBottom: '8px',
                 }}>
                   82%
                 </div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '700',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '1.5px',
                   textTransform: 'uppercase',
-                  opacity: 0.6,
+                  color: '#666',
                 }}>
                   CONVERSION
                 </div>
               </div>
               <div style={{
                 gridColumn: 'span 2',
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
                 padding: '24px',
                 borderRadius: '16px',
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}>
                 <div style={{
                   height: '128px',
@@ -515,7 +503,7 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                   {[40, 60, 85, 45, 100, 70, 90].map((h, i) => (
                     <div key={i} style={{
                       flex: '1',
-                      background: '#4DB695',
+                      background: `linear-gradient(to top, #00D9FF, #FF00FF)`,
                       borderRadius: '4px 4px 0 0',
                       height: `${h}%`,
                       transition: 'height 0.5s',
@@ -528,9 +516,9 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                   marginTop: '16px',
                   fontSize: '10px',
                   fontWeight: '700',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '1.5px',
                   textTransform: 'uppercase',
-                  opacity: 0.4,
+                  color: '#555',
                 }}>
                   <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
                 </div>
@@ -542,31 +530,28 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
 
       {/* Premium Event Templates Section */}
       <section style={{
-        padding: '128px 64px',
-        background: '#fff',
-        color: '#191c1e',
+        padding: '80px 20px',
       }}>
         <div style={{
-          maxWidth: '1280px',
+          maxWidth: '1200px',
           margin: '0 auto',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '64px',
+          gap: '60px',
           alignItems: 'center',
         }}>
           <div style={{ flex: '5', minWidth: '300px' }}>
             <h2 style={{
               fontSize: '32px',
-              fontWeight: '600',
-              color: '#1E304F',
-              marginBottom: '24px',
+              fontWeight: '700',
+              marginBottom: '16px',
             }}>
               Premium Event Templates
             </h2>
             <p style={{
               fontSize: '16px',
-              lineHeight: '1.6',
-              color: '#3e4944',
+              lineHeight: '1.7',
+              color: '#a0a0a0',
               marginBottom: '32px',
             }}>
               StiQR Event codes don't just point to a URL—they lead to a premium, mobile-optimized landing page designed specifically for event logistics.
@@ -582,9 +567,10 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  fontSize: '16px',
+                  fontSize: '15px',
+                  color: '#ccc',
                 }}>
-                  <span style={{ color: '#4DB695', fontSize: '20px' }}>✓</span>
+                  <span style={{ color: '#00D9FF', fontSize: '20px' }}>✓</span>
                   {item}
                 </div>
               ))}
@@ -592,18 +578,18 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
             <button
               onClick={() => navigate('/types')}
               style={{
-                border: '2px solid #1E304F',
-                color: '#1E304F',
-                background: 'transparent',
-                padding: '12px 32px',
-                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                padding: '14px 32px',
+                borderRadius: '12px',
                 fontSize: '14px',
-                fontWeight: '700',
+                fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => { e.target.style.background = '#1E304F'; e.target.style.color = '#fff'; }}
-              onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#1E304F'; }}
+              onMouseEnter={(e) => { e.target.style.borderColor = '#00D9FF'; e.target.style.color = '#00D9FF'; }}
+              onMouseLeave={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'; e.target.style.color = '#fff'; }}
             >
               Explore Template Gallery
             </button>
@@ -611,10 +597,10 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
           <div style={{ flex: '7', minWidth: '300px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingTop: '48px' }}>
               <div style={{
-                borderRadius: '12px',
-                border: '1px solid #bdc9c2',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 overflow: 'hidden',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
               }}>
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLP_xZ8j2vrI287xWxvSKYIjO7yeI63kocXicOtfgF1MkXnMNQ7klp5SARzyohwfO14OhAAtojgMuV0zHHUK9ykCbamTLUjVBNH_dB3NM1cKLOYy2vh96rn4oNg1iRcA7uL36jkO-lwPNniV-aF-UzfoeU7r_X0y34x-h7SzeDxZlzA1ANaztg7AMekwKBT0ZuSt_eAi8olidsB1LCYukyRRQd06CI0S3LgOxc1z7cWUwAg-19wK_xPA"
@@ -631,11 +617,11 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                 />
                 <div style={{
                   padding: '16px',
-                  background: '#fff',
                   textAlign: 'center',
-                  borderTop: '1px solid #bdc9c2',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   fontSize: '14px',
-                  fontWeight: '500',
+                  fontWeight: '600',
+                  color: '#a0a0a0',
                 }}>
                   Bespoke Weddings
                 </div>
@@ -643,10 +629,10 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{
-                borderRadius: '12px',
-                border: '1px solid #bdc9c2',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 overflow: 'hidden',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
               }}>
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5K0Wx3CitqGjaQ9IchiI-2aGIdh8xzYxNwSHyI0K7WtDwLt0CwgyaLbX7p_X9Kie-BQ25r9XRkvaWMdbjRMTsB3No1zmjHLcN1KOb9Y1BZoWFgjei9RQOpclJaQaAA8kS0XPdeaHpK0g3cmVd_4T6137ETjJ3yxfD8n0czPXyj6PMtr5jtkk6Leg__V83GqZupFjIopSXWJ3iPQC8XI8O6rWJbaYIEKtVvdfEqDeDkWQEduqwOT7nUg"
@@ -663,20 +649,20 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                 />
                 <div style={{
                   padding: '16px',
-                  background: '#fff',
                   textAlign: 'center',
-                  borderTop: '1px solid #bdc9c2',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   fontSize: '14px',
-                  fontWeight: '500',
+                  fontWeight: '600',
+                  color: '#a0a0a0',
                 }}>
                   Tech Conferences
                 </div>
               </div>
               <div style={{
-                borderRadius: '12px',
-                border: '1px solid #bdc9c2',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 overflow: 'hidden',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
               }}>
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHbQE6eRkxPLzIhhP4zPKB5h3rCkE-jUAFXNSNBOGwuLymxNL8o2YBL98_WjdqIWPLuSAPapfwUqybaMZvEe8veG55Omdm_sUvmYo3p3LBRh1aDwUuJGQmIetBdnxQlqfKU7SKv2bXpAKGvmkZqlBv4DxyZVyby9Yg0MaZeWKF6aYFppDbjOrpKWJCQf4QPv0tDoTrlO9f-nsmjLcdeWWtJ2OafYo4paNZ5CXNlAClK1LZbMr1PrFd5w"
@@ -693,11 +679,11 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
                 />
                 <div style={{
                   padding: '16px',
-                  background: '#fff',
                   textAlign: 'center',
-                  borderTop: '1px solid #bdc9c2',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   fontSize: '14px',
-                  fontWeight: '500',
+                  fontWeight: '600',
+                  color: '#a0a0a0',
                 }}>
                   Public Festivals
                 </div>
@@ -709,28 +695,24 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
 
       {/* Final CTA */}
       <section style={{
-        padding: '96px 64px',
-        background: 'rgba(77, 182, 149, 0.1)',
-        borderTop: '1px solid rgba(189, 201, 194, 0.3)',
-        borderBottom: '1px solid rgba(189, 201, 194, 0.3)',
+        padding: '80px 20px',
+        background: 'rgba(255, 255, 255, 0.02)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
         textAlign: 'center',
       }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h2 style={{
             fontSize: '32px',
-            fontWeight: '600',
-            color: '#1E304F',
-            marginBottom: '24px',
+            fontWeight: '700',
+            marginBottom: '16px',
           }}>
             Ready to upgrade your guest experience?
           </h2>
           <p style={{
             fontSize: '18px',
             lineHeight: '1.6',
-            color: '#3e4944',
-            marginBottom: '40px',
-            maxWidth: '500px',
-            margin: '0 auto 40px',
+            color: '#a0a0a0',
+            marginBottom: '30px',
           }}>
             Join over 5,000 organizers who trust StiQR for their event connectivity.
           </p>
@@ -738,37 +720,36 @@ const Events = ({ onViewDashboard, onViewPricing }) => {
             <button
               onClick={() => navigate('/')}
               style={{
-                background: '#4DB695',
-                color: '#fff',
+                background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                color: '#0a0a0a',
                 border: 'none',
                 padding: '16px 40px',
-                borderRadius: '8px',
-                fontSize: '14px',
+                borderRadius: '12px',
+                fontSize: '15px',
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: '0 4px 12px rgba(77, 182, 149, 0.3)',
               }}
-              onMouseEnter={(e) => { e.target.style.filter = 'brightness(1.05)'; }}
-              onMouseLeave={(e) => { e.target.style.filter = 'brightness(1)'; }}
+              onMouseEnter={(e) => { e.target.style.boxShadow = '0 8px 24px rgba(0, 217, 255, 0.3)'; }}
+              onMouseLeave={(e) => { e.target.style.boxShadow = 'none'; }}
             >
               Create Your First Code
             </button>
             <button
               onClick={() => navigate('/contact')}
               style={{
-                background: '#fff',
-                border: '2px solid #6e7a74',
-                color: '#191c1e',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
                 padding: '16px 40px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '700',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => { e.target.style.background = '#f2f4f6'; }}
-              onMouseLeave={(e) => { e.target.style.background = '#fff'; }}
+              onMouseEnter={(e) => { e.target.style.borderColor = '#00D9FF'; e.target.style.color = '#00D9FF'; }}
+              onMouseLeave={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'; e.target.style.color = '#fff'; }}
             >
               Talk to Sales
             </button>
