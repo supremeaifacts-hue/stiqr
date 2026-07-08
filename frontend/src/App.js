@@ -10,6 +10,7 @@ import DynamicQR from './DynamicQR';
 import StaticQR from './StaticQR';
 import Features from './Features';
 import Weddings from './Weddings';
+import Restaurants from './Restaurants';
 import Contact from './Contact';
 import FAQ from './FAQ';
 import Disclaimer from './Disclaimer';
@@ -55,6 +56,12 @@ function AppContent() {
       } />
       <Route path="/use-cases/weddings" element={
         <Weddings
+          onViewDashboard={() => navigate('/dashboard')}
+          onViewPricing={() => navigate('/pricing')}
+        />
+      } />
+      <Route path="/use-cases/restaurants" element={
+        <Restaurants
           onViewDashboard={() => navigate('/dashboard')}
           onViewPricing={() => navigate('/pricing')}
         />
