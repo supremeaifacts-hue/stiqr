@@ -365,9 +365,9 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
       {/* Upsell Section */}
       <section style={{
         padding: '80px 20px',
-        background: '#1E304F',
-        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        background: 'rgba(0, 0, 0, 0.3)',
+        borderTop: '1px solid rgba(0, 217, 255, 0.1)',
+        borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{
@@ -393,7 +393,7 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
               <p style={{
                 fontSize: '18px',
                 lineHeight: '1.6',
-                color: 'rgba(255, 255, 255, 0.8)',
+                color: '#a0a0a0',
                 marginBottom: '32px',
               }}>
                 While static codes are great for permanency, dynamic codes offer post-print editing, scan tracking, and higher density layouts that make your business smarter.
@@ -410,9 +410,10 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
                     gap: '12px',
                     marginBottom: '12px',
                     fontSize: '16px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    color: '#ffffff',
+                    fontWeight: '500',
                   }}>
-                    <span style={{ color: '#72d9b6', fontSize: '20px' }}>✓</span>
+                    <span style={{ color: '#00D9FF', fontSize: '20px', fontWeight: '700' }}>✓</span>
                     {item}
                   </div>
                 ))}
@@ -420,8 +421,8 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
               <button
                 onClick={() => navigate('/dynamic-qr-codes')}
                 style={{
-                  background: '#4db695',
-                  color: '#004333',
+                  background: 'linear-gradient(135deg, #00D9FF 0%, #FF00FF 100%)',
+                  color: '#0a0a0a',
                   border: 'none',
                   padding: '16px 32px',
                   borderRadius: '12px',
@@ -430,50 +431,37 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => { e.target.style.background = '#72d9b6'; e.target.style.boxShadow = '0 8px 24px rgba(77, 182, 149, 0.3)'; }}
-                onMouseLeave={(e) => { e.target.style.background = '#4db695'; e.target.style.boxShadow = 'none'; }}
+                onMouseEnter={(e) => { e.target.style.boxShadow = '0 8px 24px rgba(0, 217, 255, 0.3)'; }}
+                onMouseLeave={(e) => { e.target.style.boxShadow = 'none'; }}
               >
                 Explore Dynamic Codes
               </button>
             </div>
             <div style={{ flex: '1', minWidth: '300px' }}>
               <div style={{
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(255, 255, 255, 0.03)',
                 borderRadius: '24px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '48px',
-                backdropFilter: 'blur(8px)',
-              }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{
-                    height: '16px',
-                    background: 'rgba(114, 217, 182, 0.2)',
-                    borderRadius: '8px',
-                    width: '75%',
-                  }} />
-                  <div style={{
-                    height: '16px',
-                    background: 'rgba(114, 217, 182, 0.4)',
-                    borderRadius: '8px',
+                border: '1px solid rgba(0, 217, 255, 0.15)',
+                overflow: 'hidden',
+                padding: '8px',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                transition: 'transform 0.5s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.borderColor = '#00D9FF'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.15)'; }}
+              >
+                <img
+                  src="/assets/restaurant-owner.png"
+                  alt="Restaurant owner using StiQR dynamic QR codes"
+                  style={{
                     width: '100%',
-                  }} />
-                  <div style={{
-                    height: '16px',
-                    background: 'rgba(114, 217, 182, 0.1)',
-                    borderRadius: '8px',
-                    width: '50%',
-                  }} />
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '16px',
-                    paddingTop: '16px',
-                  }}>
-                    <div style={{ height: '80px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px' }} />
-                    <div style={{ height: '80px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px' }} />
-                    <div style={{ height: '80px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px' }} />
-                  </div>
-                </div>
+                    height: 'auto',
+                    borderRadius: '18px',
+                    display: 'block',
+                    aspectRatio: '4/3',
+                    objectFit: 'cover',
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -529,3 +517,4 @@ const StaticQR = ({ onViewDashboard, onViewPricing }) => {
 };
 
 export default StaticQR;
+

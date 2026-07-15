@@ -311,11 +311,24 @@ const About = ({ onViewDashboard, onViewPricing, onBack }) => {
             </p>
           </div>
 
-          <div style={{
+          <style>{`
+            @media (max-width: 768px) {
+              .manifesto-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 24px !important;
+              }
+              .manifesto-card {
+                grid-column: span 1 !important;
+              }
+            }
+          `}</style>
+          <div className="manifesto-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '24px',
           }}>
+
             {/* Mission Card - spans 2 cols */}
             <div style={{
               gridColumn: 'span 2',

@@ -2740,7 +2740,32 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                     <div style={{ marginBottom: '12px', fontSize: '12px', color: '#aaa', fontWeight: '600' }}>
                       Choose a frame style:
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    <div style={{
+                      display: 'flex',
+                      gap: '10px',
+                      overflowX: 'auto',
+                      overflowY: 'hidden',
+                      paddingBottom: '8px',
+                      scrollSnapType: 'x mandatory',
+                      WebkitOverflowScrolling: 'touch',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#00D9FF rgba(0, 217, 255, 0.1)',
+                    }}
+                      className="frame-styles-scroll"
+                    >
+                      <style>{`
+                        .frame-styles-scroll::-webkit-scrollbar {
+                          height: 4px;
+                        }
+                        .frame-styles-scroll::-webkit-scrollbar-track {
+                          background: rgba(0, 217, 255, 0.1);
+                          border-radius: 2px;
+                        }
+                        .frame-styles-scroll::-webkit-scrollbar-thumb {
+                          background: #00D9FF;
+                          border-radius: 2px;
+                        }
+                      `}</style>
                         {[
                         { 
                           id: 'none', 
@@ -2783,6 +2808,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            flex: '0 0 auto',
+                            width: '120px',
                             background: selectedFrame === frame.id ? 'rgba(0, 217, 255, 0.15)' : 'rgba(0, 217, 255, 0.05)',
                             border: selectedFrame === frame.id ? '2px solid #00D9FF' : '2px solid rgba(0, 217, 255, 0.2)',
                             borderRadius: '8px',
@@ -2790,6 +2817,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                             transition: 'all 0.2s ease',
                             padding: '10px',
                             height: '120px',
+                            scrollSnapAlign: 'start',
                           }}
                           onMouseEnter={(e) => {
                             if (selectedFrame !== frame.id) {

@@ -543,9 +543,41 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           padding: '0 40px',
           boxSizing: 'border-box',
           gap: '60px',
-        }}>
+        }}
+          className="benefits-section"
+        >
+          <style>{`
+            .benefits-section {
+              flex-direction: row;
+            }
+            @media (max-width: 768px) {
+              .benefits-section {
+                flex-direction: column !important;
+                text-align: center !important;
+                gap: 30px !important;
+                padding: 0 20px !important;
+              }
+              .benefits-section .benefits-gif-wrapper {
+                min-height: auto !important;
+                margin-bottom: 0 !important;
+              }
+              .benefits-section .benefits-text-column {
+                text-align: center !important;
+                max-width: 100% !important;
+              }
+              .benefits-section .benefits-text-column h2 {
+                text-align: center !important;
+              }
+              .benefits-section .benefits-text-column p {
+                text-align: center !important;
+              }
+              .benefits-section .benefits-checkmarks {
+                align-items: center !important;
+              }
+            }
+          `}</style>
           {/* Left Column - Animated QR Cards */}
-          <div style={{
+          <div className="benefits-gif-wrapper" style={{
             flex: '1',
             display: 'flex',
             justifyContent: 'center',
@@ -818,12 +850,13 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           </div>
 
           {/* Right Column - Benefits Content */}
-          <div style={{
+          <div className="benefits-text-column" style={{
             flex: '1',
             textAlign: 'right',
             maxWidth: '700px',
           }}>
             <h2 style={{
+
               fontSize: '42px',
               fontWeight: '900',
               color: '#ffffff',
@@ -849,7 +882,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
               <strong style={{ color: '#FF00FF' }}>Why?</strong><br />
               Because stiQR allows you to add stickers or logos over your QR codes, making it different from the usual bland black and white QR code. Do you want to get noticed instantly? Change the colors, add frames and place your logo over the QR code. Our QR code generator with analytics helps you track every scan.
             </p>
-            <div style={{
+            <div className="benefits-checkmarks" style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
@@ -879,6 +912,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       </section>
@@ -1061,7 +1095,50 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
         maxWidth: '1200px',
         margin: '0 auto',
         position: 'relative',
-      }}>
+      }}
+        className="testimonials-section"
+      >
+        <style>{`
+          .testimonials-section .testimonials-container {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 0;
+            overflow: visible;
+            padding: 20px 0;
+            position: relative;
+          }
+          @media (max-width: 768px) {
+            .testimonials-section .testimonials-container {
+              overflow-x: auto !important;
+              overflow-y: hidden !important;
+              justify-content: flex-start !important;
+              gap: 16px !important;
+              padding: 20px 4px 16px !important;
+              scroll-snap-type: x mandatory !important;
+              -webkit-overflow-scrolling: touch !important;
+              scrollbar-width: thin !important;
+              scrollbar-color: #00D9FF rgba(0, 217, 255, 0.1) !important;
+            }
+            .testimonials-section .testimonials-container::-webkit-scrollbar {
+              height: 4px;
+            }
+            .testimonials-section .testimonials-container::-webkit-scrollbar-track {
+              background: rgba(0, 217, 255, 0.1);
+              border-radius: 2px;
+            }
+            .testimonials-section .testimonials-container::-webkit-scrollbar-thumb {
+              background: #00D9FF;
+              border-radius: 2px;
+            }
+            .testimonials-section .testimonial-group {
+              flex: 0 0 auto !important;
+              width: 280px !important;
+              margin-left: 0 !important;
+              scroll-snap-align: start !important;
+            }
+          }
+        `}</style>
         <h2 style={{
           textAlign: 'center',
           fontSize: '36px',
@@ -1073,7 +1150,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           What do people <span style={{ color: '#00D9FF' }}>think?</span>
         </h2>
 
-        <div style={{
+        <div className="testimonials-container" style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'stretch',
@@ -1082,6 +1159,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           padding: '20px 0',
           position: 'relative',
         }}>
+
           {[
             {
               category: 'Restaurant',
@@ -1178,6 +1256,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           ].map((group, groupIndex) => (
             <div
               key={group.category}
+              className="testimonial-group"
               style={{
                 flex: '0 0 auto',
                 width: '320px',
@@ -1189,6 +1268,7 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
                 position: 'relative',
                 transition: 'all 0.3s ease',
               }}
+
               onMouseEnter={(e) => {
                 const cards = e.currentTarget.parentElement.children;
                 for (let i = 0; i < cards.length; i++) {

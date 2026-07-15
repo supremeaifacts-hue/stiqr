@@ -24,7 +24,22 @@ const Features = ({ onViewDashboard, onViewPricing }) => {
         overflow: 'hidden',
         padding: '80px 20px 60px',
       }}>
+        <style>{`
+          @media (max-width: 768px) {
+            .features-hero-grid {
+              display: flex !important;
+              flex-direction: column !important;
+            }
+            .features-hero-content {
+              order: 2 !important;
+            }
+            .features-hero-image {
+              order: 1 !important;
+            }
+          }
+        `}</style>
         <div style={{
+
           position: 'absolute',
           inset: 0,
           pointerEvents: 'none',
@@ -50,7 +65,7 @@ const Features = ({ onViewDashboard, onViewPricing }) => {
             animation: 'pulse 3s ease-in-out infinite',
           }} />
         </div>
-        <div style={{
+        <div className="features-hero-grid" style={{
           maxWidth: '1200px',
           margin: '0 auto',
           display: 'grid',
@@ -60,7 +75,9 @@ const Features = ({ onViewDashboard, onViewPricing }) => {
           position: 'relative',
           zIndex: 1,
         }}>
-          <div>
+          <div className="features-hero-content">
+
+
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -143,10 +160,11 @@ const Features = ({ onViewDashboard, onViewPricing }) => {
               </button>
             </div>
           </div>
-          <div style={{
+          <div className="features-hero-image" style={{
             position: 'relative',
             perspective: '1000px',
           }}>
+
             <div style={{
               position: 'absolute',
               inset: '-16px',

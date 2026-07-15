@@ -228,13 +228,63 @@ const Restaurants = ({ onViewDashboard, onViewPricing }) => {
         maxWidth: '1200px',
         margin: '0 auto',
       }}>
-        <div style={{
+        <style>{`
+          @media (max-width: 768px) {
+            .restaurant-benefits-grid {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 24px !important;
+            }
+            .restaurant-image-card {
+              grid-column: span 1 !important;
+              min-height: 300px !important;
+            }
+            .restaurant-image-card .restaurant-image-text {
+              left: 20px !important;
+              right: 20px !important;
+              max-width: none !important;
+            }
+            .restaurant-benefits-scroll {
+              display: flex !important;
+              overflow-x: auto !important;
+              gap: 16px !important;
+              padding: 4px 4px 16px !important;
+              scroll-snap-type: x mandatory !important;
+              -webkit-overflow-scrolling: touch !important;
+              scrollbar-width: thin !important;
+              scrollbar-color: #00D9FF rgba(0, 217, 255, 0.1) !important;
+            }
+            .restaurant-benefits-scroll::-webkit-scrollbar {
+              height: 4px;
+            }
+            .restaurant-benefits-scroll::-webkit-scrollbar-track {
+              background: rgba(0, 217, 255, 0.1);
+              border-radius: 2px;
+            }
+            .restaurant-benefits-scroll::-webkit-scrollbar-thumb {
+              background: #00D9FF;
+              border-radius: 2px;
+            }
+            .restaurant-benefit-card {
+              flex: 0 0 auto !important;
+              width: 280px !important;
+              scroll-snap-align: start !important;
+            }
+            .restaurant-benefit-card-wide {
+              flex: 0 0 auto !important;
+              width: 280px !important;
+              scroll-snap-align: start !important;
+              grid-column: span 1 !important;
+            }
+          }
+        `}</style>
+        <div className="restaurant-benefits-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '24px',
         }}>
           {/* Image Card */}
-          <div style={{
+          <div className="restaurant-image-card" style={{
             gridColumn: 'span 2',
             position: 'relative',
             borderRadius: '24px',
@@ -259,7 +309,7 @@ const Restaurants = ({ onViewDashboard, onViewPricing }) => {
               inset: 0,
               background: 'linear-gradient(to top, rgba(26, 10, 46, 0.85) 0%, transparent 60%)',
             }} />
-            <div style={{
+            <div className="restaurant-image-text" style={{
               position: 'absolute',
               bottom: '40px',
               left: '40px',
@@ -282,177 +332,182 @@ const Restaurants = ({ onViewDashboard, onViewPricing }) => {
             </div>
           </div>
 
-          {/* Benefit 1 */}
-          <div style={{
-            background: 'rgba(0, 217, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '32px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}>
-            <div>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                background: 'rgba(0, 217, 255, 0.15)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '24px',
-                fontSize: '24px',
-                color: '#00D9FF',
-              }}>
-                ⚡
-              </div>
-              <h3 style={{
-                fontSize: '20px',
-                fontWeight: '700',
-                marginBottom: '12px',
-              }}>
-                Instant Updates
-              </h3>
-              <p style={{
-                fontSize: '15px',
-                lineHeight: '1.7',
-                color: '#a0a0a0',
-              }}>
-                Prices, seasonal specials, or daily rotations are updated in real-time. Sold out of the daily special? Remove it in three clicks before the next guest sits down.
-              </p>
-            </div>
-            <div style={{
-              marginTop: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#00D9FF',
-                animation: 'pulse 2s infinite',
-              }} />
-              <span style={{
-                fontSize: '11px',
-                fontWeight: '700',
-                letterSpacing: '1.5px',
-                color: '#00D9FF',
-              }}>
-                LIVE SYNCHRONIZATION
-              </span>
-            </div>
-          </div>
-
-          {/* Benefit 2 */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
-            padding: '32px',
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              background: 'rgba(0, 217, 255, 0.1)',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '24px',
-              fontSize: '24px',
-              color: '#00D9FF',
-            }}>
-              🌱
-            </div>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '700',
-              marginBottom: '12px',
-            }}>
-              Sustainability
-            </h3>
-            <p style={{
-              fontSize: '15px',
-              lineHeight: '1.7',
-              color: '#a0a0a0',
-            }}>
-              Eliminate the cost and waste of paper menu reprints. Save thousands annually while reducing your environmental footprint.
-            </p>
-          </div>
-
-          {/* Benefit 3 */}
-          <div style={{
+          {/* Benefits Scroll Container */}
+          <div className="restaurant-benefits-scroll" style={{
             gridColumn: 'span 2',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(0, 217, 255, 0.2)',
-            borderRadius: '16px',
-            padding: '32px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: '32px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '24px',
           }}>
-            <div style={{ flex: '2', minWidth: '250px' }}>
+            {/* Benefit 1 */}
+            <div className="restaurant-benefit-card" style={{
+              background: 'rgba(0, 217, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'rgba(0, 217, 255, 0.15)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '24px',
+                  fontSize: '24px',
+                  color: '#00D9FF',
+                }}>
+                  ⚡
+                </div>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  marginBottom: '12px',
+                }}>
+                  Instant Updates
+                </h3>
+                <p style={{
+                  fontSize: '15px',
+                  lineHeight: '1.7',
+                  color: '#a0a0a0',
+                }}>
+                  Prices, seasonal specials, or daily rotations are updated in real-time. Sold out of the daily special? Remove it in three clicks before the next guest sits down.
+                </p>
+              </div>
+              <div style={{
+                marginTop: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#00D9FF',
+                  animation: 'pulse 2s infinite',
+                }} />
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  letterSpacing: '1.5px',
+                  color: '#00D9FF',
+                }}>
+                  LIVE SYNCHRONIZATION
+                </span>
+              </div>
+            </div>
+
+            {/* Benefit 2 */}
+            <div className="restaurant-benefit-card" style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '32px',
+            }}>
               <div style={{
                 width: '48px',
                 height: '48px',
-                background: 'rgba(243, 176, 54, 0.15)',
+                background: 'rgba(0, 217, 255, 0.1)',
                 borderRadius: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '24px',
                 fontSize: '24px',
-                color: '#F3B036',
+                color: '#00D9FF',
               }}>
-                ⭐
+                🌱
               </div>
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: '700',
                 marginBottom: '12px',
               }}>
-                Guest Satisfaction
+                Sustainability
               </h3>
               <p style={{
                 fontSize: '15px',
                 lineHeight: '1.7',
                 color: '#a0a0a0',
               }}>
-                Ensure guests always have accurate information about availability and allergens. A transparent menu experience leads to higher trust and better reviews.
+                Eliminate the cost and waste of paper menu reprints. Save thousands annually while reducing your environmental footprint.
               </p>
             </div>
-            <div style={{
-              flex: '1',
-              minWidth: '150px',
-              background: 'rgba(0, 0, 0, 0.3)',
-              padding: '24px',
+
+            {/* Benefit 3 */}
+            <div className="restaurant-benefit-card-wide" style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(0, 217, 255, 0.2)',
               borderRadius: '16px',
-              textAlign: 'center',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
             }}>
-              <div style={{
-                fontSize: '42px',
-                fontWeight: '900',
-                color: '#00D9FF',
-                marginBottom: '4px',
-              }}>
-                4.9/5
+              <div>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'rgba(243, 176, 54, 0.15)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '24px',
+                  fontSize: '24px',
+                  color: '#F3B036',
+                }}>
+                  ⭐
+                </div>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  marginBottom: '12px',
+                }}>
+                  Guest Satisfaction
+                </h3>
+                <p style={{
+                  fontSize: '15px',
+                  lineHeight: '1.7',
+                  color: '#a0a0a0',
+                }}>
+                  Ensure guests always have accurate information about availability and allergens. A transparent menu experience leads to higher trust and better reviews.
+                </p>
               </div>
               <div style={{
-                fontSize: '11px',
-                fontWeight: '700',
-                letterSpacing: '1.5px',
-                color: '#888',
+                background: 'rgba(0, 0, 0, 0.3)',
+                padding: '24px',
+                borderRadius: '16px',
+                textAlign: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}>
-                GUEST SATISFACTION
+                <div style={{
+                  fontSize: '42px',
+                  fontWeight: '900',
+                  color: '#00D9FF',
+                  marginBottom: '4px',
+                }}>
+                  4.9/5
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  letterSpacing: '1.5px',
+                  color: '#888',
+                }}>
+                  GUEST SATISFACTION
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Why QR Codes Section */}
       <section style={{

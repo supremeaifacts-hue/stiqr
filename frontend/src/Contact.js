@@ -55,11 +55,7 @@ const Contact = () => {
         onGoToLanding={() => navigate('/')}
       />
       <main className="contact-page">
-        <section className="contact-hero">
-          <div className="contact-hero-inner">
-            <p className="contact-hero-badge">Contact form</p>
-          </div>
-        </section>
+
 
       <div className="contact-content">
         <div className="contact-card">

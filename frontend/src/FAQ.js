@@ -188,7 +188,30 @@ const FAQ = ({ onViewDashboard, onViewPricing, onBack }) => {
       </section>
 
       {/* FAQ Content */}
-      <main style={{
+      <style>{`
+        @media (max-width: 768px) {
+          .faq-main-layout {
+            flex-direction: column !important;
+          }
+          .faq-sidebar {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            position: static !important;
+            margin-bottom: 32px !important;
+            flex: none !important;
+            width: 100% !important;
+          }
+          .faq-sidebar a {
+            flex: 0 0 auto !important;
+            padding: 10px 16px !important;
+            background: rgba(0, 217, 255, 0.06) !important;
+            border-radius: 10px !important;
+          }
+        }
+      `}</style>
+      <main className="faq-main-layout" style={{
         maxWidth: '1100px',
         margin: '0 auto',
         padding: '0 20px 80px',
@@ -196,7 +219,7 @@ const FAQ = ({ onViewDashboard, onViewPricing, onBack }) => {
         gap: '40px',
       }}>
         {/* Sidebar Navigation */}
-        <aside style={{
+        <aside className="faq-sidebar" style={{
           flex: '0 0 220px',
           position: 'sticky',
           top: '100px',
@@ -342,6 +365,7 @@ const FAQ = ({ onViewDashboard, onViewPricing, onBack }) => {
           ))}
         </div>
       </main>
+
 
       {/* CTA Section */}
       <section style={{

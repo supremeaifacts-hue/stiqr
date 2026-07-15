@@ -136,8 +136,22 @@ const TermsOfService = ({ onViewDashboard, onViewPricing, onBack }) => {
         </p>
       </section>
 
+      <style>{`
+        @media (max-width: 768px) {
+          .legal-content-layout {
+            flex-direction: column !important;
+          }
+          .legal-sidebar {
+            order: -1 !important;
+            position: static !important;
+            flex: none !important;
+            width: 100% !important;
+            margin-bottom: 24px !important;
+          }
+        }
+      `}</style>
       {/* Content Layout */}
-      <div style={{
+      <div className="legal-content-layout" style={{
         maxWidth: '1100px',
         margin: '0 auto',
         padding: '0 20px 80px',
@@ -145,7 +159,7 @@ const TermsOfService = ({ onViewDashboard, onViewPricing, onBack }) => {
         gap: '40px',
       }}>
         {/* Sidebar Navigation */}
-        <aside style={{
+        <aside className="legal-sidebar" style={{
           flex: '0 0 220px',
           position: 'sticky',
           top: '100px',
@@ -154,6 +168,7 @@ const TermsOfService = ({ onViewDashboard, onViewPricing, onBack }) => {
           flexDirection: 'column',
           gap: '8px',
         }}>
+
           <div style={{
             background: 'rgba(0, 0, 0, 0.3)',
             border: '1px solid rgba(0, 217, 255, 0.15)',
