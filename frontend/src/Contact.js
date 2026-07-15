@@ -55,9 +55,7 @@ const Contact = () => {
         onGoToLanding={() => navigate('/')}
       />
       <main className="contact-page">
-
-
-      <div className="contact-content">
+      <div className="contact-content" style={{ marginTop: '40px' }}>
         <div className="contact-card">
           <div className="contact-card-header">
             <h1>Contact Us</h1>

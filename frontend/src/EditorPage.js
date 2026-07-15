@@ -3396,11 +3396,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         ref={columnRef}
         className="editor-right"
       >
-        {/* QR Preview Box (moves up and down with scroll) */}
+        {/* QR Preview Box (moves up and down with scroll on desktop, fixed on mobile) */}
         <div
           className="qr-preview-scroll"
           style={{
-            transform: `translateY(${scrollProgress * 600}px)`,
+            transform: window.innerWidth < 768 ? 'none' : `translateY(${scrollProgress * 600}px)`,
           }}
         >
           <div className="qr-preview-card">

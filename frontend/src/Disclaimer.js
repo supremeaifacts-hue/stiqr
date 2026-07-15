@@ -413,7 +413,7 @@ const Disclaimer = ({ onViewDashboard, onViewPricing, onBack }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ color: '#00D9FF', fontSize: '20px' }}>✉️</span>
-                    <span style={{ color: '#fff', fontWeight: '600', fontSize: '15px' }}>legal@stiqr.top</span>
+                    <span style={{ color: '#fff', fontWeight: '600', fontSize: '15px' }}>support@stiqr.top</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ color: '#00D9FF', fontSize: '20px' }}>🌐</span>

@@ -505,20 +505,20 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
         }}
       />
       
-      <div style={{ flex: 1, padding: '40px 60px' }}>
+      <div style={{ flex: 1, padding: '40px 60px' }} className="dashboard-content">
         <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '20px', color: '#00D9FF' }}>
           Dashboard
         </h1>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }} className="dashboard-stats-cards">
           <div style={{
             background: 'rgba(0,0,0,0.5)',
             border: '1px solid #00D9FF',
             borderRadius: '16px',
             padding: '30px',
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>🔲</div>
-            <div style={{ fontSize: '14px', color: '#888' }}>Total QR Codes</div>
-            <div style={{ fontSize: '20px', fontWeight: '700' }}>
+          }} className="stat-card">
+            <div style={{ fontSize: '24px', marginBottom: '10px' }} className="stat-icon">🔲</div>
+            <div style={{ fontSize: '14px', color: '#888' }} className="stat-label">Total QR Codes</div>
+            <div style={{ fontSize: '20px', fontWeight: '700' }} className="stat-value">
               {isAuthenticated ? (userAssets?.qrCodes?.length || 0) : '0'}
             </div>
           </div>
@@ -527,10 +527,10 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             border: '1px solid #FF00FF',
             borderRadius: '16px',
             padding: '30px',
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>👁️</div>
-            <div style={{ fontSize: '14px', color: '#888' }}>Total Scans</div>
-            <div style={{ fontSize: '20px', fontWeight: '700' }}>
+          }} className="stat-card">
+            <div style={{ fontSize: '24px', marginBottom: '10px' }} className="stat-icon">👁️</div>
+            <div style={{ fontSize: '14px', color: '#888' }} className="stat-label">Total Scans</div>
+            <div style={{ fontSize: '20px', fontWeight: '700' }} className="stat-value">
               {isAuthenticated ? (userAssets?.qrCodes?.reduce((total, qr) => total + (qr.scans || 0), 0) || 0) : '0'}
             </div>
           </div>
@@ -539,10 +539,10 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
             border: '1px solid #888',
             borderRadius: '16px',
             padding: '30px',
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>📈</div>
-            <div style={{ fontSize: '14px', color: '#888' }}>Avg. Scans</div>
-            <div style={{ fontSize: '20px', fontWeight: '700' }}>
+          }} className="stat-card">
+            <div style={{ fontSize: '24px', marginBottom: '10px' }} className="stat-icon">📈</div>
+            <div style={{ fontSize: '14px', color: '#888' }} className="stat-label">Avg. Scans</div>
+            <div style={{ fontSize: '20px', fontWeight: '700' }} className="stat-value">
               {isAuthenticated && (userAssets?.qrCodes?.length || 0) > 0 
                 ? Math.round((userAssets?.qrCodes?.reduce((total, qr) => total + (qr.scans || 0), 0) || 0) / (userAssets?.qrCodes?.length || 1)) 
                 : '0'}
