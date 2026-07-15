@@ -19,6 +19,7 @@ import TermsOfService from './TermsOfService';
 import PrivacyPolicy from './PrivacyPolicy';
 import RefundPolicy from './RefundPolicy';
 import About from './About';
+import CancelSubscription from './CancelSubscription';
 import Footer from './Footer';
 
 function AppContent() {
@@ -110,6 +111,7 @@ function AppContent() {
       <Route path="/about" element={
         <About onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
       } />
+      <Route path="/cancel-subscription" element={<CancelSubscription />} />
     </Routes>
   );
 }
