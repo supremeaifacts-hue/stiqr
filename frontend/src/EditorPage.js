@@ -4776,7 +4776,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
-                fontFamily: '"Nunito Sans", "Inter", sans-serif',
+                fontFamily: '"Cormorant Garamond", Georgia, serif',
               }}>
                 {/* Notch */}
                 <div style={{
@@ -4817,8 +4817,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       </div>
                     )}
                     <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff', padding: '0 16px' }}>
-                      <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', lineHeight: '1.2', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-                        {eventData.title || 'Event Title'}
+                      <div style={{
+                        display: 'inline-block',
+                        background: 'rgba(0, 0, 0, 0.45)',
+                        backdropFilter: 'blur(4px)',
+                        padding: '8px 20px',
+                        borderRadius: '10px',
+                      }}>
+                        <div style={{ fontSize: '20px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', lineHeight: '1.2', letterSpacing: '0.02em' }}>
+                          {eventData.title || 'Event Title'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -4826,17 +4834,17 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {/* Card 1: Event Title + Summary */}
                   <div style={{ padding: '16px 16px 8px' }}>
                     <div style={{
-                      background: '#fff',
+                      background: 'rgba(255, 255, 255, 0.35)',
                       borderRadius: '10px',
                       padding: '20px',
-                      border: '1px solid #e0e3e5',
+                      border: '1px solid rgba(0, 0, 0, 0.08)',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                     }}>
-                      <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '20px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
                         {eventData.title || 'Event Title'}
                       </div>
                       {eventData.summary && (
-                        <div style={{ fontSize: '13px', color: '#3e4944', lineHeight: '1.5' }}>
+                        <div style={{ fontSize: '16px', color: '#3e4944', lineHeight: '1.6' }}>
                           {eventData.summary}
                         </div>
                       )}
@@ -4847,16 +4855,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {eventData.about && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
-                        background: '#fff',
+                        background: 'rgba(255, 255, 255, 0.35)',
                         borderRadius: '10px',
                         padding: '20px',
-                        border: '1px solid #e0e3e5',
+                        border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
                           About
                         </div>
-                        <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.6' }}>
+                        <div style={{ fontSize: '16px', color: '#3e4944', lineHeight: '1.6' }}>
                           {eventData.about}
                         </div>
                       </div>
@@ -4867,18 +4875,18 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {(eventData.dateFrom || eventData.dateTo || eventData.timeFrom || eventData.timeTo || Object.values(eventData.services).some(v => v)) && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
-                        background: '#fff',
+                        background: 'rgba(255, 255, 255, 0.35)',
                         borderRadius: '10px',
                         padding: '20px',
-                        border: '1px solid #e0e3e5',
+                        border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
                         {(eventData.dateFrom || eventData.dateTo) && (
                           <div style={{ marginBottom: (eventData.timeFrom || eventData.timeTo || Object.values(eventData.services).some(v => v)) ? '16px' : '0' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
                               Date
                             </div>
-                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
                               {eventData.dateFrom ? new Date(eventData.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                               {eventData.dateFrom && eventData.dateTo ? ' - ' : ''}
                               {eventData.dateTo ? new Date(eventData.dateTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
@@ -4888,10 +4896,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
                         {(eventData.timeFrom || eventData.timeTo) && (
                           <div style={{ marginBottom: Object.values(eventData.services).some(v => v) ? '16px' : '0' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
                               Time
                             </div>
-                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
                               {eventData.timeFrom || ''}{eventData.timeFrom && eventData.timeTo ? ' - ' : ''}{eventData.timeTo || ''}
                             </div>
                           </div>
@@ -4899,7 +4907,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
                         {Object.values(eventData.services).some(v => v) && (
                           <div>
-                            <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', textAlign: 'center', letterSpacing: '0.02em' }}>
                               Services
                             </div>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -4921,16 +4929,16 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {(eventData.street || eventData.city || eventData.state || eventData.zip || eventData.country) && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
-                        background: '#fff',
+                        background: 'rgba(255, 255, 255, 0.35)',
                         borderRadius: '10px',
                         padding: '20px',
-                        border: '1px solid #e0e3e5',
+                        border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
                           Address
                         </div>
-                        <div style={{ fontSize: '12px', color: '#3e4944', lineHeight: '1.5' }}>
+                        <div style={{ fontSize: '16px', color: '#3e4944', lineHeight: '1.5' }}>
                           {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
                         </div>
                       </div>
@@ -4941,33 +4949,33 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   {(eventData.contactName || eventData.contactPhone || eventData.contactEmail || eventData.contactWebsite) && (
                     <div style={{ padding: '8px 16px' }}>
                       <div style={{
-                        background: '#fff',
+                        background: 'rgba(255, 255, 255, 0.35)',
                         borderRadius: '10px',
                         padding: '20px',
-                        border: '1px solid #e0e3e5',
+                        border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#1E304F', marginBottom: '12px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '12px', letterSpacing: '0.02em' }}>
                           Contacts
                         </div>
                         {eventData.contactName && (
-                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#191c1e', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#191c1e', marginBottom: '8px' }}>
                             {eventData.contactName}
                           </div>
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {eventData.contactPhone && (
-                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
                               📞 {eventData.contactPhone}
                             </div>
                           )}
                           {eventData.contactEmail && (
-                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
                               ✉️ {eventData.contactEmail}
                             </div>
                           )}
                           {eventData.contactWebsite && (
-                            <div style={{ fontSize: '12px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
                               🌐 {eventData.contactWebsite}
                             </div>
                           )}
@@ -4978,7 +4986,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
                   {/* Footer */}
                   <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', fontFamily: '"Hanken Grotesk", sans-serif', color: '#191c1e', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#191c1e', marginBottom: '4px', letterSpacing: '0.02em' }}>
                       {eventData.title || 'Event'}
                     </div>
                     <div style={{ fontSize: '10px', color: '#6e7a74' }}>

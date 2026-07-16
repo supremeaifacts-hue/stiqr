@@ -94,7 +94,7 @@ router.get('/event/:id', async (req, res) => {
         <meta name="description" content="${summary || 'Event page'}">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           
@@ -103,23 +103,25 @@ router.get('/event/:id', async (req, res) => {
             --text-primary: #191c1e;
             --text-secondary: #3e4944;
             --text-muted: #6e7a74;
-            --card-bg: #ffffff;
-            --border-color: #e0e3e5;
+            --card-bg: rgba(255, 255, 255, 0.35);
+            --border-color: rgba(0, 0, 0, 0.08);
             --accent: #4DB695;
-            --surface-low: #f2f4f6;
+            --surface-low: rgba(255, 255, 255, 0.2);
           }
           
           body {
-            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Cormorant Garamond', Georgia, serif;
             background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
-            line-height: 1.5;
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            font-size: 17px;
           }
           
           h1, h2, h3, h4, h5, h6 {
-            font-family: 'Hanken Grotesk', sans-serif;
+            font-family: 'Cormorant SC', Georgia, serif;
+            font-weight: 600;
           }
           
           /* ===== Hero Section ===== */
@@ -159,13 +161,21 @@ router.get('/event/:id', async (req, res) => {
             padding: 0 20px;
           }
           
+          .hero-title-wrapper {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(4px);
+            padding: 12px 28px;
+            border-radius: 12px;
+          }
+          
           .hero-title {
-            font-family: 'Hanken Grotesk', sans-serif;
+            font-family: 'Cormorant SC', Georgia, serif;
             font-size: clamp(28px, 6vw, 42px);
-            font-weight: 700;
-            line-height: 1.1;
-            letter-spacing: -0.02em;
-            text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
           }
           
           /* ===== Main Content ===== */
@@ -193,15 +203,16 @@ router.get('/event/:id', async (req, res) => {
           }
           
           .card-title {
-            font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
+            font-family: 'Cormorant SC', Georgia, serif;
+            font-size: 15px;
+            font-weight: 600;
             color: #1E304F;
             margin-bottom: 8px;
+            letter-spacing: 0.02em;
           }
           
           .card-text {
-            font-size: 12px;
+            font-size: 16px;
             color: var(--text-secondary);
             line-height: 1.6;
           }
@@ -230,9 +241,9 @@ router.get('/event/:id', async (req, res) => {
           }
           
           .footer .brand {
-            font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
+            font-family: 'Cormorant SC', Georgia, serif;
+            font-size: 14px;
+            font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 4px;
           }
@@ -263,7 +274,9 @@ router.get('/event/:id', async (req, res) => {
               <div class="hero-overlay"></div>
             </div>
             <div class="hero-content">
-              <h1 class="hero-title">${title || 'Event'}</h1>
+              <div class="hero-title-wrapper">
+                <h1 class="hero-title">${title || 'Event'}</h1>
+              </div>
             </div>
           </section>
           
@@ -271,10 +284,10 @@ router.get('/event/:id', async (req, res) => {
             <!-- Card 1: Event Title + Summary -->
             <div class="section-gap" style="padding-top:16px;">
               <div class="card">
-                <div style="font-size:18px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;color:#1E304F;margin-bottom:8px;">
+                <div style="font-size:20px;font-weight:600;font-family:'Cormorant SC',Georgia,serif;color:#1E304F;margin-bottom:8px;letter-spacing:0.02em;">
                   ${title || 'Event Title'}
                 </div>
-                ${summary ? `<div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${summary}</div>` : ''}
+                ${summary ? `<div style="font-size:16px;color:var(--text-secondary);line-height:1.6;">${summary}</div>` : ''}
               </div>
             </div>
             
