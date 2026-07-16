@@ -94,34 +94,36 @@ router.get('/event/:id', async (req, res) => {
         <meta name="description" content="${summary || 'Event page'}">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           
           :root {
             --bg-color: ${pageColor || '#f7f9fb'};
             --text-primary: #191c1e;
-            --text-secondary: #3e4944;
+            --text-secondary: #283a50;
             --text-muted: #6e7a74;
             --card-bg: rgba(255, 255, 255, 0.35);
             --border-color: rgba(0, 0, 0, 0.08);
             --accent: #4DB695;
             --surface-low: rgba(255, 255, 255, 0.2);
+            --title-color: #10264a;
           }
           
           body {
-            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
             background: var(--bg-color);
-            color: var(--text-primary);
+            color: var(--text-secondary);
             min-height: 100vh;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
-            font-size: 17px;
+            font-size: 16px;
           }
           
           h1, h2, h3, h4, h5, h6 {
             font-family: 'Cormorant SC', Georgia, serif;
             font-weight: 600;
+            color: var(--title-color);
           }
           
           /* ===== Hero Section ===== */
@@ -206,14 +208,15 @@ router.get('/event/:id', async (req, res) => {
             font-family: 'Cormorant SC', Georgia, serif;
             font-size: 15px;
             font-weight: 600;
-            color: #1E304F;
+            color: #10264a;
             margin-bottom: 8px;
             letter-spacing: 0.02em;
           }
           
           .card-text {
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
             font-size: 16px;
-            color: var(--text-secondary);
+            color: #283a50;
             line-height: 1.6;
           }
           
@@ -284,10 +287,10 @@ router.get('/event/:id', async (req, res) => {
             <!-- Card 1: Event Title + Summary -->
             <div class="section-gap" style="padding-top:16px;">
               <div class="card">
-                <div style="font-size:20px;font-weight:600;font-family:'Cormorant SC',Georgia,serif;color:#1E304F;margin-bottom:8px;letter-spacing:0.02em;">
+                <div style="font-size:20px;font-weight:600;font-family:'Cormorant SC',Georgia,serif;color:#10264a;margin-bottom:8px;letter-spacing:0.02em;">
                   ${title || 'Event Title'}
                 </div>
-                ${summary ? `<div style="font-size:16px;color:var(--text-secondary);line-height:1.6;">${summary}</div>` : ''}
+                ${summary ? `<div style="font-size:16px;font-family:'Nunito','Segoe UI',sans-serif;color:#283a50;line-height:1.6;">${summary}</div>` : ''}
               </div>
             </div>
             
@@ -342,11 +345,11 @@ router.get('/event/:id', async (req, res) => {
               <div class="section-gap">
                 <div class="card">
                   <div class="card-title">Contacts</div>
-                  ${contact?.name ? `<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">${contact.name}</div>` : ''}
+                  ${contact?.name ? `<div style="font-size:13px;font-weight:600;color:#10264a;margin-bottom:8px;font-family:'Cormorant SC',Georgia,serif;">${contact.name}</div>` : ''}
                   <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
-                    ${contact?.phone ? `<div style="font-size:12px;color:var(--text-secondary);">📞 ${contact.phone}</div>` : ''}
-                    ${contact?.email ? `<div style="font-size:12px;color:var(--text-secondary);">✉️ ${contact.email}</div>` : ''}
-                    ${contact?.website ? `<div style="font-size:12px;color:var(--text-secondary);">🌐 ${contact.website}</div>` : ''}
+                    ${contact?.phone ? `<div style="font-size:12px;color:#283a50;font-family:'Nunito','Segoe UI',sans-serif;">📞 ${contact.phone}</div>` : ''}
+                    ${contact?.email ? `<div style="font-size:12px;color:#283a50;font-family:'Nunito','Segoe UI',sans-serif;">✉️ ${contact.email}</div>` : ''}
+                    ${contact?.website ? `<div style="font-size:12px;color:#283a50;font-family:'Nunito','Segoe UI',sans-serif;">🌐 ${contact.website}</div>` : ''}
                   </div>
                 </div>
               </div>

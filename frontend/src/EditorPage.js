@@ -4776,7 +4776,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
-                fontFamily: '"Cormorant Garamond", Georgia, serif',
+                fontFamily: '"Nunito", "Segoe UI", sans-serif',
               }}>
                 {/* Notch */}
                 <div style={{
@@ -4840,11 +4840,11 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       border: '1px solid rgba(0, 0, 0, 0.08)',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                     }}>
-                      <div style={{ fontSize: '20px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
+                      <div style={{ fontSize: '20px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px', letterSpacing: '0.02em' }}>
                         {eventData.title || 'Event Title'}
                       </div>
                       {eventData.summary && (
-                        <div style={{ fontSize: '16px', color: '#3e4944', lineHeight: '1.6' }}>
+                        <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50', lineHeight: '1.6' }}>
                           {eventData.summary}
                         </div>
                       )}
@@ -4861,10 +4861,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px', letterSpacing: '0.02em' }}>
                           About
                         </div>
-                        <div style={{ fontSize: '16px', color: '#3e4944', lineHeight: '1.6' }}>
+                        <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50', lineHeight: '1.6' }}>
                           {eventData.about}
                         </div>
                       </div>
@@ -4883,10 +4883,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       }}>
                         {(eventData.dateFrom || eventData.dateTo) && (
                           <div style={{ marginBottom: (eventData.timeFrom || eventData.timeTo || Object.values(eventData.services).some(v => v)) ? '16px' : '0' }}>
-                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px', letterSpacing: '0.02em' }}>
                               Date
                             </div>
-                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50' }}>
                               {eventData.dateFrom ? new Date(eventData.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                               {eventData.dateFrom && eventData.dateTo ? ' - ' : ''}
                               {eventData.dateTo ? new Date(eventData.dateTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
@@ -4896,10 +4896,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
                         {(eventData.timeFrom || eventData.timeTo) && (
                           <div style={{ marginBottom: Object.values(eventData.services).some(v => v) ? '16px' : '0' }}>
-                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px', letterSpacing: '0.02em' }}>
                               Time
                             </div>
-                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50' }}>
                               {eventData.timeFrom || ''}{eventData.timeFrom && eventData.timeTo ? ' - ' : ''}{eventData.timeTo || ''}
                             </div>
                           </div>
@@ -4907,7 +4907,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
                         {Object.values(eventData.services).some(v => v) && (
                           <div>
-                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', textAlign: 'center', letterSpacing: '0.02em' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px', textAlign: 'center', letterSpacing: '0.02em' }}>
                               Services
                             </div>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -4935,10 +4935,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '8px', letterSpacing: '0.02em' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px', letterSpacing: '0.02em' }}>
                           Address
                         </div>
-                        <div style={{ fontSize: '16px', color: '#3e4944', lineHeight: '1.5' }}>
+                        <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50', lineHeight: '1.5' }}>
                           {[eventData.street, eventData.city, eventData.state, eventData.zip, eventData.country].filter(Boolean).join(', ')}
                         </div>
                       </div>
@@ -4955,27 +4955,27 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         border: '1px solid rgba(0, 0, 0, 0.08)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                       }}>
-                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#1E304F', marginBottom: '12px', letterSpacing: '0.02em' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '12px', letterSpacing: '0.02em' }}>
                           Contacts
                         </div>
                         {eventData.contactName && (
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#191c1e', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '600', fontFamily: '"Cormorant SC", Georgia, serif', color: '#10264a', marginBottom: '8px' }}>
                             {eventData.contactName}
                           </div>
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {eventData.contactPhone && (
-                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50' }}>
                               📞 {eventData.contactPhone}
                             </div>
                           )}
                           {eventData.contactEmail && (
-                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50' }}>
                               ✉️ {eventData.contactEmail}
                             </div>
                           )}
                           {eventData.contactWebsite && (
-                            <div style={{ fontSize: '16px', color: '#3e4944' }}>
+                            <div style={{ fontSize: '16px', fontFamily: '"Nunito", "Segoe UI", sans-serif', color: '#283a50' }}>
                               🌐 {eventData.contactWebsite}
                             </div>
                           )}
