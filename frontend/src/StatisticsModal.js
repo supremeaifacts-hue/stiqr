@@ -425,49 +425,52 @@ const StatisticsModal = ({ qrCode, onClose }) => {
                   </div>
 
                   <div style={{ overflowX: 'auto', overflowY: 'hidden', flex: 1 }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-end',
-                      gap: '12px',
-                      height: '160px',
-                      padding: '20px 8px 44px 8px',
-                      borderBottom: '1px solid rgba(255,255,255,0.1)',
-                      width: `${Math.max(scansOverTime.length * 72, 100)}px`,
-                    }}>
-                      {scansOverTime.map(([label, count], index) => {
-                        const height = (count / maxTimeCount) * 120;
-                        return (
-                          <div key={index} style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            minWidth: '60px',
-                            flexShrink: 0,
-                          }}>
-                            <div style={{ fontSize: '12px', color: '#ddd', marginBottom: '6px', fontWeight: 700 }}>{count}</div>
-                            <div
-                              style={{
-                                width: '28px',
-                                height: `${Math.max(height, 4)}px`,
-                                background: 'linear-gradient(to top, #00D9FF, #FF00FF)',
-                                borderRadius: '4px 4px 0 0',
-                                transition: 'height 0.3s ease',
-                                cursor: 'pointer',
-                              }}
-                              title={`${label}: ${count} scans`}
-                            ></div>
-                            <div style={{
-                              fontSize: '12px',
-                              color: '#ccc',
-                              marginTop: '8px',
-                              whiteSpace: 'nowrap',
-                              fontWeight: 700,
+                    <div style={{ width: `${Math.max(scansOverTime.length * 72, 100)}px` }}>
+                      {/* Bar area (bars sit on the bottom border) */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                        gap: '12px',
+                        height: '140px',
+                        padding: '8px 8px 0 8px',
+                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                        boxSizing: 'border-box'
+                      }}>
+                        {scansOverTime.map(([label, count], index) => {
+                          const height = (count / maxTimeCount) * 120;
+                          return (
+                            <div key={index} style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              minWidth: '60px',
+                              flexShrink: 0,
                             }}>
-                              {label}
+                              <div style={{ fontSize: '12px', color: '#ddd', marginBottom: '6px', fontWeight: 700, lineHeight: '1' }}>{count}</div>
+                              <div
+                                style={{
+                                  width: '28px',
+                                  height: `${Math.max(height, 4)}px`,
+                                  background: 'linear-gradient(to top, #00D9FF, #FF00FF)',
+                                  borderRadius: '4px 4px 0 0',
+                                  transition: 'height 0.3s ease',
+                                  cursor: 'pointer',
+                                }}
+                                title={`${label}: ${count} scans`}
+                              ></div>
                             </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* X-axis labels under the baseline */}
+                      <div style={{ display: 'flex', gap: '12px', padding: '10px 8px', justifyContent: 'flex-start' }}>
+                        {scansOverTime.map(([label], index) => (
+                          <div key={index} style={{ minWidth: '60px', textAlign: 'center', fontSize: '12px', color: '#ccc', fontWeight: 700 }}>
+                            {label}
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
