@@ -415,57 +415,61 @@ const StatisticsModal = ({ qrCode, onClose }) => {
                 No scan data available for the selected period
               </div>
             ) : (
-              <div style={{
-                width: '100%',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  gap: '6px',
-                  height: '200px',
-                  padding: '0 5px 25px 5px',
-                  borderBottom: '1px solid rgba(255,255,255,0.1)',
-                  width: `${Math.max(scansOverTime.length * 52, 100)}px`,
-                }}>
-                  {scansOverTime.map(([label, count], index) => {
-                    const height = (count / maxTimeCount) * 170;
-                    return (
-                      <div key={index} style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        minWidth: '46px',
-                        flexShrink: 0,
-                      }}>
-                        <div style={{ fontSize: '10px', color: '#aaa', marginBottom: '4px' }}>{count}</div>
-                        <div
-                          style={{
-                            width: '28px',
-                            height: `${Math.max(height, 4)}px`,
-                            background: 'linear-gradient(to top, #00D9FF, #FF00FF)',
-                            borderRadius: '4px 4px 0 0',
-                            transition: 'height 0.3s ease',
-                            cursor: 'pointer',
-                          }}
-                          title={`${label}: ${count} scans`}
-                        ></div>
-                        <div style={{
-                          fontSize: '9px',
-                          color: '#888',
-                          marginTop: '5px',
-                          whiteSpace: 'nowrap',
-                          transform: 'rotate(-45deg)',
-                          transformOrigin: 'left top',
-                          position: 'relative',
-                          top: '5px',
-                        }}>
-                          {label}
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                  {/* Y-axis ticks */}
+                  <div style={{ width: '56px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-end', padding: '8px 6px', color: '#aaa', fontSize: '12px' }}>
+                    <div style={{ fontWeight: 600 }}>{maxTimeCount}</div>
+                    <div style={{ fontWeight: 600 }}>{Math.ceil(maxTimeCount / 2)}</div>
+                    <div style={{ fontWeight: 600 }}>0</div>
+                  </div>
+
+                  <div style={{ overflowX: 'auto', overflowY: 'hidden', flex: 1 }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      gap: '12px',
+                      height: '160px',
+                      padding: '20px 8px 44px 8px',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                      width: `${Math.max(scansOverTime.length * 72, 100)}px`,
+                    }}>
+                      {scansOverTime.map(([label, count], index) => {
+                        const height = (count / maxTimeCount) * 120;
+                        return (
+                          <div key={index} style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            minWidth: '60px',
+                            flexShrink: 0,
+                          }}>
+                            <div style={{ fontSize: '12px', color: '#ddd', marginBottom: '6px', fontWeight: 700 }}>{count}</div>
+                            <div
+                              style={{
+                                width: '28px',
+                                height: `${Math.max(height, 4)}px`,
+                                background: 'linear-gradient(to top, #00D9FF, #FF00FF)',
+                                borderRadius: '4px 4px 0 0',
+                                transition: 'height 0.3s ease',
+                                cursor: 'pointer',
+                              }}
+                              title={`${label}: ${count} scans`}
+                            ></div>
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#ccc',
+                              marginTop: '8px',
+                              whiteSpace: 'nowrap',
+                              fontWeight: 700,
+                            }}>
+                              {label}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
