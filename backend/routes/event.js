@@ -103,8 +103,8 @@ router.get('/event/:id', async (req, res) => {
             --text-primary: #191c1e;
             --text-secondary: #283a50;
             --text-muted: #6e7a74;
-            --card-bg: rgba(255, 255, 255, 0.35);
-            --border-color: rgba(0, 0, 0, 0.08);
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --border-color: rgba(0, 0, 0, 0.06);
             --accent: #4DB695;
             --surface-low: rgba(255, 255, 255, 0.2);
             --title-color: #10264a;
@@ -194,13 +194,13 @@ router.get('/event/:id', async (req, res) => {
             border-radius: 10px;
             padding: 20px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 6px 14px rgba(0,0,0,0.06);
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
           }
           
           .card:hover {
             transform: scale(1.03);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 18px 60px rgba(0,0,0,0.16), 0 8px 24px rgba(0,0,0,0.08);
             cursor: pointer;
           }
           
