@@ -163,9 +163,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   }, []);
 
   useEffect(() => {
+    console.log('Scroll useEffect mounted');
+    console.log('isMobile:', isMobile);
+
     if (isMobile) return; // no scroll-follow on small screens
 
     const handleScroll = () => {
+      console.log('🔄 Scroll handler is running!');
       if (!containerRef.current || !contentRef.current) return;
 
       const container = containerRef.current;
@@ -187,12 +191,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         progress = Math.max(0, Math.min(1, progress));
       }
 
+      console.log('scroll debug:', { top: rect.top, containerHeight, contentHeight, maxTranslate, viewportHeight, progress });
+
       const translateY = -progress * maxTranslate;
       content.style.transform = `translateY(${translateY}px)`;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
+    console.log('Scroll listeners attached');
     handleScroll();
     return () => {
       window.removeEventListener('scroll', handleScroll);
