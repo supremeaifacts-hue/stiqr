@@ -65,11 +65,7 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  /* Match final QR preview dimensions (canvas 270x300 + padding 30px each side) */
-  width: 330px;
-  height: 360px;
-  min-width: 330px;
-  min-height: 360px;
+  max-width: 400px;
   box-sizing: border-box;
 }
 
@@ -78,11 +74,6 @@
   border: 1px solid white;
   max-width: 100%;
   max-height: 100%;
-  /* Default placeholder size so the preview box is large on initial load */
-  width: 270px;
-  height: 300px;
-  min-width: 270px;
-  min-height: 300px;
 }
 
 /* ===== Action Buttons Row ===== */
@@ -164,24 +155,27 @@
 
   .editor-right {
     position: sticky;
-    top: 0;
+    top: 80px;
+    overflow: hidden; /* critical: keeps QR inside */
+    height: 600px;
+    max-height: 80vh;
     flex: 1;
-    min-height: 1200px;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
   }
 
   .qr-preview-scroll {
+    width: 100%;
     padding: 30px 40px;
     transition: transform 0.1s ease-out;
   }
 
   .qr-preview-card {
     padding: 50px;
-    /* Match final desktop preview dimensions (canvas 270x300 + padding 50px each side) */
-    width: 370px;
-    height: 400px;
-    min-width: 370px;
-    min-height: 400px;
+    max-width: none;
+    width: auto;
     background: #fbfcff;
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.20), 0 8px 20px rgba(0, 0, 0, 0.10);
   }
