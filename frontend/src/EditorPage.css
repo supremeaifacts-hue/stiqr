@@ -64,8 +64,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  max-width: 400px;
+  width: 330px; /* canvas 270 + 30px padding each side */
+  height: 360px; /* canvas 300 + 30px padding top/bottom */
+  flex: none; /* prevent shrinking inside flex column */
   box-sizing: border-box;
 }
 
@@ -178,7 +179,9 @@
   .qr-preview-card {
     padding: 50px;
     max-width: none;
-    width: auto;
+    width: 370px; /* canvas 270 + 50px padding each side */
+    height: 400px; /* canvas 300 + 50px padding top/bottom */
+    flex: none;
     background: #fbfcff;
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.20), 0 8px 20px rgba(0, 0, 0, 0.10);
   }
