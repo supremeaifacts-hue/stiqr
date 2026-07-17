@@ -174,24 +174,24 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
       const container = containerRef.current;
       const content = contentRef.current;
-
       const rect = container.getBoundingClientRect();
+
       const containerHeight = container.offsetHeight;
       const contentHeight = content.scrollHeight;
-
       const maxTranslate = Math.max(0, containerHeight - contentHeight);
 
       const viewportHeight = window.innerHeight;
-      const startPosition = 0;
-      const endPosition = viewportHeight - containerHeight;
+      const start = 0;
+      const end = viewportHeight - containerHeight;
+      const adjustedEnd = Math.max(end, 0);
 
       let progress = 0;
-      if (endPosition !== startPosition) {
-        progress = (rect.top - startPosition) / (endPosition - startPosition);
+      if (adjustedEnd !== start) {
+        progress = (rect.top - start) / (adjustedEnd - start);
         progress = Math.max(0, Math.min(1, progress));
       }
 
-      console.log('scroll debug:', { top: rect.top, containerHeight, contentHeight, maxTranslate, viewportHeight, progress });
+      console.log('scroll debug:', { top: rect.top, containerHeight, contentHeight, maxTranslate, viewportHeight, progress, adjustedEnd });
 
       const translateY = progress * maxTranslate;
       content.style.transform = `translateY(${translateY}px)`;
