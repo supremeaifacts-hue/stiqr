@@ -146,6 +146,7 @@
     flex-direction: row;
     gap: 30px;
     padding: 20px;
+    align-items: stretch; /* critical: makes both columns the same height */
   }
 
   .editor-left {
@@ -158,13 +159,12 @@
     position: sticky;
     top: 80px;
     overflow: hidden; /* critical: keeps QR inside */
-    height: 600px;
-    max-height: 80vh;
     flex: 1;
+    min-height: 500px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    align-self: flex-start;
+    align-self: stretch;
     z-index: 0;
   }
 
