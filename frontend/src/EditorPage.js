@@ -179,7 +179,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       const containerHeight = container.offsetHeight;
       const contentHeight = content.scrollHeight;
 
-      const maxTranslate = Math.max(0, contentHeight - containerHeight);
+      const maxTranslate = Math.max(0, containerHeight - contentHeight);
 
       const viewportHeight = window.innerHeight;
       const startPosition = 0;
@@ -193,7 +193,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
       console.log('scroll debug:', { top: rect.top, containerHeight, contentHeight, maxTranslate, viewportHeight, progress });
 
-      const translateY = -progress * maxTranslate;
+      const translateY = progress * maxTranslate;
       content.style.transform = `translateY(${translateY}px)`;
     };
 
