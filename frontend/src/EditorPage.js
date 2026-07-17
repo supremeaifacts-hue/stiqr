@@ -150,31 +150,40 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // up and down within the column as the user scrolls.
   // ============================================================
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [previewTranslate, setPreviewTranslate] = useState(0);
   const columnRef = useRef(null);
+  const previewRef = useRef(null);
   
   useEffect(() => {
     const handleScroll = () => {
-      if (!columnRef.current) return;
+      if (!columnRef.current || !previewRef.current) return;
       const rect = columnRef.current.getBoundingClientRect();
-      // Calculate how far the column is from the top of the viewport
-      // progress = 0 when column top is at viewport top
-      // progress = 1 when column bottom is at viewport bottom
       const columnHeight = rect.height;
       const viewportHeight = window.innerHeight;
       const maxScroll = columnHeight - viewportHeight;
       if (maxScroll <= 0) {
         setScrollProgress(0);
+        setPreviewTranslate(0);
         return;
       }
-      // How much of the column is above the viewport top
-      const scrolled = -rect.top;
+
+      // How far the column has moved past the top of the viewport.
+      const scrolled = Math.max(0, -rect.top);
       const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
       setScrollProgress(progress);
+
+      const previewHeight = previewRef.current.getBoundingClientRect().height;
+      const maxTranslate = Math.max(0, previewHeight - columnHeight);
+      setPreviewTranslate(-progress * maxTranslate);
     };
-    
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
     handleScroll(); // Initialize
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
   
   // Email-specific state
@@ -3398,9 +3407,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       >
         {/* QR Preview Box (moves up and down with scroll on desktop, fixed on mobile) */}
         <div
+          ref={previewRef}
           className="qr-preview-scroll"
           style={{
-            transform: window.innerWidth < 768 ? 'none' : `translateY(${scrollProgress * 600}px)`,
+            transform: window.innerWidth < 768 ? 'none' : `translateY(${previewTranslate}px)`,
           }}
         >
           <div className="qr-preview-card">

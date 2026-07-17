@@ -164,12 +164,15 @@
     align-items: center;
     justify-content: center;
     align-self: flex-start;
+    z-index: 0;
   }
 
   .qr-preview-scroll {
+    position: relative;
     width: 100%;
     padding: 30px 40px;
     transition: transform 0.1s ease-out;
+    z-index: 0;
   }
 
   .qr-preview-card {
