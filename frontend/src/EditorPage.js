@@ -148,43 +148,57 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // ============================================================
   // Scroll-following QR preview: smoothly move the QR preview
   // up and down within the column as the user scrolls.
+  // Uses a containerRef and contentRef to keep the content clipped
+  // inside the sticky `.editor-right` container. Disabled on mobile.
   // ============================================================
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [previewTranslate, setPreviewTranslate] = useState(0);
-  const columnRef = useRef(null);
-  const previewRef = useRef(null);
-  
+  const [isMobile, setIsMobile] = useState(false);
+  const containerRef = useRef(null);
+  const contentRef = useRef(null);
+
   useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) return; // no scroll-follow on small screens
+
     const handleScroll = () => {
-      if (!columnRef.current || !previewRef.current) return;
-      const rect = columnRef.current.getBoundingClientRect();
-      const columnHeight = rect.height;
+      if (!containerRef.current || !contentRef.current) return;
+
+      const container = containerRef.current;
+      const content = contentRef.current;
+
+      const rect = container.getBoundingClientRect();
+      const containerHeight = container.offsetHeight;
+      const contentHeight = content.scrollHeight;
+
+      const maxTranslate = Math.max(0, contentHeight - containerHeight);
+
       const viewportHeight = window.innerHeight;
-      const maxScroll = columnHeight - viewportHeight;
-      if (maxScroll <= 0) {
-        setScrollProgress(0);
-        setPreviewTranslate(0);
-        return;
+      const startPosition = 0;
+      const endPosition = viewportHeight - containerHeight;
+
+      let progress = 0;
+      if (endPosition !== startPosition) {
+        progress = (rect.top - startPosition) / (endPosition - startPosition);
+        progress = Math.max(0, Math.min(1, progress));
       }
 
-      // How far the column has moved past the top of the viewport.
-      const scrolled = Math.max(0, -rect.top);
-      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
-      setScrollProgress(progress);
-
-      const previewHeight = previewRef.current.getBoundingClientRect().height;
-      const maxTranslate = Math.max(0, previewHeight - columnHeight);
-      setPreviewTranslate(-progress * maxTranslate);
+      const translateY = -progress * maxTranslate;
+      content.style.transform = `translateY(${translateY}px)`;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
-    handleScroll(); // Initialize
+    handleScroll();
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, []);
+  }, [isMobile]);
   
   // Email-specific state
   const [emailData, setEmailData] = useState({
@@ -3402,16 +3416,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
       {/* NEW: QR Preview Column (this is the container) */}
       <div
-        ref={columnRef}
+        ref={containerRef}
         className="editor-right"
       >
         {/* QR Preview Box (moves up and down with scroll on desktop, fixed on mobile) */}
         <div
-          ref={previewRef}
+          ref={contentRef}
           className="qr-preview-scroll"
-          style={{
-            transform: window.innerWidth < 768 ? 'none' : `translateY(${previewTranslate}px)`,
-          }}
         >
           <div className="qr-preview-card">
             <canvas ref={canvasRef} className="qr-canvas" style={{ 
