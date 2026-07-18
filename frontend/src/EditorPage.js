@@ -163,13 +163,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   }, []);
 
   useEffect(() => {
-    console.log('Scroll useEffect mounted');
-    console.log('isMobile:', isMobile);
-
     if (isMobile) return; // no scroll-follow on small screens
 
     const handleScroll = () => {
-      console.log('🔄 Scroll handler is running!');
       if (!containerRef.current || !contentRef.current) return;
 
       const container = containerRef.current;
@@ -178,20 +174,22 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
       const containerHeight = container.offsetHeight;
       const contentHeight = content.scrollHeight;
-      const maxTranslate = Math.max(0, containerHeight - contentHeight);
+      const maxTranslate = containerHeight - contentHeight;
 
-      const viewportHeight = window.innerHeight;
-      const start = 0;
-      const end = viewportHeight - containerHeight;
-      const adjustedEnd = Math.max(end, 0);
+      // Fixed range limits
+      const TOP_LIMIT = 56;
+      const BOTTOM_LIMIT = -1043;
 
       let progress = 0;
-      if (adjustedEnd !== start) {
-        progress = (rect.top - start) / (adjustedEnd - start);
-        progress = Math.max(0, Math.min(1, progress));
+      if (rect.top > TOP_LIMIT) {
+        progress = 0;
+      } else if (rect.top < BOTTOM_LIMIT) {
+        progress = 1;
+      } else {
+        progress = (TOP_LIMIT - rect.top) / (TOP_LIMIT - BOTTOM_LIMIT);
       }
 
-      console.log('scroll debug:', { top: rect.top, containerHeight, contentHeight, maxTranslate, viewportHeight, progress, adjustedEnd });
+      progress = Math.max(0, Math.min(1, progress));
 
       const translateY = progress * maxTranslate;
       content.style.transform = `translateY(${translateY}px)`;
@@ -199,7 +197,6 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
-    console.log('Scroll listeners attached');
     handleScroll();
     return () => {
       window.removeEventListener('scroll', handleScroll);
