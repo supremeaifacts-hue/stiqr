@@ -1404,7 +1404,6 @@ const LandingPage = ({ onViewDashboard, onViewPricing, qrCodeToEdit, onClearQrCo
           }}>
             <img src="/assets/payment/visa.svg" alt="Visa" style={{ height: '48px', opacity: 0.5 }} />
             <img src="/assets/payment/mastercard.svg" alt="Mastercard" style={{ height: '48px', opacity: 0.5 }} />
-            <img src="/assets/payment/paypal.svg" alt="PayPal" style={{ height: '48px', opacity: 0.5 }} />
             <img src="/assets/payment/stripe.svg" alt="Stripe" style={{ height: '48px', opacity: 0.5 }} />
           </div>
 
