@@ -8,6 +8,7 @@
     "/assets/*",
     "/social/*",
     "/event/*",
-    "/menu/*"
+    "/menu/*",
+    "/llms.txt"
   ]
 }
