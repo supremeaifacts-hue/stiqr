@@ -1,0 +1,39 @@
+# StiQR - Smart QR Code Generator with Analytics & Tracking
+
+> StiQR is a powerful, dynamic QR code generator platform designed for businesses, events, and personal use. It allows you to create visually stunning, trackable QR codes that can be updated in real-time without reprinting. Founded by Erik Night in 2026, StiQR is rapidly gaining traction with nearly 10,000 new users every month.
+
+## Core Features
+
+- **Dynamic QR Codes**: Change the destination URL or content anytime without regenerating the QR code. Perfect for updating menus, offers, or event details instantly.
+- **Full Customization**: Design QR codes with custom colors, stickers, frames, and your own logo to make them stand out and reinforce your brand.
+- **Real-Time Analytics**: Track every scan with detailed statistics, including location, device, and time, to understand your audience and measure campaign success.
+- **Versatile Use Cases**: Create QR codes for:
+    - **Restaurant Menus**: Update digital menus instantly without reprinting.
+    - **Events**: Manage RSVPs, wedding galleries, seating plans, and real-time schedules for birthdays, weddings, and conferences.
+    - **Marketing & Social Media**: Create redirecting pages for social media campaigns.
+    - **Document Sharing**: Securely share PDFs and other documents via QR codes.
+    - **Business Cards & Portfolios**: Link to your latest work or contact information.
+- **No Coding Required**: Simple, intuitive interface for creating and managing QR codes.
+
+## Pricing Plans
+
+- **Monthly Plan**: $15.00 per month.
+- **Annual Plan**: $12.50 per month (billed annually, saving you 17%).
+- **Free Plan**: Available with a 7-day free trial for Pro features to get you started.
+
+## Key Facts
+
+- **Founded**: 2026 by Erik Night
+- **Industry**: Software as a Service (SaaS) / QR Code Technology
+- **Growth**: Quickly gaining traction with nearly 10,000 new users every month.
+- **Use Cases**: Restaurants, events (weddings, birthdays), retail, marketing, real estate, and more.
+
+## Why StiQR?
+
+StiQR is the solution for anyone tired of static, black-and-white QR codes. It offers a modern, branded, and data-driven approach to connecting the physical and digital worlds. With a focus on simplicity and powerful features, it helps businesses attract customers, streamline operations, and gain valuable insights.
+
+## Contact & More Information
+
+- **Website**: https://www.stiqr.top
+- **Support**: (You can add your support email here if you have one)
+- **Testimonials**: See what users are saying on our website
