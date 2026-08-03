@@ -1,4 +1,4 @@
-// VERSION: 2025-06-30-v10 - Added PDF landing page support with tracking
+// VERSION: 2025-06-30-v11 - Added llms.txt support
 // Flag to track if KV has been initialized
 let kvInitialized = false;
 
@@ -33,7 +33,6 @@ export default {
       if (content.startsWith('SMTP:')) return 'mail';
       if (content.startsWith('sms:')) return 'sms';
       if (content.match(/^https?:\/\//i)) return 'url';
-      // Also catch URLs without protocol (e.g., "example.com")
       if (content.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/) && !content.includes(' ')) return 'url';
       if (content.toLowerCase().endsWith('.pdf') || content.includes('.pdf')) return 'pdf';
       return 'text';
@@ -61,7 +60,6 @@ export default {
       const socialId = pathname.substring(8);
       console.log(`[${requestId}] 📱 Social page request: ${socialId}`);
       
-      // Forward to Render backend to get the HTML page
       const backendUrl = `https://stiqr-backend.onrender.com/social/${socialId}`;
       const backendRequest = new Request(backendUrl, {
         method: 'GET',
@@ -85,7 +83,6 @@ export default {
       const eventId = pathname.substring(7);
       console.log(`[${requestId}] 🎉 Event page request: ${eventId}`);
       
-      // Forward to Render backend to get the HTML page
       const backendUrl = `https://stiqr-backend.onrender.com/event/${eventId}`;
       const backendRequest = new Request(backendUrl, {
         method: 'GET',
@@ -109,7 +106,6 @@ export default {
       const menuId = pathname.substring(6);
       console.log(`[${requestId}] 📋 Menu page request: ${menuId}`);
       
-      // Forward to Render backend to get the HTML page
       const backendUrl = `https://stiqr-backend.onrender.com/menu/${menuId}`;
       const backendRequest = new Request(backendUrl, {
         method: 'GET',
@@ -133,8 +129,6 @@ export default {
       const pdfId = pathname.substring(5);
       console.log(`[${requestId}] 📄 PDF page request: ${pdfId}`);
       
-      // Redirect through tracking to record the scan
-      // Then serve the PDF from the backend
       const backendUrl = `https://stiqr-backend.onrender.com/track/${pdfId}`;
       const backendRequest = new Request(backendUrl, {
         method: 'GET',
@@ -149,6 +143,20 @@ export default {
         console.error(`[${requestId}] ❌ PDF page error: ${error.message}`);
         return new Response('PDF not found', { status: 404 });
       }
+    }
+
+    // ============================================================
+    // LLMS.TXT - Serve static file
+    // ============================================================
+    if (pathname === '/llms.txt') {
+      console.log(`[${requestId}] 📄 Serving llms.txt`);
+      const fileUrl = `https://stiqr-frontend.pages.dev/llms.txt`;
+      return fetch(fileUrl, {
+        headers: {
+          'Content-Type': 'text/plain',
+          'Cache-Control': 'public, max-age=3600'
+        }
+      });
     }
     
     // ============================================================
@@ -271,10 +279,8 @@ export default {
       const trackingId = pathname.substring(7);
       console.log(`[${requestId}] 🔍 TRACKING: ${trackingId}`);
       
-      // Get content from KV (fast lookup)
       let content = await env.QR_DESTINATIONS.get(trackingId);
       
-      // If not in KV, try to get from backend (fallback)
       if (!content) {
         console.log(`[${requestId}] ⚠️ KV miss for ${trackingId}, trying backend`);
         try {
@@ -296,19 +302,14 @@ export default {
         return new Response('QR code not found', { status: 404 });
       }
       
-      // Detect QR code type
       const qrType = getQRType(content);
       console.log(`[${requestId}] 📋 QR Type: ${qrType}, Content: ${content.substring(0, 150)}`);
       
-      // ============================================================
-      // ASYNC analytics logging & scan count increment
-      // ============================================================
       const userAgent = request.headers.get('User-Agent') || '';
       const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
       const cf = request.cf || {};
       const ua = userAgent.toLowerCase();
       
-      // Device detection
       let deviceType = 'unknown';
       if (/iphone|ipod|android.*mobile/i.test(ua)) {
         deviceType = 'mobile';
@@ -358,7 +359,6 @@ export default {
       console.log(`[${requestId}] 📊 Recording scan for QR: ${trackingId}`);
       console.log(`[${requestId}] 📊 Data being sent:`, JSON.stringify(analyticsData, null, 2));
       
-      // Fire and forget - ONLY use /api/scan/log
       ctx.waitUntil(
         (async () => {
           try {
@@ -381,11 +381,6 @@ export default {
         })()
       );
       
-      // ============================================================
-      // HANDLE DIFFERENT QR CODE TYPES
-      // ============================================================
-      
-      // 1. WiFi QR codes - return raw config
       if (qrType === 'wifi') {
         console.log(`[${requestId}] 📶 WiFi QR code detected`);
         return new Response(content, {
@@ -397,7 +392,6 @@ export default {
         });
       }
       
-      // 2. Mail QR codes - redirect to mailto: URL
       if (qrType === 'mail') {
         console.log(`[${requestId}] 📧 Mail QR code detected`);
         let mailUrl = content;
@@ -407,7 +401,6 @@ export default {
         return Response.redirect(mailUrl, 302);
       }
       
-      // 3. SMS QR codes - redirect to sms: URL
       if (qrType === 'sms') {
         console.log(`[${requestId}] 📱 SMS QR code detected`);
         let smsUrl = content;
@@ -417,7 +410,6 @@ export default {
         return Response.redirect(smsUrl, 302);
       }
       
-      // 4. PDF QR codes - redirect to PDF URL
       if (qrType === 'pdf') {
         let pdfUrl = content;
         if (!pdfUrl.startsWith('http://') && !pdfUrl.startsWith('https://')) {
@@ -427,14 +419,12 @@ export default {
         return Response.redirect(pdfUrl, 302);
       }
       
-      // 5. URL QR codes - redirect to destination
       if (qrType === 'url') {
         let destination = ensureProtocol(content);
         console.log(`[${requestId}] 🔗 URL QR code, redirecting to: ${destination}`);
         return Response.redirect(destination, 302);
       }
       
-      // 6. Text/Other - try to treat as URL if possible
       console.log(`[${requestId}] 📝 Checking if text is actually a URL...`);
       let possibleUrl = ensureProtocol(content);
       if (possibleUrl.match(/^https?:\/\//i)) {

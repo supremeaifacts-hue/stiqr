@@ -1473,41 +1473,43 @@ app.get('/api/pdf/job/:jobId', async (req, res) => {
   }
 });
 
-// GET /api/pdf/:id - Retrieve PDF directly from MongoDB
+// GET /api/pdf/:id - Stream PDF from MongoDB
 app.get('/api/pdf/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`📄 GET /api/pdf/${id}`);
-    const PDFFile = require('./models/PDFFile');
-    const pdfRecord = await PDFFile.findById(id);
-    
-    if (!pdfRecord) {
-      console.log(`❌ PDF record not found: ${id}`);
+    console.log(`📄 Streaming PDF: ${id}`);
+
+    const db = mongoose.connection.db;
+    const collection = db.collection('pdffiles');
+
+    const doc = await collection.findOne({
+      _id: new mongoose.Types.ObjectId(id)
+    });
+
+    if (!doc || !doc.data) {
+      console.log(`❌ PDF not found: ${id}`);
       return res.status(404).json({ error: 'PDF not found' });
     }
 
-    if (!pdfRecord.data) {
-      console.log(`❌ PDF data missing for record: ${id}`);
-      return res.status(500).json({ error: 'PDF data missing' });
+    const pdfBuffer = doc.data.buffer;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${doc.originalName || 'document.pdf'}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Stream the PDF in chunks to avoid timeouts
+    const chunkSize = 64 * 1024; // 64KB chunks
+    for (let i = 0; i < pdfBuffer.length; i += chunkSize) {
+      const chunk = pdfBuffer.slice(i, i + chunkSize);
+      res.write(chunk);
     }
+    res.end();
 
-    const pdfBuffer = Buffer.isBuffer(pdfRecord.data)
-      ? pdfRecord.data
-      : Buffer.from(pdfRecord.data.buffer || pdfRecord.data);
-
-    console.log(`✅ Serving PDF: ${pdfRecord.originalName || 'document.pdf'} (${pdfBuffer.length} bytes)`);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${pdfRecord.originalName || 'document.pdf'}"`,
-      'Content-Length': pdfBuffer.length
-    });
-
-    res.send(pdfBuffer);
+    console.log(`✅ PDF streamed successfully: ${doc.originalName || 'document.pdf'}`);
 
   } catch (error) {
-    console.error('❌ Error retrieving PDF:', error);
-    res.status(500).json({ error: 'Failed to retrieve PDF', details: error.message });
+    console.error('❌ Error streaming PDF:', error);
+    res.status(500).json({ error: 'Failed to serve PDF', details: error.message });
   }
 });
 
