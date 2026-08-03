@@ -1,0 +1,539 @@
+// VERSION: 2025-06-30-v10 - Added PDF landing page support with tracking
+// Flag to track if KV has been initialized
+let kvInitialized = false;
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    const requestId = crypto.randomUUID().slice(0, 8);
+    
+    // Helper function for JSON responses
+    const jsonResponse = (data, status = 200) => {
+      return new Response(JSON.stringify(data), {
+        status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    };
+
+    // Helper to ensure destination URLs have a protocol
+    const ensureProtocol = (destination) => {
+      if (!destination) return destination;
+      if (destination.startsWith('http://') || destination.startsWith('https://')) {
+        return destination;
+      }
+      return `https://${destination}`;
+    };
+    
+    // Helper to detect QR code type from content
+    const getQRType = (content) => {
+      if (!content) return 'unknown';
+      if (content.startsWith('WIFI:')) return 'wifi';
+      if (content.startsWith('mailto:')) return 'mail';
+      if (content.startsWith('SMTP:')) return 'mail';
+      if (content.startsWith('sms:')) return 'sms';
+      if (content.match(/^https?:\/\//i)) return 'url';
+      // Also catch URLs without protocol (e.g., "example.com")
+      if (content.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/) && !content.includes(' ')) return 'url';
+      if (content.toLowerCase().endsWith('.pdf') || content.includes('.pdf')) return 'pdf';
+      return 'text';
+    };
+    
+    // ============================================================
+    // HANDLE CORS PREFLIGHT (OPTIONS) REQUESTS
+    // ============================================================
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400'
+        }
+      });
+    }
+    
+    // ============================================================
+    // SOCIAL MEDIA LANDING PAGES
+    // ============================================================
+    if (pathname.startsWith('/social/')) {
+      const socialId = pathname.substring(8);
+      console.log(`[${requestId}] 📱 Social page request: ${socialId}`);
+      
+      // Forward to Render backend to get the HTML page
+      const backendUrl = `https://stiqr-backend.onrender.com/social/${socialId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`[${requestId}] ✅ Social page response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Social page error: ${error.message}`);
+        return new Response('Social page not found', { status: 404 });
+      }
+    }
+    
+    // ============================================================
+    // EVENT LANDING PAGES
+    // ============================================================
+    if (pathname.startsWith('/event/')) {
+      const eventId = pathname.substring(7);
+      console.log(`[${requestId}] 🎉 Event page request: ${eventId}`);
+      
+      // Forward to Render backend to get the HTML page
+      const backendUrl = `https://stiqr-backend.onrender.com/event/${eventId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`[${requestId}] ✅ Event page response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Event page error: ${error.message}`);
+        return new Response('Event page not found', { status: 404 });
+      }
+    }
+
+    // ============================================================
+    // MENU LANDING PAGES
+    // ============================================================
+    if (pathname.startsWith('/menu/')) {
+      const menuId = pathname.substring(6);
+      console.log(`[${requestId}] 📋 Menu page request: ${menuId}`);
+      
+      // Forward to Render backend to get the HTML page
+      const backendUrl = `https://stiqr-backend.onrender.com/menu/${menuId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`[${requestId}] ✅ Menu page response: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Menu page error: ${error.message}`);
+        return new Response('Menu page not found', { status: 404 });
+      }
+    }
+
+    // ============================================================
+    // PDF LANDING PAGES - WITH TRACKING (UPDATED)
+    // ============================================================
+    if (pathname.startsWith('/pdf/')) {
+      const pdfId = pathname.substring(5);
+      console.log(`[${requestId}] 📄 PDF page request: ${pdfId}`);
+      
+      // Redirect through tracking to record the scan
+      // Then serve the PDF from the backend
+      const backendUrl = `https://stiqr-backend.onrender.com/track/${pdfId}`;
+      const backendRequest = new Request(backendUrl, {
+        method: 'GET',
+        headers: request.headers,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        console.log(`[${requestId}] ✅ PDF scan recorded and page served: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ PDF page error: ${error.message}`);
+        return new Response('PDF not found', { status: 404 });
+      }
+    }
+    
+    // ============================================================
+    // KV INITIALIZATION - Load all QR codes from backend into KV
+    // ============================================================
+    if (!kvInitialized) {
+      console.log(`[${requestId}] 🔄 Initializing KV cache from database...`);
+      try {
+        const backendUrl = `https://stiqr-backend.onrender.com/api/qrcodes/all`;
+        const response = await fetch(backendUrl);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const qrCodes = data.qrCodes || [];
+          
+          console.log(`[${requestId}] 📦 Found ${qrCodes.length} QR codes to cache`);
+          
+          ctx.waitUntil(async () => {
+            let cachedCount = 0;
+            for (const qr of qrCodes) {
+              if (qr.id && (qr.destination || qr.data)) {
+                const content = qr.destination || qr.data;
+                await env.QR_DESTINATIONS.put(qr.id, content);
+                cachedCount++;
+              }
+            }
+            console.log(`[${requestId}] ✅ KV cache initialized with ${cachedCount} QR codes`);
+          });
+        } else {
+          console.warn(`[${requestId}] ⚠️ Failed to fetch QR codes from backend: ${response.status}`);
+        }
+      } catch (error) {
+        console.error(`[${requestId}] ❌ KV initialization error: ${error.message}`);
+      }
+      kvInitialized = true;
+    }
+    
+    // ============================================================
+    // 0. TEST ENDPOINT - Verify Worker is alive
+    // ============================================================
+    if (pathname === '/test') {
+      console.log(`[${requestId}] 🧪 TEST endpoint called`);
+      return new Response('Worker is alive!', { 
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    }
+    
+    // ============================================================
+    // 1. WEBHOOK REQUESTS
+    // ============================================================
+    if (pathname === '/api/webhook' && request.method === 'POST') {
+      console.log(`[${requestId}] 🔗 WEBHOOK received`);
+      
+      const backendUrl = `https://stiqr-backend.onrender.com${pathname}`;
+      const webhookRequest = new Request(backendUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      
+      try {
+        const response = await fetch(webhookRequest);
+        console.log(`[${requestId}] ✅ Webhook forwarded, status: ${response.status}`);
+        return response;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Webhook failed: ${error.message}`);
+        return new Response('Webhook error', { status: 500 });
+      }
+    }
+    
+    // ============================================================
+    // 2. KV UPDATE
+    // ============================================================
+    if (pathname === '/api/kv/update' && request.method === 'POST') {
+      try {
+        const { key, value } = await request.json();
+        
+        if (!key || !value) {
+          console.error(`[${requestId}] ❌ /api/kv/update: Missing key or value`);
+          return jsonResponse({ error: 'Missing key or value' }, 400);
+        }
+        
+        await env.QR_DESTINATIONS.put(key, value);
+        console.log(`[${requestId}] ✅ KV cache updated: ${key} → ${value}`);
+        
+        return jsonResponse({ success: true, key, value });
+      } catch (error) {
+        console.error(`[${requestId}] ❌ /api/kv/update error: ${error.message}`);
+        return jsonResponse({ error: 'Internal Server Error' }, 500);
+      }
+    }
+    
+    // ============================================================
+    // 2.5 KV DELETE
+    // ============================================================
+    if (pathname === '/api/kv/delete' && request.method === 'POST') {
+      try {
+        const { key } = await request.json();
+        
+        if (!key) {
+          console.error(`[${requestId}] ❌ /api/kv/delete: Missing key`);
+          return jsonResponse({ error: 'Missing key' }, 400);
+        }
+        
+        await env.QR_DESTINATIONS.delete(key);
+        console.log(`[${requestId}] ✅ KV cache deleted: ${key}`);
+        
+        return jsonResponse({ success: true, key });
+      } catch (error) {
+        console.error(`[${requestId}] ❌ /api/kv/delete error: ${error.message}`);
+        return jsonResponse({ error: 'Internal Server Error' }, 500);
+      }
+    }
+    
+    // ============================================================
+    // 3. TRACKING REQUESTS - WITH SCAN COUNTING (UPDATED)
+    // ============================================================
+    if (pathname.startsWith('/track/')) {
+      const trackingId = pathname.substring(7);
+      console.log(`[${requestId}] 🔍 TRACKING: ${trackingId}`);
+      
+      // Get content from KV (fast lookup)
+      let content = await env.QR_DESTINATIONS.get(trackingId);
+      
+      // If not in KV, try to get from backend (fallback)
+      if (!content) {
+        console.log(`[${requestId}] ⚠️ KV miss for ${trackingId}, trying backend`);
+        try {
+          const backendResponse = await fetch(`https://stiqr-backend.onrender.com/api/qrcodes/${trackingId}`);
+          if (backendResponse.ok) {
+            const data = await backendResponse.json();
+            content = data.destination || data.data;
+            if (content) {
+              await env.QR_DESTINATIONS.put(trackingId, content);
+            }
+          }
+        } catch (error) {
+          console.error(`[${requestId}] ❌ Backend fetch failed: ${error.message}`);
+        }
+      }
+      
+      if (!content) {
+        console.log(`[${requestId}] ❌ ID not found: ${trackingId}`);
+        return new Response('QR code not found', { status: 404 });
+      }
+      
+      // Detect QR code type
+      const qrType = getQRType(content);
+      console.log(`[${requestId}] 📋 QR Type: ${qrType}, Content: ${content.substring(0, 150)}`);
+      
+      // ============================================================
+      // ASYNC analytics logging & scan count increment
+      // ============================================================
+      const userAgent = request.headers.get('User-Agent') || '';
+      const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
+      const cf = request.cf || {};
+      const ua = userAgent.toLowerCase();
+      
+      // Device detection
+      let deviceType = 'unknown';
+      if (/iphone|ipod|android.*mobile/i.test(ua)) {
+        deviceType = 'mobile';
+      } else if (/ipad|android(?!.*mobile)/i.test(ua)) {
+        deviceType = 'tablet';
+      } else if (/windows|mac|linux|cros|windows\s+phone/i.test(ua)) {
+        deviceType = 'desktop';
+      }
+      
+      let os = 'unknown';
+      if (/iphone|ipod|ipad/i.test(ua)) {
+        os = 'iOS';
+        if (deviceType === 'desktop') {
+          deviceType = /ipad/i.test(ua) ? 'tablet' : 'mobile';
+        }
+      } else if (/android/i.test(ua)) {
+        os = 'Android';
+      } else if (/windows/i.test(ua)) {
+        os = 'Windows';
+      } else if (/mac/i.test(ua)) {
+        os = 'macOS';
+      } else if (/linux/i.test(ua)) {
+        os = 'Linux';
+      }
+      
+      let browser = 'unknown';
+      if (ua.includes('edg') || ua.includes('edge')) browser = 'Edge';
+      else if (ua.includes('chrome') && !ua.includes('edg')) browser = 'Chrome';
+      else if (ua.includes('safari') && !ua.includes('chrome') && !ua.includes('edg')) browser = 'Safari';
+      else if (ua.includes('firefox')) browser = 'Firefox';
+      else if (ua.includes('opera') || ua.includes('opr')) browser = 'Opera';
+      
+      const analyticsData = {
+        qrCodeId: trackingId,
+        timestamp: new Date().toISOString(),
+        userAgent,
+        deviceType,
+        os,
+        browser,
+        ip,
+        country: cf.country,
+        city: cf.city,
+        region: cf.region,
+        timezone: cf.timezone
+      };
+      
+      console.log(`[${requestId}] 📊 Recording scan for QR: ${trackingId}`);
+      console.log(`[${requestId}] 📊 Data being sent:`, JSON.stringify(analyticsData, null, 2));
+      
+      // Fire and forget - ONLY use /api/scan/log
+      ctx.waitUntil(
+        (async () => {
+          try {
+            const response = await fetch('https://stiqr-backend.onrender.com/api/scan/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(analyticsData)
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log(`[${requestId}] ✅ Scan recorded successfully! Scan ID: ${result.scanId}`);
+            } else {
+              const errorText = await response.text();
+              console.log(`[${requestId}] ❌ Scan recording failed: ${response.status} - ${errorText}`);
+            }
+          } catch (err) {
+            console.log(`[${requestId}] ❌ Scan recording error: ${err.message}`);
+          }
+        })()
+      );
+      
+      // ============================================================
+      // HANDLE DIFFERENT QR CODE TYPES
+      // ============================================================
+      
+      // 1. WiFi QR codes - return raw config
+      if (qrType === 'wifi') {
+        console.log(`[${requestId}] 📶 WiFi QR code detected`);
+        return new Response(content, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain',
+            'Cache-Control': 'no-cache'
+          }
+        });
+      }
+      
+      // 2. Mail QR codes - redirect to mailto: URL
+      if (qrType === 'mail') {
+        console.log(`[${requestId}] 📧 Mail QR code detected`);
+        let mailUrl = content;
+        if (!mailUrl.startsWith('mailto:')) {
+          mailUrl = `mailto:${mailUrl}`;
+        }
+        return Response.redirect(mailUrl, 302);
+      }
+      
+      // 3. SMS QR codes - redirect to sms: URL
+      if (qrType === 'sms') {
+        console.log(`[${requestId}] 📱 SMS QR code detected`);
+        let smsUrl = content;
+        if (!smsUrl.startsWith('sms:')) {
+          smsUrl = `sms:${smsUrl}`;
+        }
+        return Response.redirect(smsUrl, 302);
+      }
+      
+      // 4. PDF QR codes - redirect to PDF URL
+      if (qrType === 'pdf') {
+        let pdfUrl = content;
+        if (!pdfUrl.startsWith('http://') && !pdfUrl.startsWith('https://')) {
+          pdfUrl = ensureProtocol(pdfUrl);
+        }
+        console.log(`[${requestId}] 📄 PDF QR code, redirecting to: ${pdfUrl}`);
+        return Response.redirect(pdfUrl, 302);
+      }
+      
+      // 5. URL QR codes - redirect to destination
+      if (qrType === 'url') {
+        let destination = ensureProtocol(content);
+        console.log(`[${requestId}] 🔗 URL QR code, redirecting to: ${destination}`);
+        return Response.redirect(destination, 302);
+      }
+      
+      // 6. Text/Other - try to treat as URL if possible
+      console.log(`[${requestId}] 📝 Checking if text is actually a URL...`);
+      let possibleUrl = ensureProtocol(content);
+      if (possibleUrl.match(/^https?:\/\//i)) {
+        console.log(`[${requestId}] 🔄 Forcing redirect to: ${possibleUrl}`);
+        return Response.redirect(possibleUrl, 302);
+      }
+      
+      return new Response(content, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain',
+          'Cache-Control': 'no-cache'
+        }
+      });
+    }
+    
+    // ============================================================
+    // 4. QR CODE SAVING
+    // ============================================================
+    if ((pathname === '/qrcodes' || pathname === '/api/qrcodes') && request.method === 'POST') {
+      try {
+        const clonedRequest = request.clone();
+        const requestBody = await clonedRequest.json();
+        const { id, data, destination, type } = requestBody;
+        
+        const targetContent = data || destination;
+        
+        console.log(`[${requestId}] 📝 Saving QR code: ${id} → ${targetContent.substring(0, 100)} (type: ${type || 'auto'})`);
+        
+        if (id && targetContent) {
+          await env.QR_DESTINATIONS.put(id, targetContent);
+          console.log(`[${requestId}] ✅ Saved to KV: ${id}`);
+        } else {
+          console.warn(`[${requestId}] ⚠️ Missing id or content, skipping KV save`);
+        }
+        
+        const backendUrl = `https://stiqr-backend.onrender.com${pathname}${url.search}`;
+        const backendRequest = new Request(backendUrl, {
+          method: 'POST',
+          headers: request.headers,
+          body: JSON.stringify(requestBody),
+        });
+        
+        const backendResponse = await fetch(backendRequest);
+        console.log(`[${requestId}] 📡 Backend response status: ${backendResponse.status}`);
+        
+        return backendResponse;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ Error in /qrcodes handler: ${error.message}`);
+        return jsonResponse({ error: 'Failed to save QR code', details: error.message }, 500);
+      }
+    }
+    
+    // ============================================================
+    // 5. OTHER API REQUESTS
+    // ============================================================
+    if (pathname.startsWith('/auth') || 
+        pathname.startsWith('/api') ||
+        pathname.startsWith('/qrcodes')) {
+      
+      const backendUrl = `https://stiqr-backend.onrender.com${pathname}${url.search}`;
+      console.log(`[${requestId}] 📡 API request to: ${backendUrl}`);
+      
+      const backendRequest = new Request(backendUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      
+      try {
+        const response = await fetch(backendRequest);
+        return response;
+      } catch (error) {
+        console.error(`[${requestId}] ❌ API backend error: ${error.message}`);
+        return jsonResponse({ error: 'Backend unavailable' }, 503);
+      }
+    }
+    
+    // ============================================================
+    // 6. STATIC ASSETS
+    // ============================================================
+    if (pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|webp|json|xml)$/)) {
+      const assetUrl = `https://stiqr-frontend.pages.dev${pathname}`;
+      console.log(`[${requestId}] 📦 Serving asset: ${assetUrl}`);
+      return fetch(assetUrl);
+    }
+    
+    // ============================================================
+    // 7. ALL OTHER REQUESTS - Serve React app
+    // ============================================================
+    console.log(`[${requestId}] 🌐 Serving index.html for: ${pathname}`);
+    const indexPath = `https://stiqr-frontend.pages.dev/index.html`;
+    const indexResponse = await fetch(indexPath);
+    
+    return new Response(indexResponse.body, {
+      headers: {
+        'Content-Type': 'text/html',
+        ...Object.fromEntries(indexResponse.headers)
+      }
+    });
+  },
+};

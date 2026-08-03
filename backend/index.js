@@ -1477,24 +1477,37 @@ app.get('/api/pdf/job/:jobId', async (req, res) => {
 app.get('/api/pdf/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`📄 GET /api/pdf/${id}`);
     const PDFFile = require('./models/PDFFile');
     const pdfRecord = await PDFFile.findById(id);
     
-    if (!pdfRecord || !pdfRecord.data) {
+    if (!pdfRecord) {
+      console.log(`❌ PDF record not found: ${id}`);
       return res.status(404).json({ error: 'PDF not found' });
     }
+
+    if (!pdfRecord.data) {
+      console.log(`❌ PDF data missing for record: ${id}`);
+      return res.status(500).json({ error: 'PDF data missing' });
+    }
+
+    const pdfBuffer = Buffer.isBuffer(pdfRecord.data)
+      ? pdfRecord.data
+      : Buffer.from(pdfRecord.data.buffer || pdfRecord.data);
+
+    console.log(`✅ Serving PDF: ${pdfRecord.originalName || 'document.pdf'} (${pdfBuffer.length} bytes)`);
 
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="${pdfRecord.originalName || 'document.pdf'}"`,
-      'Content-Length': pdfRecord.size
+      'Content-Length': pdfBuffer.length
     });
 
-    res.send(pdfRecord.data);
+    res.send(pdfBuffer);
 
   } catch (error) {
     console.error('❌ Error retrieving PDF:', error);
-    res.status(500).json({ error: 'Failed to retrieve PDF' });
+    res.status(500).json({ error: 'Failed to retrieve PDF', details: error.message });
   }
 });
 

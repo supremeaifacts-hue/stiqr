@@ -21,6 +21,7 @@ import RefundPolicy from './RefundPolicy';
 import About from './About';
 import CancelSubscription from './CancelSubscription';
 import Footer from './Footer';
+import LlmsPage from './LlmsPage';
 
 function AppContent() {
   const navigate = useNavigate();
@@ -112,6 +113,7 @@ function AppContent() {
         <About onViewDashboard={() => navigate('/dashboard')} onViewPricing={() => navigate('/pricing')} onBack={() => navigate('/')} />
       } />
       <Route path="/cancel-subscription" element={<CancelSubscription />} />
+      <Route path="/llms.txt" element={<LlmsPage />} />
     </Routes>
   );
 }
