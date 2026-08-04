@@ -1,0 +1,21 @@
+Icons:
+Whatsapp: <a href="https://www.flaticon.com/free-icons/whatsapp" title="whatsapp icons">Whatsapp icons created by cobynecz - Flaticon</a>
+Wechat: <a href="https://www.flaticon.com/free-icons/wechat" title="wechat icons">Wechat icons created by Ruslan Babkin - Flaticon</a>
+Wi-fi: <a href="https://www.flaticon.com/free-icons/wifi-signal" title="wifi signal icons">Wifi signal icons created by Flat Icons - Flaticon</a>
+Paypal: <a href="https://www.flaticon.com/free-icons/payments" title="payments icons">Payments icons created by Andrew Dynamite - Flaticon</a>
+link: <a href="https://www.flaticon.com/free-icons/link" title="link icons">Link icons created by Rizki Ahmad Fauzi - Flaticon</a>
+bitcoin: <a href="https://www.flaticon.com/free-icons/cryptocurrency" title="cryptocurrency icons">Cryptocurrency icons created by Freepik - Flaticon</a>
+mail: <a href="https://www.flaticon.com/free-icons/inbox" title="inbox icons">Inbox icons created by meaicon - Flaticon</a>
+Instagram: <a href="https://www.flaticon.com/free-icons/instagram" title="instagram icons">Instagram icons created by cobynecz - Flaticon</a>
+TikTok: <a href="https://www.flaticon.com/free-icons/tik-tok" title="tik tok icons">Tik tok icons created by Rakib Hassan Rahim - Flaticon</a>
+Facebook: <a href="https://www.flaticon.com/free-icons/facebook" title="facebook icons">Facebook icons created by Enamo Studios - Flaticon</a>
+LinkedIn: <a href="https://www.flaticon.com/free-icons/linkedin" title="linkedin icons">Linkedin icons created by riajulislam - Flaticon</a>
+Youtube: <a href="https://www.flaticon.com/free-icons/youtube" title="youtube icons">Youtube icons created by Freepik - Flaticon</a>
+Pinterest: <a href="https://www.flaticon.com/free-icons/pinterest" title="pinterest icons">Pinterest icons created by Smashicons - Flaticon</a>
+reddit: <a href="https://www.flaticon.com/free-icons/reddit" title="reddit icons">Reddit icons created by Md Tanvirul Haque - Flaticon</a>
+telegram: <a href="https://www.flaticon.com/free-icons/telegram" title="telegram icons">Telegram icons created by Pixel perfect - Flaticon</a>
+ithub: <a href="https://www.flaticon.com/free-icons/github" title="github icons">Github icons created by Pixel perfect - Flaticon</a>
+spotify: <a href="https://www.flaticon.com/free-icons/spotify-sketch" title="spotify sketch icons">Spotify sketch icons created by Fathema Khanom - Flaticon</a>
+messenger: <a href="https://www.flaticon.com/free-icons/facebook" title="facebook icons">Facebook icons created by Pixel perfect - Flaticon</a>
+Link: <a href="https://www.flaticon.com/free-icons/link" title="link icons">Link icons created by Rizki Ahmad Fauzi - Flaticon</a>
+x: <a href="https://www.flaticon.com/free-icons/brands-and-logotypes" title="brands and logotypes icons">Brands and logotypes icons created by Freepik - Flaticon</a>
