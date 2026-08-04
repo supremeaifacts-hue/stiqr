@@ -843,6 +843,22 @@ app.get('/menu/:id', async (req, res) => {
     }
 
     const { title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = menuPage;
+
+    // Ensure menu PDF link opens inline in browser.
+    // If `pdfFile` already points to our `/api/pdf/` endpoint or is an absolute URL, use it as-is.
+    // Otherwise, if we have a stored `pdfFileName`, expose a safe API endpoint that will locate
+    // the PDF by its original filename and serve it inline.
+    const hostBase = `${req.protocol}://${req.get('host')}`;
+    let pdfLink = pdfFile || '';
+    if (pdfLink && (pdfLink.startsWith('http://') || pdfLink.startsWith('https://') || pdfLink.includes('/api/pdf/'))) {
+      // leave as-is
+    } else if (pdfFileName) {
+      // Provide an API route that will find the PDFFile by original name and stream it inline.
+      pdfLink = `${hostBase}/api/pdf-by-name?name=${encodeURIComponent(pdfFileName)}`;
+    } else if (pdfLink && pdfLink.startsWith('/uploads/')) {
+      // Convert legacy uploads path to backend-hosted API proxy (best-effort)
+      pdfLink = `${hostBase}/api/pdf-by-path?path=${encodeURIComponent(pdfLink)}`;
+    }
     
     // Build address string
     const addressParts = [];
@@ -1075,7 +1091,7 @@ app.get('/menu/:id', async (req, res) => {
                   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
                     <span style="font-size:32px;">📄</span>
                     <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">${pdfFileName}</div>
-                    <a href="${pdfFile}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
+                    <a href="${pdfLink}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
                   </div>
                 </div>
               </div>
@@ -1509,6 +1525,80 @@ app.get('/api/pdf/:id', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error streaming PDF:', error);
+    res.status(500).json({ error: 'Failed to serve PDF', details: error.message });
+  }
+});
+
+// GET /api/pdf-by-name - Find PDF by original filename and serve inline
+app.get('/api/pdf-by-name', async (req, res) => {
+  try {
+    const name = req.query.name;
+    if (!name) return res.status(400).json({ error: 'name query parameter required' });
+
+    console.log(`🔎 Looking up PDF by name: ${name}`);
+    const PDFFile = require('./models/PDFFile');
+    let pdfRecord = await PDFFile.findOne({ originalName: name });
+
+    if (!pdfRecord) {
+      // Fallback: case-insensitive partial match
+      const regex = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      pdfRecord = await PDFFile.findOne({ originalName: { $regex: regex } });
+    }
+
+    if (!pdfRecord || !pdfRecord.data) {
+      console.log(`❌ PDF not found by name: ${name}`);
+      return res.status(404).json({ error: 'PDF not found' });
+    }
+
+    const pdfBuffer = Buffer.isBuffer(pdfRecord.data)
+      ? pdfRecord.data
+      : Buffer.from(pdfRecord.data.buffer || pdfRecord.data);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${pdfRecord.originalName || 'document.pdf'}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Stream in chunks
+    const chunkSize = 64 * 1024;
+    for (let i = 0; i < pdfBuffer.length; i += chunkSize) {
+      res.write(pdfBuffer.slice(i, i + chunkSize));
+    }
+    res.end();
+
+    console.log(`✅ Served PDF by name: ${pdfRecord.originalName}`);
+  } catch (error) {
+    console.error('❌ Error serving PDF by name:', error);
+    res.status(500).json({ error: 'Failed to serve PDF', details: error.message });
+  }
+});
+
+// GET /api/pdf-by-path - Proxy legacy uploads path and serve inline if file exists
+app.get('/api/pdf-by-path', async (req, res) => {
+  try {
+    const p = req.query.path;
+    if (!p || !p.startsWith('/uploads/')) return res.status(400).json({ error: 'invalid path' });
+
+    const fs = require('fs');
+    const localPath = path.join(__dirname, '..', 'frontend', 'public', p);
+    if (!fs.existsSync(localPath)) {
+      console.log(`❌ Uploads file not found: ${localPath}`);
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const data = fs.readFileSync(localPath);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${path.basename(localPath)}"`);
+    res.setHeader('Content-Length', data.length);
+
+    const chunkSize = 64 * 1024;
+    for (let i = 0; i < data.length; i += chunkSize) {
+      res.write(data.slice(i, i + chunkSize));
+    }
+    res.end();
+
+    console.log(`✅ Served uploads PDF: ${localPath}`);
+  } catch (error) {
+    console.error('❌ Error serving PDF by path:', error);
     res.status(500).json({ error: 'Failed to serve PDF', details: error.message });
   }
 });
