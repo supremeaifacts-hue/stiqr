@@ -853,8 +853,9 @@ app.get('/menu/:id', async (req, res) => {
     if (pdfLink && (pdfLink.startsWith('http://') || pdfLink.startsWith('https://') || pdfLink.includes('/api/pdf/'))) {
       // leave as-is
     } else if (pdfFileName) {
-      // Provide an API route that will find the PDFFile by original name and stream it inline.
-      pdfLink = `${hostBase}/api/pdf-by-name?name=${encodeURIComponent(pdfFileName)}`;
+      // Prefer serving the menu PDF via the dedicated menu-pdf endpoint which
+      // will extract the stored data URI and serve it inline in the browser.
+      pdfLink = `${hostBase}/api/menu-pdf/${id}`;
     } else if (pdfLink && pdfLink.startsWith('/uploads/')) {
       // Convert legacy uploads path to backend-hosted API proxy (best-effort)
       pdfLink = `${hostBase}/api/pdf-by-path?path=${encodeURIComponent(pdfLink)}`;
@@ -1602,6 +1603,58 @@ app.get('/api/pdf-by-path', async (req, res) => {
     res.status(500).json({ error: 'Failed to serve PDF', details: error.message });
   }
 });
+
+// GET /api/menu-pdf/:menuId - Serve menu PDF stored in menu_pages (data URI) inline
+app.get('/api/menu-pdf/:menuId', async (req, res) => {
+  try {
+    const { menuId } = req.params;
+    console.log(`📄 Serving menu PDF for menuId: ${menuId}`);
+
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    if (!db) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const collection = db.collection('menu_pages');
+    const doc = await collection.findOne({ id: menuId });
+
+    if (!doc || !doc.pdfFile) {
+      console.log(`❌ Menu PDF not found for menuId: ${menuId}`);
+      return res.status(404).json({ error: 'PDF not found' });
+    }
+
+    // pdfFile is expected to be a data URI (data:application/pdf;base64,<base64>)
+    let pdfBuffer;
+    if (Buffer.isBuffer(doc.pdfFile)) {
+      pdfBuffer = doc.pdfFile;
+    } else if (typeof doc.pdfFile === 'string') {
+      const commaIndex = doc.pdfFile.indexOf(',');
+      const base64String = commaIndex >= 0 ? doc.pdfFile.slice(commaIndex + 1) : doc.pdfFile;
+      pdfBuffer = Buffer.from(base64String, 'base64');
+    } else {
+      console.log('❌ Unsupported pdfFile format for menuId:', menuId);
+      return res.status(500).json({ error: 'Unsupported PDF format' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${doc.pdfFileName || 'menu.pdf'}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Stream in chunks to avoid large single writes
+    const chunkSize = 64 * 1024;
+    for (let i = 0; i < pdfBuffer.length; i += chunkSize) {
+      res.write(pdfBuffer.slice(i, i + chunkSize));
+    }
+    res.end();
+
+    console.log(`✅ Menu PDF served inline for menuId: ${menuId}`);
+  } catch (error) {
+    console.error('❌ Error serving menu PDF:', error);
+    res.status(500).json({ error: 'Failed to serve PDF', details: error.message });
+  }
+});
+
 
 // DELETE /api/pdf/:id - Delete PDF from MongoDB
 app.delete('/api/pdf/:id', async (req, res) => {
