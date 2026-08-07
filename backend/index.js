@@ -1603,22 +1603,31 @@ app.get('/api/menu-pdf/:menuId', async (req, res) => {
     const collection = db.collection('menu_pages');
     const doc = await collection.findOne({ id: menuId });
 
-    if (!doc || !doc.pdfFile) {
-      console.log(`❌ Menu PDF not found for menuId: ${menuId}`);
-      return res.status(404).json({ error: 'PDF not found' });
+    let pdfBuffer = null;
+    let filename = doc?.pdfFileName || 'menu.pdf';
+
+    if (doc?.pdfFileId) {
+      const PDFFile = require('./models/PDFFile');
+      const pdfRecord = await PDFFile.findById(doc.pdfFileId);
+      if (pdfRecord?.data) {
+        pdfBuffer = Buffer.isBuffer(pdfRecord.data) ? pdfRecord.data : Buffer.from(pdfRecord.data.buffer || pdfRecord.data);
+        filename = pdfRecord.originalName || filename;
+      }
     }
 
-    // pdfFile is expected to be a data URI (data:application/pdf;base64,<base64>)
-    let pdfBuffer;
-    if (Buffer.isBuffer(doc.pdfFile)) {
-      pdfBuffer = doc.pdfFile;
-    } else if (typeof doc.pdfFile === 'string') {
-      const commaIndex = doc.pdfFile.indexOf(',');
-      const base64String = commaIndex >= 0 ? doc.pdfFile.slice(commaIndex + 1) : doc.pdfFile;
-      pdfBuffer = Buffer.from(base64String, 'base64');
-    } else {
-      console.log('❌ Unsupported pdfFile format for menuId:', menuId);
-      return res.status(500).json({ error: 'Unsupported PDF format' });
+    if (!pdfBuffer && doc?.pdfFile) {
+      if (Buffer.isBuffer(doc.pdfFile)) {
+        pdfBuffer = doc.pdfFile;
+      } else if (typeof doc.pdfFile === 'string') {
+        const commaIndex = doc.pdfFile.indexOf(',');
+        const base64String = commaIndex >= 0 ? doc.pdfFile.slice(commaIndex + 1) : doc.pdfFile;
+        pdfBuffer = Buffer.from(base64String, 'base64');
+      }
+    }
+
+    if (!pdfBuffer) {
+      console.log(`❌ Menu PDF not found for menuId: ${menuId}`);
+      return res.status(404).json({ error: 'PDF not found' });
     }
 
     res.setHeader('Content-Type', 'application/pdf');

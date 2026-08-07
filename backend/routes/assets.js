@@ -1028,7 +1028,22 @@ router.get('/event-pages/:id', async (req, res) => {
 // Save/Update a menu page
 router.post('/menu-pages', async (req, res) => {
   try {
-    const { id, title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = req.body;
+    const {
+      id,
+      title,
+      summary,
+      about,
+      image,
+      pdfFile,
+      pdfFileName,
+      pdfFileId: incomingPdfFileId,
+      pdfUrl: incomingPdfUrl,
+      businessHours,
+      services,
+      address,
+      contact,
+      pageColor
+    } = req.body;
 
     if (!id || !title) {
       return res.status(400).json({ error: 'Menu page ID and title are required' });
@@ -1047,12 +1062,16 @@ router.post('/menu-pages', async (req, res) => {
       }
     }
 
-    let pdfFileId = null;
-    let pdfUrl = null;
+    let pdfFileId = incomingPdfFileId ? String(incomingPdfFileId) : null;
+    let pdfUrl = incomingPdfUrl || null;
     let storedPdfFile = null;
     let storedPdfFileName = pdfFileName || '';
 
-    if (pdfFile && typeof pdfFile === 'string' && pdfFile.startsWith('data:')) {
+    if (pdfFileId) {
+      if (!pdfUrl) {
+        pdfUrl = `/api/pdf/${pdfFileId}`;
+      }
+    } else if (pdfFile && typeof pdfFile === 'string' && pdfFile.startsWith('data:')) {
       const PDFFile = require('../models/PDFFile');
       const pdfBuffer = Buffer.from(pdfFile.split(',')[1], 'base64');
       const pdfRecord = await PDFFile.create({

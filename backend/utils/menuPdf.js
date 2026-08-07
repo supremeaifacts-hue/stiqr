@@ -3,7 +3,7 @@ function getMenuPdfLink(menuPage, req) {
 
   const hostBase = `${req.protocol}://${req.get('host')}`;
   const directPdfUrl = menuPage.pdfUrl || '';
-  const pdfFileId = menuPage.pdfFileId;
+  const pdfFileId = menuPage.pdfFileId ? String(menuPage.pdfFileId) : null;
 
   if (directPdfUrl && (directPdfUrl.startsWith('http://') || directPdfUrl.startsWith('https://') || directPdfUrl.includes('/api/pdf/'))) {
     return directPdfUrl;
