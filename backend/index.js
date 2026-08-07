@@ -852,9 +852,9 @@ app.get('/menu/:id', async (req, res) => {
     let pdfLink = pdfFile || '';
     if (pdfLink && (pdfLink.startsWith('http://') || pdfLink.startsWith('https://') || pdfLink.includes('/api/pdf/'))) {
       // leave as-is
-    } else if (pdfFileName) {
-      // Prefer serving the menu PDF via the dedicated menu-pdf endpoint which
-      // will extract the stored data URI and serve it inline in the browser.
+    } else if (pdfFileName || (typeof pdfLink === 'string' && pdfLink.startsWith('data:')) || Buffer.isBuffer(pdfFile)) {
+      // Prefer serving the menu PDF via the dedicated menu-pdf endpoint so the browser
+      // renders it inline instead of treating the embedded data URI as a download.
       pdfLink = `${hostBase}/api/menu-pdf/${id}`;
     } else if (pdfLink && pdfLink.startsWith('/uploads/')) {
       // Convert legacy uploads path to backend-hosted API proxy (best-effort)

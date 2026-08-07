@@ -1154,6 +1154,16 @@ router.get('/menu/:id', async (req, res) => {
     }
 
     const { title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = menuPage;
+    const hostBase = `${req.protocol}://${req.get('host')}`;
+    let pdfLink = pdfFile || '';
+
+    if (pdfLink && (pdfLink.startsWith('http://') || pdfLink.startsWith('https://') || pdfLink.includes('/api/pdf/'))) {
+      // leave as-is
+    } else if (pdfFileName || (typeof pdfLink === 'string' && pdfLink.startsWith('data:')) || Buffer.isBuffer(pdfFile)) {
+      pdfLink = `${hostBase}/api/menu-pdf/${id}`;
+    } else if (pdfLink && pdfLink.startsWith('/uploads/')) {
+      pdfLink = `${hostBase}/api/pdf-by-path?path=${encodeURIComponent(pdfLink)}`;
+    }
     
     // Build address string
     const addressParts = [];
@@ -1386,7 +1396,7 @@ router.get('/menu/:id', async (req, res) => {
                   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
                     <span style="font-size:32px;">📄</span>
                     <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">${pdfFileName}</div>
-                    <a href="${pdfFile}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
+                    <a href="${pdfLink}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
                   </div>
                 </div>
               </div>
@@ -2142,5 +2152,6 @@ router.post('/qrcodes/:id/increment', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-module.exports = router;
+
+module.exports = router;
 
