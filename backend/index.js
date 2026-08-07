@@ -1445,26 +1445,39 @@ async function processPDFInBackground(jobId, buffer, req) {
       try {
         const db = mongoose.connection.db;
         if (db) {
-          await db.collection('menu_pages').updateOne(
+          const updateFields = {
+            pdfFile: pdfRecord._id,
+            pdfFileId: pdfRecord._id.toString(),
+            // ✅ Store the full URL in the menu document
+            pdfUrl: `${frontendUrl}/api/pdf/${pdfRecord._id}`,
+            pdfFileName: job.originalName || 'menu.pdf',
+            updatedAt: new Date()
+          };
+
+          // Primary: match the menu document by its `id` field (the menu ID).
+          // upsert:true ensures the menu document is created if it doesn't exist yet.
+          const result = await db.collection('menu_pages').updateOne(
             { id: targetMenuId },
-            {
-              $set: {
-                pdfFile: pdfRecord._id,
-                pdfFileId: pdfRecord._id.toString(),
-                // ✅ Store the full URL in the menu document
-                pdfUrl: `${frontendUrl}/api/pdf/${pdfRecord._id}`,
-                pdfFileName: job.originalName || 'menu.pdf',
-                updatedAt: new Date()
-              }
-            },
+            { $set: updateFields },
             { upsert: true }
           );
+
+          // Fallback: if no menu document matched by `id`, try matching by the
+          // `qrCodeId` field (some menu documents may store the ID there instead).
+          if (result.matchedCount === 0) {
+            await db.collection('menu_pages').updateOne(
+              { qrCodeId: targetMenuId },
+              { $set: updateFields },
+              { upsert: false }
+            );
+          }
         }
       } catch (menuUpdateError) {
         console.error('⚠️ Failed to update menu page with PDF reference:', menuUpdateError.message);
 
       }
     }
+
 
 
     // Update job with results
