@@ -342,6 +342,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [menuConfigSaved, setMenuConfigSaved] = useState(false);
   const menuImageInputRef = useRef(null);
   const menuPdfInputRef = useRef(null);
+  // ✅ Ref to hold the menu ID used for PDF uploads so that processPDFInBackground
+  //    links the PDF to the correct menu_pages document. Set when the modal opens.
+  const menuPageIdRef = useRef(null);
+
 
 
   // Open social modal (separate handler for easier debugging)
@@ -353,6 +357,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   // Open menu modal
   const openMenuModal = () => {
     console.log('Opening Menu modal');
+    // ✅ Set a stable menu ID for this session so that PDF uploads
+    //    (processPDFInBackground) link to the correct menu_pages document.
+    //    For a new menu, generate the ID once here and reuse it in
+    //    handleSaveMenuConfig so both use the same ID.
+    if (!menuPageId) {
+      menuPageIdRef.current = generateId();
+    } else {
+      menuPageIdRef.current = menuPageId;
+    }
     // Pre-load the restaurant image
     const img = new Image();
     img.onload = () => {
@@ -368,6 +381,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     setShowMenuModal(true);
   };
 
+
   // Get the menu landing page URL
   const getMenuLandingUrl = (pageId) => {
     const hostname = window.location.hostname;
@@ -381,14 +395,17 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     }
   };
 
-  const uploadMenuPdfFile = async (file) => {
+  const uploadMenuPdfFile = async (file, qrCodeId = null) => {
     if (!file) return { pdfFileId: null, pdfUrl: null };
 
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const token = localStorage.getItem('jwtToken');
     const formData = new FormData();
     formData.append('pdfFile', file);
-    formData.append('qrCodeId', menuPageId || generateId());
+    // ✅ Use the provided qrCodeId (the menu ID) so processPDFInBackground
+    //    can correctly link the PDF to the menu_pages document.
+    formData.append('qrCodeId', qrCodeId || menuPageId || generateId());
+
 
     const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
       method: 'POST',
@@ -445,7 +462,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     setSavingMenu(true);
 
     try {
-      const newMenuPageId = menuPageId || generateId();
+      // ✅ Use the stable menu ID set when the modal opened (menuPageIdRef.current)
+      //    so that PDF uploads (processPDFInBackground) link to the correct
+      //    menu_pages document. Fall back to menuPageId or a new ID if not set.
+      const newMenuPageId = menuPageIdRef.current || menuPageId || generateId();
 
       let resolvedPdfFileId = menuData.pdfFileId || null;
       let resolvedPdfUrl = menuData.pdfUrl || null;
@@ -453,7 +473,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
       if (menuData.pdfFileName && !resolvedPdfFileId && !resolvedPdfUrl) {
         const pendingPdfFile = menuPdfInputRef.current?.files?.[0] || null;
         if (pendingPdfFile) {
-          const uploadedPdf = await uploadMenuPdfFile(pendingPdfFile);
+          // ✅ Pass the menu ID so processPDFInBackground links the PDF
+          //    to the correct menu_pages document.
+          const uploadedPdf = await uploadMenuPdfFile(pendingPdfFile, newMenuPageId);
           resolvedPdfFileId = uploadedPdf.pdfFileId || null;
           resolvedPdfUrl = uploadedPdf.pdfUrl || null;
           setMenuData(prev => ({
@@ -463,6 +485,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           }));
         }
       }
+
+
 
       // Build the menu data payload
       const menuPayload = {
@@ -5411,7 +5435,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         }));
 
                         try {
-                          const uploadedPdf = await uploadMenuPdfFile(file);
+                          // ✅ Pass the menu ID so processPDFInBackground links the PDF
+                          //    to the correct menu_pages document. Use the stable ID set
+                          //    when the modal opened (menuPageIdRef.current) so it matches
+                          //    the ID used in handleSaveMenuConfig.
+                          const uploadMenuId = menuPageIdRef.current || menuPageId || generateId();
+                          const uploadedPdf = await uploadMenuPdfFile(file, uploadMenuId);
                           setMenuData(prev => ({
                             ...prev,
                             pdfFileId: uploadedPdf.pdfFileId || null,
@@ -5421,6 +5450,13 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                           console.error('Menu PDF upload error:', error);
                           alert('Menu PDF upload failed. Please try again.');
                         }
+
+
+
+
+
+
+
                       }}
                       style={{ display: 'none' }}
                     />

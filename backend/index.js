@@ -1358,6 +1358,7 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
     }
 
     const { qrCodeId } = req.body;
+    const menuId = qrCodeId || null;
     
     // Generate a unique job ID
     const jobId = `pdf-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -1372,7 +1373,7 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
     // Store job info in memory
     const job = {
       id: jobId,
-      qrCodeId: qrCodeId,
+      qrCodeId: menuId,
       originalName: req.file.originalname,
       size: req.file.size,
       status: 'pending',
@@ -1432,13 +1433,20 @@ async function processPDFInBackground(jobId, buffer, req) {
     console.log(`✅ PDF saved directly to MongoDB: ${pdfRecord._id}`);
     console.log(`   URL: ${fileUrl}`);
 
-    // Update the menu document with the PDF reference when available
-    if (job.qrCodeId) {
+    // Update the menu document with the PDF reference when available.
+    // IMPORTANT: Use upsert:true because the menu_pages document may not exist yet.
+    // In the menu creation flow, the PDF is uploaded (and processPDFInBackground runs)
+    // BEFORE the menu document is created by POST /api/menu-pages. With upsert:false,
+    // the update matches zero documents and silently does nothing, leaving pdfFile null.
+    // With upsert:true, the menu document is created (or updated) with the PDF reference,
+    // and the subsequent POST /api/menu-pages will fill in the rest of the menu data.
+    const targetMenuId = job.qrCodeId || null;
+    if (targetMenuId) {
       try {
         const db = mongoose.connection.db;
         if (db) {
           await db.collection('menu_pages').updateOne(
-            { id: job.qrCodeId },
+            { id: targetMenuId },
             {
               $set: {
                 pdfFile: pdfRecord._id,
@@ -1449,7 +1457,7 @@ async function processPDFInBackground(jobId, buffer, req) {
                 updatedAt: new Date()
               }
             },
-            { upsert: false }
+            { upsert: true }
           );
         }
       } catch (menuUpdateError) {
@@ -1457,6 +1465,7 @@ async function processPDFInBackground(jobId, buffer, req) {
 
       }
     }
+
 
     // Update job with results
     job.status = 'completed';
