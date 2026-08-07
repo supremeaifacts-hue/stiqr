@@ -6,8 +6,7 @@
     "npm": "9.x"
   },
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "npm install debug@4.3.4 --save-exact"
+    "start": "node index.js"
   },
   "dependencies": {
     "@mongodb-js/saslprep": "^1.4.11",
