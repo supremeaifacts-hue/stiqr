@@ -306,6 +306,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     imagePreview: null,
     pdfFile: null,
     pdfFileName: '',
+    pdfFileId: null,
+    pdfUrl: null,
     businessHours: {
       monday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
       tuesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
@@ -401,6 +403,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         image: menuData.imagePreview,
         pdfFile: menuData.pdfFile,
         pdfFileName: menuData.pdfFileName,
+        pdfFileId: menuData.pdfFileId || null,
+        pdfUrl: menuData.pdfUrl || null,
         businessHours: menuData.businessHours,
         services: menuData.services,
         address: {
@@ -1228,6 +1232,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   imagePreview: page.image || null,
                   pdfFile: page.pdfFile || null,
                   pdfFileName: page.pdfFileName || '',
+                  pdfFileId: page.pdfFileId || null,
+                  pdfUrl: page.pdfUrl || null,
                   businessHours: page.businessHours || {
                     monday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
                     tuesday: { morningOpen: '', morningClose: '', eveningOpen: '', eveningClose: '', closed: false },
@@ -5322,18 +5328,76 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                       ref={menuPdfInputRef}
                       type="file"
                       accept=".pdf"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
+                        if (!file) return;
+
+                        setMenuData(prev => ({
+                          ...prev,
+                          pdfFile: null,
+                          pdfFileName: file.name,
+                          pdfFileId: null,
+                          pdfUrl: null,
+                        }));
+
+                        try {
+                          const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                          const token = localStorage.getItem('jwtToken');
+                          const formData = new FormData();
+                          formData.append('pdfFile', file);
+                          formData.append('qrCodeId', menuPageId || generateId());
+
+                          const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
+                            method: 'POST',
+                            headers: token ? { Authorization: `Bearer ${token}` } : {},
+                            body: formData,
+                          });
+
+                          if (!uploadResponse.ok) {
+                            const uploadError = await uploadResponse.text();
+                            console.error('❌ Menu PDF upload failed:', uploadError);
+                            alert('Failed to upload menu PDF. Please try again.');
+                            return;
+                          }
+
+                          const result = await uploadResponse.json();
+                          if (!result.jobId) {
                             setMenuData(prev => ({
                               ...prev,
-                              pdfFile: ev.target.result,
-                              pdfFileName: file.name,
+                              pdfFileId: result.pdfId || null,
+                              pdfUrl: result.fileUrl || null,
                             }));
-                          };
-                          reader.readAsDataURL(file);
+                            return;
+                          }
+
+                          let pollAttempts = 0;
+                          const maxPollAttempts = 30;
+                          const pollInterval = 1000;
+
+                          while (pollAttempts < maxPollAttempts) {
+                            pollAttempts += 1;
+                            const jobResponse = await fetch(`${baseUrl}/api/pdf/job/${result.jobId}`);
+                            if (jobResponse.ok) {
+                              const jobData = await jobResponse.json();
+                              if (jobData.status === 'completed') {
+                                setMenuData(prev => ({
+                                  ...prev,
+                                  pdfFileId: jobData.pdfId || null,
+                                  pdfUrl: jobData.fileUrl || null,
+                                }));
+                                return;
+                              }
+                              if (jobData.status === 'failed') {
+                                throw new Error(jobData.error || 'PDF processing failed');
+                              }
+                            }
+                            await new Promise(resolve => setTimeout(resolve, pollInterval));
+                          }
+
+                          throw new Error('Menu PDF upload timed out');
+                        } catch (error) {
+                          console.error('Menu PDF upload error:', error);
+                          alert('Menu PDF upload failed. Please try again.');
                         }
                       }}
                       style={{ display: 'none' }}

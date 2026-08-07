@@ -843,23 +843,7 @@ app.get('/menu/:id', async (req, res) => {
     }
 
     const { title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = menuPage;
-
-    // Ensure menu PDF link opens inline in browser.
-    // If `pdfFile` already points to our `/api/pdf/` endpoint or is an absolute URL, use it as-is.
-    // Otherwise, if we have a stored `pdfFileName`, expose a safe API endpoint that will locate
-    // the PDF by its original filename and serve it inline.
-    const hostBase = `${req.protocol}://${req.get('host')}`;
-    let pdfLink = pdfFile || '';
-    if (pdfLink && (pdfLink.startsWith('http://') || pdfLink.startsWith('https://') || pdfLink.includes('/api/pdf/'))) {
-      // leave as-is
-    } else if (pdfFileName || (typeof pdfLink === 'string' && pdfLink.startsWith('data:')) || Buffer.isBuffer(pdfFile)) {
-      // Prefer serving the menu PDF via the dedicated menu-pdf endpoint so the browser
-      // renders it inline instead of treating the embedded data URI as a download.
-      pdfLink = `${hostBase}/api/menu-pdf/${id}`;
-    } else if (pdfLink && pdfLink.startsWith('/uploads/')) {
-      // Convert legacy uploads path to backend-hosted API proxy (best-effort)
-      pdfLink = `${hostBase}/api/pdf-by-path?path=${encodeURIComponent(pdfLink)}`;
-    }
+    const pdfLink = require('./utils/menuPdf').getMenuPdfLink(menuPage, req);
     
     // Build address string
     const addressParts = [];

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { getMenuPdfLink } = require('../utils/menuPdf');
 
 // Middleware to check if user is authenticated (supports both session and JWT)
 const isAuthenticated = async (req, res, next) => {
@@ -1046,14 +1047,39 @@ router.post('/menu-pages', async (req, res) => {
       }
     }
 
+    let pdfFileId = null;
+    let pdfUrl = null;
+    let storedPdfFile = null;
+    let storedPdfFileName = pdfFileName || '';
+
+    if (pdfFile && typeof pdfFile === 'string' && pdfFile.startsWith('data:')) {
+      const PDFFile = require('../models/PDFFile');
+      const pdfBuffer = Buffer.from(pdfFile.split(',')[1], 'base64');
+      const pdfRecord = await PDFFile.create({
+        qrCodeId: id,
+        originalName: storedPdfFileName || 'menu.pdf',
+        data: pdfBuffer,
+        size: pdfBuffer.length,
+        status: 'completed'
+      });
+      pdfFileId = pdfRecord._id.toString();
+      pdfUrl = `/api/pdf/${pdfFileId}`;
+      storedPdfFile = null;
+      storedPdfFileName = pdfRecord.originalName || storedPdfFileName;
+    } else {
+      storedPdfFile = pdfFile || null;
+    }
+
     const menuPageData = {
       id,
       title,
       summary: summary || '',
       about: about || '',
       image: image || null,
-      pdfFile: pdfFile || null,
-      pdfFileName: pdfFileName || '',
+      pdfFile: storedPdfFile,
+      pdfFileId,
+      pdfUrl,
+      pdfFileName: storedPdfFileName,
       businessHours: businessHours || {},
       services: services || {},
       address: address || {},
@@ -1154,16 +1180,7 @@ router.get('/menu/:id', async (req, res) => {
     }
 
     const { title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = menuPage;
-    const hostBase = `${req.protocol}://${req.get('host')}`;
-    let pdfLink = pdfFile || '';
-
-    if (pdfLink && (pdfLink.startsWith('http://') || pdfLink.startsWith('https://') || pdfLink.includes('/api/pdf/'))) {
-      // leave as-is
-    } else if (pdfFileName || (typeof pdfLink === 'string' && pdfLink.startsWith('data:')) || Buffer.isBuffer(pdfFile)) {
-      pdfLink = `${hostBase}/api/menu-pdf/${id}`;
-    } else if (pdfLink && pdfLink.startsWith('/uploads/')) {
-      pdfLink = `${hostBase}/api/pdf-by-path?path=${encodeURIComponent(pdfLink)}`;
-    }
+    const pdfLink = getMenuPdfLink(menuPage, req);
     
     // Build address string
     const addressParts = [];
