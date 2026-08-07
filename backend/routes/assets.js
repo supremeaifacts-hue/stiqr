@@ -1085,7 +1085,7 @@ router.post('/menu-pages', async (req, res) => {
       if (!pdfUrl) {
         pdfUrl = `/api/pdf/${pdfFileId}`;
       }
-      storedPdfFile = pdfFileId;
+      storedPdfFile = mongoose.Types.ObjectId.isValid(pdfFileId) ? new mongoose.Types.ObjectId(pdfFileId) : pdfFileId;
     } else if (pdfFile && typeof pdfFile === 'string' && pdfFile.startsWith('data:')) {
       const PDFFile = require('../models/PDFFile');
       const pdfBuffer = Buffer.from(pdfFile.split(',')[1], 'base64');
@@ -1098,12 +1098,12 @@ router.post('/menu-pages', async (req, res) => {
       });
       pdfFileId = pdfRecord._id.toString();
       pdfUrl = `/api/pdf/${pdfFileId}`;
-      storedPdfFile = pdfFileId;
+      storedPdfFile = pdfRecord._id;
       storedPdfFileName = pdfRecord.originalName || storedPdfFileName;
     } else if (pdfFile && typeof pdfFile === 'string' && /^[a-fA-F0-9]{24}$/.test(pdfFile.trim())) {
       pdfFileId = pdfFile.trim();
       pdfUrl = `/api/pdf/${pdfFileId}`;
-      storedPdfFile = pdfFileId;
+      storedPdfFile = mongoose.Types.ObjectId.isValid(pdfFileId) ? new mongoose.Types.ObjectId(pdfFileId) : pdfFileId;
     } else {
       storedPdfFile = pdfFile || null;
     }

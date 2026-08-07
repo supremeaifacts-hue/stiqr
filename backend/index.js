@@ -1427,6 +1427,30 @@ async function processPDFInBackground(jobId, buffer, req) {
     console.log(`✅ PDF saved directly to MongoDB: ${pdfRecord._id}`);
     console.log(`   URL: ${fileUrl}`);
 
+    // Update the menu document with the PDF reference when available
+    if (job.qrCodeId) {
+      try {
+        const db = mongoose.connection.db;
+        if (db) {
+          await db.collection('menu_pages').updateOne(
+            { id: job.qrCodeId },
+            {
+              $set: {
+                pdfFile: pdfRecord._id,
+                pdfFileId: pdfRecord._id.toString(),
+                pdfUrl: `/api/pdf/${pdfRecord._id}`,
+                pdfFileName: job.originalName || 'menu.pdf',
+                updatedAt: new Date()
+              }
+            },
+            { upsert: false }
+          );
+        }
+      } catch (menuUpdateError) {
+        console.error('⚠️ Failed to update menu page with PDF reference:', menuUpdateError.message);
+      }
+    }
+
     // Update job with results
     job.status = 'completed';
     job.pdfId = pdfRecord._id.toString();
