@@ -28,6 +28,13 @@ function getMenuPdfLink(menuPage, req) {
   }
 
   const pdfFile = menuPage.pdfFile || '';
+  const pdfReferenceId = typeof pdfFile === 'string'
+    ? (pdfFile.trim().match(/^[a-fA-F0-9]{24}$/) ? pdfFile.trim() : null)
+    : (pdfFile && typeof pdfFile === 'object' && pdfFile.toString && pdfFile.toString().match(/^[a-fA-F0-9]{24}$/) ? pdfFile.toString() : null);
+
+  if (pdfReferenceId) {
+    return `${hostBase}/api/pdf/${pdfReferenceId}`;
+  }
   if (pdfFile && (pdfFile.startsWith('http://') || pdfFile.startsWith('https://') || pdfFile.includes('/api/pdf/'))) {
     return pdfFile;
   }

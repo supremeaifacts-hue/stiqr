@@ -1616,7 +1616,15 @@ app.get('/api/menu-pdf/:menuId', async (req, res) => {
     }
 
     if (!pdfBuffer && doc?.pdfFile) {
-      if (Buffer.isBuffer(doc.pdfFile)) {
+      const pdfReference = typeof doc.pdfFile === 'string' ? doc.pdfFile.trim() : doc.pdfFile?.toString?.();
+      if (pdfReference && /^[a-fA-F0-9]{24}$/.test(pdfReference)) {
+        const PDFFile = require('./models/PDFFile');
+        const pdfRecord = await PDFFile.findById(pdfReference);
+        if (pdfRecord?.data) {
+          pdfBuffer = Buffer.isBuffer(pdfRecord.data) ? pdfRecord.data : Buffer.from(pdfRecord.data.buffer || pdfRecord.data);
+          filename = pdfRecord.originalName || filename;
+        }
+      } else if (Buffer.isBuffer(doc.pdfFile)) {
         pdfBuffer = doc.pdfFile;
       } else if (typeof doc.pdfFile === 'string') {
         const commaIndex = doc.pdfFile.indexOf(',');
