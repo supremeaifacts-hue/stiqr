@@ -843,7 +843,11 @@ app.get('/menu/:id', async (req, res) => {
     }
 
     const { title, summary, about, image, pdfFile, pdfFileName, businessHours, services, address, contact, pageColor } = menuPage;
-    const pdfLink = require('./utils/menuPdf').getMenuPdfLink(menuPage, req);
+    // ✅ Use the stored pdfUrl field (full URL) with a fallback to the pdfFile reference
+    const pdfLink = menuPage.pdfUrl || `https://www.stiqr.top/api/pdf/${menuPage.pdfFile}`;
+    // Fallback to the robust helper if no pdfUrl/pdfFile is present
+    const resolvedPdfLink = pdfLink && !pdfLink.includes('undefined') ? pdfLink : require('./utils/menuPdf').getMenuPdfLink(menuPage, req);
+
     
     // Build address string
     const addressParts = [];
@@ -1076,7 +1080,8 @@ app.get('/menu/:id', async (req, res) => {
                   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
                     <span style="font-size:32px;">📄</span>
                     <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">${pdfFileName}</div>
-                    <a href="${pdfLink}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
+                    <a href="${resolvedPdfLink}" target="_blank" style="display:inline-block;padding:8px 20px;background:#1E304F;border-radius:20px;color:#fff;font-size:12px;font-weight:600;text-decoration:none;">View Menu PDF</a>
+
                   </div>
                 </div>
               </div>
@@ -1438,7 +1443,8 @@ async function processPDFInBackground(jobId, buffer, req) {
               $set: {
                 pdfFile: pdfRecord._id,
                 pdfFileId: pdfRecord._id.toString(),
-                pdfUrl: `/api/pdf/${pdfRecord._id}`,
+                // ✅ Store the full URL in the menu document
+                pdfUrl: `${frontendUrl}/api/pdf/${pdfRecord._id}`,
                 pdfFileName: job.originalName || 'menu.pdf',
                 updatedAt: new Date()
               }
@@ -1448,6 +1454,7 @@ async function processPDFInBackground(jobId, buffer, req) {
         }
       } catch (menuUpdateError) {
         console.error('⚠️ Failed to update menu page with PDF reference:', menuUpdateError.message);
+
       }
     }
 
