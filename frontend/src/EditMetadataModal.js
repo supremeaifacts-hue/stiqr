@@ -1015,6 +1015,41 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
           </span>
         </div>
 
+        {qrType === 'pdf' && (
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '13px',
+              color: '#aaa',
+              marginBottom: '6px',
+              fontWeight: '600',
+            }}>
+              Destination URL
+            </label>
+            <input
+              type="url"
+              value={destination || ''}
+              readOnly
+              placeholder="https://example.com"
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: '#bbb',
+                fontSize: '14px',
+                outline: 'none',
+                boxSizing: 'border-box',
+                cursor: 'not-allowed',
+              }}
+            />
+            <div style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>
+              This is the URL people will be redirected to when scanning this PDF QR code.
+            </div>
+          </div>
+        )}
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
