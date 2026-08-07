@@ -381,6 +381,59 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     }
   };
 
+  const uploadMenuPdfFile = async (file) => {
+    if (!file) return { pdfFileId: null, pdfUrl: null };
+
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const token = localStorage.getItem('jwtToken');
+    const formData = new FormData();
+    formData.append('pdfFile', file);
+    formData.append('qrCodeId', menuPageId || generateId());
+
+    const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const uploadError = await uploadResponse.text();
+      throw new Error(uploadError || 'Failed to upload PDF file');
+    }
+
+    const result = await uploadResponse.json();
+    if (!result.jobId) {
+      return {
+        pdfFileId: result.pdfId || null,
+        pdfUrl: result.fileUrl || null,
+      };
+    }
+
+    let pollAttempts = 0;
+    const maxPollAttempts = 30;
+    const pollInterval = 1000;
+
+    while (pollAttempts < maxPollAttempts) {
+      pollAttempts += 1;
+      const jobResponse = await fetch(`${baseUrl}/api/pdf/job/${result.jobId}`);
+      if (jobResponse.ok) {
+        const jobData = await jobResponse.json();
+        if (jobData.status === 'completed') {
+          return {
+            pdfFileId: jobData.pdfId || null,
+            pdfUrl: jobData.fileUrl || null,
+          };
+        }
+        if (jobData.status === 'failed') {
+          throw new Error(jobData.error || 'PDF processing failed');
+        }
+      }
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+
+    throw new Error('Menu PDF upload timed out');
+  };
+
   // Handle saving menu configuration
   const handleSaveMenuConfig = async () => {
     // Validate required fields
@@ -394,6 +447,23 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     try {
       const newMenuPageId = menuPageId || generateId();
 
+      let resolvedPdfFileId = menuData.pdfFileId || null;
+      let resolvedPdfUrl = menuData.pdfUrl || null;
+
+      if (menuData.pdfFileName && !resolvedPdfFileId && !resolvedPdfUrl) {
+        const pendingPdfFile = menuPdfInputRef.current?.files?.[0] || null;
+        if (pendingPdfFile) {
+          const uploadedPdf = await uploadMenuPdfFile(pendingPdfFile);
+          resolvedPdfFileId = uploadedPdf.pdfFileId || null;
+          resolvedPdfUrl = uploadedPdf.pdfUrl || null;
+          setMenuData(prev => ({
+            ...prev,
+            pdfFileId: resolvedPdfFileId,
+            pdfUrl: resolvedPdfUrl,
+          }));
+        }
+      }
+
       // Build the menu data payload
       const menuPayload = {
         id: newMenuPageId,
@@ -403,8 +473,8 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         image: menuData.imagePreview,
         pdfFile: menuData.pdfFile,
         pdfFileName: menuData.pdfFileName,
-        pdfFileId: menuData.pdfFileId || null,
-        pdfUrl: menuData.pdfUrl || null,
+        pdfFileId: resolvedPdfFileId,
+        pdfUrl: resolvedPdfUrl,
         businessHours: menuData.businessHours,
         services: menuData.services,
         address: {
@@ -5341,60 +5411,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         }));
 
                         try {
-                          const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                          const token = localStorage.getItem('jwtToken');
-                          const formData = new FormData();
-                          formData.append('pdfFile', file);
-                          formData.append('qrCodeId', menuPageId || generateId());
-
-                          const uploadResponse = await fetch(`${baseUrl}/api/upload/pdf`, {
-                            method: 'POST',
-                            headers: token ? { Authorization: `Bearer ${token}` } : {},
-                            body: formData,
-                          });
-
-                          if (!uploadResponse.ok) {
-                            const uploadError = await uploadResponse.text();
-                            console.error('❌ Menu PDF upload failed:', uploadError);
-                            alert('Failed to upload menu PDF. Please try again.');
-                            return;
-                          }
-
-                          const result = await uploadResponse.json();
-                          if (!result.jobId) {
-                            setMenuData(prev => ({
-                              ...prev,
-                              pdfFileId: result.pdfId || null,
-                              pdfUrl: result.fileUrl || null,
-                            }));
-                            return;
-                          }
-
-                          let pollAttempts = 0;
-                          const maxPollAttempts = 30;
-                          const pollInterval = 1000;
-
-                          while (pollAttempts < maxPollAttempts) {
-                            pollAttempts += 1;
-                            const jobResponse = await fetch(`${baseUrl}/api/pdf/job/${result.jobId}`);
-                            if (jobResponse.ok) {
-                              const jobData = await jobResponse.json();
-                              if (jobData.status === 'completed') {
-                                setMenuData(prev => ({
-                                  ...prev,
-                                  pdfFileId: jobData.pdfId || null,
-                                  pdfUrl: jobData.fileUrl || null,
-                                }));
-                                return;
-                              }
-                              if (jobData.status === 'failed') {
-                                throw new Error(jobData.error || 'PDF processing failed');
-                              }
-                            }
-                            await new Promise(resolve => setTimeout(resolve, pollInterval));
-                          }
-
-                          throw new Error('Menu PDF upload timed out');
+                          const uploadedPdf = await uploadMenuPdfFile(file);
+                          setMenuData(prev => ({
+                            ...prev,
+                            pdfFileId: uploadedPdf.pdfFileId || null,
+                            pdfUrl: uploadedPdf.pdfUrl || null,
+                          }));
                         } catch (error) {
                           console.error('Menu PDF upload error:', error);
                           alert('Menu PDF upload failed. Please try again.');

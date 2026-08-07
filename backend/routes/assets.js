@@ -1062,8 +1062,22 @@ router.post('/menu-pages', async (req, res) => {
       }
     }
 
-    let pdfFileId = incomingPdfFileId ? String(incomingPdfFileId) : null;
-    let pdfUrl = incomingPdfUrl || null;
+    const normalizePdfId = (value) => {
+      if (value === null || value === undefined) return null;
+      const str = String(value).trim();
+      if (!str || str === 'null' || str === 'undefined') return null;
+      return str;
+    };
+
+    const normalizePdfUrl = (value) => {
+      if (value === null || value === undefined) return null;
+      const str = String(value).trim();
+      if (!str || str === 'null' || str === 'undefined' || str === '/menu/null' || str === 'menu/null') return null;
+      return str;
+    };
+
+    let pdfFileId = normalizePdfId(incomingPdfFileId);
+    let pdfUrl = normalizePdfUrl(incomingPdfUrl);
     let storedPdfFile = null;
     let storedPdfFileName = pdfFileName || '';
 
