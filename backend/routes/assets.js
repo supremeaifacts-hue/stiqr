@@ -1144,39 +1144,68 @@ router.post('/menu-pages', async (req, res) => {
       console.log(`✅ Menu page saved to MongoDB: ${id}`);
 
       // ============================================================
-      // DEFERRED LINKING (Step 2): Check if there's a pending PDF
-      // uploaded for this menu ID (via processPDFInBackground). If so,
-      // link the PDF to the menu document and clean up the temp record.
+      // DEFERRED LINKING (Step 2): Link a PDF that was uploaded for
+      // this menu ID. The PDF upload runs in the background BEFORE the
+      // menu document is created, so we check two sources here:
+      //   1. The pdffiles collection directly (the PDF record stores
+      //      qrCodeId = the menu ID). This is the most reliable source.
+      //   2. The pdf_pending_links temporary collection (fallback).
+      // If a matching PDF is found, copy its ID into the menu's
+      // pdfFile field and set the pdfUrl.
       // ============================================================
       try {
-        const pendingPdf = await db.collection('pdf_pending_links').findOne({
-          qrCodeId: id
-        });
+        let linkedPdf = null;
 
-        if (pendingPdf) {
-          // ✅ Link the PDF to the menu
+        // Source 1: Look up the PDF directly in the pdffiles collection
+        // by the qrCodeId (which equals the menu ID).
+        const pdfRecord = await db.collection('pdffiles').findOne({ qrCodeId: id });
+        if (pdfRecord && pdfRecord._id) {
+          linkedPdf = {
+            pdfId: pdfRecord._id,
+            pdfUrl: `https://www.stiqr.top/api/pdf/${pdfRecord._id}`,
+            pdfFileName: pdfRecord.originalName || menuPageData.pdfFileName || 'menu.pdf'
+          };
+          console.log(`✅ Found PDF in pdffiles for menu ${id}: ${pdfRecord._id}`);
+        }
+
+        // Source 2 (fallback): Check the temporary pending-links collection.
+        if (!linkedPdf) {
+          const pendingPdf = await db.collection('pdf_pending_links').findOne({ qrCodeId: id });
+          if (pendingPdf) {
+            linkedPdf = {
+              pdfId: pendingPdf.pdfId,
+              pdfUrl: pendingPdf.pdfUrl,
+              pdfFileName: pendingPdf.pdfFileName || menuPageData.pdfFileName || 'menu.pdf'
+            };
+            console.log(`✅ Found pending PDF link for menu ${id}: ${pendingPdf.pdfId}`);
+          }
+        }
+
+        if (linkedPdf) {
+          // ✅ Copy the PDF ID into the menu's pdfFile field and set pdfUrl
           await collection.updateOne(
             { id },
             {
               $set: {
-                pdfFile: pendingPdf.pdfId,
-                pdfFileId: pendingPdf.pdfId.toString ? pendingPdf.pdfId.toString() : pendingPdf.pdfId,
-                pdfUrl: pendingPdf.pdfUrl,
-                pdfFileName: pendingPdf.pdfFileName || menuPageData.pdfFileName || 'menu.pdf',
+                pdfFile: linkedPdf.pdfId,
+                pdfFileId: linkedPdf.pdfId.toString ? linkedPdf.pdfId.toString() : linkedPdf.pdfId,
+                pdfUrl: linkedPdf.pdfUrl,
+                pdfFileName: linkedPdf.pdfFileName || menuPageData.pdfFileName || 'menu.pdf',
                 updatedAt: new Date().toISOString()
               }
             }
           );
 
-          console.log(`✅ Linked pending PDF ${pendingPdf.pdfId} to menu ${id}`);
+          console.log(`✅ Linked PDF ${linkedPdf.pdfId} to menu ${id}`);
 
-          // Clean up the temporary record
-          await db.collection('pdf_pending_links').deleteOne({ _id: pendingPdf._id });
-          console.log(`🗑️ Cleaned up pending PDF link for menu ${id}`);
+          // Clean up the temporary pending-link record if it was used
+          await db.collection('pdf_pending_links').deleteMany({ qrCodeId: id });
+          console.log(`🗑️ Cleaned up pending PDF link(s) for menu ${id}`);
         }
       } catch (pendingLinkError) {
         console.error('⚠️ Failed to link pending PDF to menu:', pendingLinkError.message);
       }
+
     }
 
     res.json({ success: true, id, message: 'Menu page saved successfully' });
