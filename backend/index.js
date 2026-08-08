@@ -1350,7 +1350,8 @@ const uploadPdf = multer({
 });
 
 // POST /api/upload/pdf - Direct MongoDB storage (no GridFS)
-// Returns a jobId so the frontend can poll for upload status
+// Saves the PDF synchronously and returns the pdfId + pdfUrl immediately
+// so the frontend can store them and send them with the menu save request.
 app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
   try {
     if (!req.file) {
@@ -1359,38 +1360,89 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
 
     const { qrCodeId } = req.body;
     const menuId = qrCodeId || null;
-    
-    // Generate a unique job ID
-    const jobId = `pdf-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
     console.log('📄 PDF received:', {
       originalName: req.file.originalname,
       size: req.file.size,
-      qrCodeId: qrCodeId,
-      jobId: jobId
+      qrCodeId: qrCodeId
     });
 
-    // Store job info in memory
-    const job = {
-      id: jobId,
+    // ============================================================
+    // STEP 1: Save the PDF to the pdffiles collection SYNCHRONOUSLY
+    // so we can return the pdfId and pdfUrl to the frontend immediately.
+    // ============================================================
+    const PDFFile = require('./models/PDFFile');
+    const pdfRecord = await PDFFile.create({
       qrCodeId: menuId,
       originalName: req.file.originalname,
+      data: req.file.buffer,
       size: req.file.size,
-      status: 'pending',
+      status: 'completed',
       createdAt: new Date()
-    };
+    });
 
-    if (!global.pdfJobs) global.pdfJobs = {};
-    global.pdfJobs[jobId] = job;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.stiqr.top';
+    const fileUrl = `${frontendUrl}/api/pdf/${pdfRecord._id}`;
 
-    // Start background processing
-    processPDFInBackground(jobId, req.file.buffer, req);
+    console.log(`✅ PDF saved directly to MongoDB: ${pdfRecord._id}`);
+    console.log(`   URL: ${fileUrl}`);
 
-    // ✅ Return jobId so frontend can poll status
+    // ============================================================
+    // STEP 2: Link the PDF to the menu_pages document (if the menu
+    // already exists). If the menu doesn't exist yet, store a pending
+    // link so the menu creation endpoint can link it later.
+    // ============================================================
+    if (menuId) {
+      try {
+        const db = mongoose.connection.db;
+        if (db) {
+          const updateFields = {
+            pdfFile: pdfRecord._id,
+            pdfFileId: pdfRecord._id.toString(),
+            pdfUrl: fileUrl,
+            pdfFileName: req.file.originalname || 'menu.pdf',
+            updatedAt: new Date()
+          };
+
+          // Try to update the menu document directly (if it exists)
+          const result = await db.collection('menu_pages').updateOne(
+            { id: menuId },
+            { $set: updateFields },
+            { upsert: false }
+          );
+
+          if (result.matchedCount === 0) {
+            // Menu doesn't exist yet - store a pending link so the
+            // menu creation endpoint can link the PDF later.
+            await db.collection('pdf_pending_links').insertOne({
+              qrCodeId: menuId,
+              pdfId: pdfRecord._id,
+              pdfUrl: fileUrl,
+              pdfFileName: req.file.originalname || 'menu.pdf',
+              createdAt: new Date(),
+              status: 'pending'
+            });
+            console.log(`✅ Stored pending PDF link for menu ${menuId} -> ${pdfRecord._id}`);
+          } else {
+            console.log(`✅ Linked PDF ${pdfRecord._id} to existing menu ${menuId}`);
+          }
+        }
+      } catch (menuLinkError) {
+        console.error('⚠️ Failed to link PDF to menu:', menuLinkError.message);
+      }
+    }
+
+    // ============================================================
+    // STEP 3: Return the pdfId and pdfUrl to the frontend immediately.
+    // The frontend stores these and sends them with the menu save request.
+    // ============================================================
     res.json({
       success: true,
-      jobId: jobId,
-      message: 'PDF uploaded successfully. Processing in background.'
+      pdfId: pdfRecord._id.toString(),
+      pdfUrl: fileUrl,
+      qrCodeId: menuId,
+      originalName: req.file.originalname,
+      message: 'PDF uploaded successfully'
     });
 
   } catch (error) {
@@ -1398,6 +1450,7 @@ app.post('/api/upload/pdf', uploadPdf.single('pdfFile'), async (req, res) => {
     res.status(500).json({ error: 'Failed to upload PDF', details: error.message });
   }
 });
+
 
 // Background PDF processing function
 async function processPDFInBackground(jobId, buffer, req) {

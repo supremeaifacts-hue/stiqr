@@ -419,37 +419,51 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
     }
 
     const result = await uploadResponse.json();
-    if (!result.jobId) {
+
+    // ✅ The upload endpoint now returns pdfId and pdfUrl immediately
+    //    (the PDF is saved synchronously). Use them directly.
+    if (result.pdfId && result.pdfUrl) {
       return {
-        pdfFileId: result.pdfId || null,
-        pdfUrl: result.fileUrl || null,
+        pdfFileId: result.pdfId,
+        pdfUrl: result.pdfUrl,
       };
     }
 
-    let pollAttempts = 0;
-    const maxPollAttempts = 30;
-    const pollInterval = 1000;
+    // Fallback: if the endpoint still returns a jobId (older backend),
+    // poll for the job status.
+    if (result.jobId) {
+      let pollAttempts = 0;
+      const maxPollAttempts = 30;
+      const pollInterval = 1000;
 
-    while (pollAttempts < maxPollAttempts) {
-      pollAttempts += 1;
-      const jobResponse = await fetch(`${baseUrl}/api/pdf/job/${result.jobId}`);
-      if (jobResponse.ok) {
-        const jobData = await jobResponse.json();
-        if (jobData.status === 'completed') {
-          return {
-            pdfFileId: jobData.pdfId || null,
-            pdfUrl: jobData.fileUrl || null,
-          };
+      while (pollAttempts < maxPollAttempts) {
+        pollAttempts += 1;
+        const jobResponse = await fetch(`${baseUrl}/api/pdf/job/${result.jobId}`);
+        if (jobResponse.ok) {
+          const jobData = await jobResponse.json();
+          if (jobData.status === 'completed') {
+            return {
+              pdfFileId: jobData.pdfId || null,
+              pdfUrl: jobData.fileUrl || null,
+            };
+          }
+          if (jobData.status === 'failed') {
+            throw new Error(jobData.error || 'PDF processing failed');
+          }
         }
-        if (jobData.status === 'failed') {
-          throw new Error(jobData.error || 'PDF processing failed');
-        }
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      throw new Error('Menu PDF upload timed out');
     }
 
-    throw new Error('Menu PDF upload timed out');
+    // Last resort: use whatever fields are available
+    return {
+      pdfFileId: result.pdfId || null,
+      pdfUrl: result.pdfUrl || result.fileUrl || null,
+    };
   };
+
 
   // Handle saving menu configuration
   const handleSaveMenuConfig = async () => {
@@ -786,17 +800,19 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
         
         pollJob();
       } else {
-        // Direct response (no jobId) - use fileUrl directly
-        console.log('✅ PDF saved directly to MongoDB:', result.pdfId, result.fileUrl);
-        file.uploadedUrl = result.fileUrl;
+        // Direct response (no jobId) - use pdfUrl directly
+        const directUrl = result.pdfUrl || result.fileUrl;
+        console.log('✅ PDF saved directly to MongoDB:', result.pdfId, directUrl);
+        file.uploadedUrl = directUrl;
         setPdfFile(prev => {
           const updated = { ...prev };
-          updated.uploadedUrl = result.fileUrl;
+          updated.uploadedUrl = directUrl;
           return updated;
         });
         setPdfUploaded(true);
         setUploadProgress(100);
       }
+
 
     } catch (error) {
       console.error('PDF upload error:', error);
