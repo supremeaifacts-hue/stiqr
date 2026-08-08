@@ -1433,7 +1433,34 @@ async function processPDFInBackground(jobId, buffer, req) {
     console.log(`✅ PDF saved directly to MongoDB: ${pdfRecord._id}`);
     console.log(`   URL: ${fileUrl}`);
 
+    // ============================================================
+    // DEFERRED LINKING (Step 1): Store the qrCodeId -> pdfId mapping
+    // in a temporary collection. The menu_pages document may not exist
+    // yet (the PDF upload runs in the background BEFORE the menu is
+    // saved via POST /api/menu-pages). We store the mapping here so the
+    // menu creation endpoint can link the PDF once the menu exists.
+    // ============================================================
+    if (job.qrCodeId) {
+      try {
+        const db = mongoose.connection.db;
+        if (db) {
+          await db.collection('pdf_pending_links').insertOne({
+            qrCodeId: job.qrCodeId,
+            pdfId: pdfRecord._id,
+            pdfUrl: fileUrl,
+            pdfFileName: job.originalName || 'menu.pdf',
+            createdAt: new Date(),
+            status: 'pending'
+          });
+          console.log(`✅ Stored pending PDF link for menu ${job.qrCodeId} -> ${pdfRecord._id}`);
+        }
+      } catch (pendingLinkError) {
+        console.error('⚠️ Failed to store pending PDF link:', pendingLinkError.message);
+      }
+    }
+
     // Update the menu document with the PDF reference when available.
+
     // IMPORTANT: Use upsert:true because the menu_pages document may not exist yet.
     // In the menu creation flow, the PDF is uploaded (and processPDFInBackground runs)
     // BEFORE the menu document is created by POST /api/menu-pages. With upsert:false,
@@ -1816,6 +1843,28 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ============================================================
+// DEFERRED LINKING (Step 3): Clean up orphaned pending PDF links.
+// If a user uploads a PDF but never saves the menu, the temporary
+// pdf_pending_links records would accumulate. Clean up any pending
+// links older than 1 hour. Runs every hour.
+// ============================================================
+setInterval(async () => {
+  try {
+    const db = mongoose.connection.db;
+    if (db) {
+      const result = await db.collection('pdf_pending_links').deleteMany({
+        createdAt: { $lt: new Date(Date.now() - 60 * 60 * 1000) }
+      });
+      if (result.deletedCount > 0) {
+        console.log(`🧹 Cleaned up ${result.deletedCount} orphaned pending PDF link(s)`);
+      }
+    }
+  } catch (cleanupError) {
+    console.error('⚠️ Failed to clean up pending PDF links:', cleanupError.message);
+  }
+}, 60 * 60 * 1000); // Run every hour
+
 // Start server
 connectDB().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
@@ -1825,3 +1874,4 @@ connectDB().then(() => {
   console.error('Failed to connect to MongoDB:', err);
   process.exit(1);
 });
+

@@ -1142,9 +1142,45 @@ router.post('/menu-pages', async (req, res) => {
       );
       
       console.log(`✅ Menu page saved to MongoDB: ${id}`);
+
+      // ============================================================
+      // DEFERRED LINKING (Step 2): Check if there's a pending PDF
+      // uploaded for this menu ID (via processPDFInBackground). If so,
+      // link the PDF to the menu document and clean up the temp record.
+      // ============================================================
+      try {
+        const pendingPdf = await db.collection('pdf_pending_links').findOne({
+          qrCodeId: id
+        });
+
+        if (pendingPdf) {
+          // ✅ Link the PDF to the menu
+          await collection.updateOne(
+            { id },
+            {
+              $set: {
+                pdfFile: pendingPdf.pdfId,
+                pdfFileId: pendingPdf.pdfId.toString ? pendingPdf.pdfId.toString() : pendingPdf.pdfId,
+                pdfUrl: pendingPdf.pdfUrl,
+                pdfFileName: pendingPdf.pdfFileName || menuPageData.pdfFileName || 'menu.pdf',
+                updatedAt: new Date().toISOString()
+              }
+            }
+          );
+
+          console.log(`✅ Linked pending PDF ${pendingPdf.pdfId} to menu ${id}`);
+
+          // Clean up the temporary record
+          await db.collection('pdf_pending_links').deleteOne({ _id: pendingPdf._id });
+          console.log(`🗑️ Cleaned up pending PDF link for menu ${id}`);
+        }
+      } catch (pendingLinkError) {
+        console.error('⚠️ Failed to link pending PDF to menu:', pendingLinkError.message);
+      }
     }
 
     res.json({ success: true, id, message: 'Menu page saved successfully' });
+
   } catch (error) {
     console.error('Error saving menu page:', error);
     res.status(500).json({ error: 'Server error' });
