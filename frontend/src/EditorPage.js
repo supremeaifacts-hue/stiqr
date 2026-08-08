@@ -5459,6 +5459,9 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                           const uploadedPdf = await uploadMenuPdfFile(file, uploadMenuId);
                           setMenuData(prev => ({
                             ...prev,
+                            // ✅ Store the PDF URL in the pdfFile field so it is saved
+                            //    to the menu_pages document in MongoDB.
+                            pdfFile: uploadedPdf.pdfUrl || null,
                             pdfFileId: uploadedPdf.pdfFileId || null,
                             pdfUrl: uploadedPdf.pdfUrl || null,
                           }));
@@ -5466,6 +5469,7 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                           console.error('Menu PDF upload error:', error);
                           alert('Menu PDF upload failed. Please try again.');
                         }
+
 
 
 
@@ -5501,31 +5505,47 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                         background: 'rgba(0, 217, 255, 0.1)',
                         borderRadius: '8px',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '10px',
+                        flexDirection: 'column',
+                        gap: '8px',
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '16px' }}>📄</span>
-                          <span style={{ fontSize: '12px', color: '#00D9FF', fontWeight: '600' }}>{menuData.pdfFileName}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '16px' }}>📄</span>
+                            <span style={{ fontSize: '12px', color: '#00D9FF', fontWeight: '600' }}>{menuData.pdfFileName}</span>
+                          </div>
+                          <button
+                            onClick={() => setMenuData(prev => ({...prev, pdfFile: null, pdfFileName: '', pdfFileId: null, pdfUrl: null}))}
+                            style={{
+                              padding: '4px 10px',
+                              background: 'rgba(255, 0, 0, 0.2)',
+                              border: '1px solid rgba(255, 0, 0, 0.3)',
+                              borderRadius: '4px',
+                              color: '#ff6b6b',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            ✕ Remove
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setMenuData(prev => ({...prev, pdfFile: null, pdfFileName: ''}))}
-                          style={{
-                            padding: '4px 10px',
-                            background: 'rgba(255, 0, 0, 0.2)',
-                            border: '1px solid rgba(255, 0, 0, 0.3)',
-                            borderRadius: '4px',
-                            color: '#ff6b6b',
-                            cursor: 'pointer',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          ✕ Remove
-                        </button>
+                        {/* ✅ Show the PDF URL after upload */}
+                        {menuData.pdfUrl && (
+                          <div style={{
+                            padding: '8px 10px',
+                            background: 'rgba(0, 255, 100, 0.1)',
+                            border: '1px solid rgba(0, 255, 100, 0.3)',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            color: '#00ff64',
+                            wordBreak: 'break-all',
+                          }}>
+                            ✅ PDF file saved successfully at URL: <a href={menuData.pdfUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00ff64', textDecoration: 'underline' }}>{menuData.pdfUrl}</a>
+                          </div>
+                        )}
                       </div>
                     )}
+
                   </div>
                 </div>
               </div>
