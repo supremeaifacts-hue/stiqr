@@ -279,6 +279,31 @@ router.patch('/qrcodes/:id/metadata', isAuthenticated, async (req, res) => {
 
     await user.save();
 
+    // ============================================================
+    // ALSO update the standalone 'qrcodes' collection in MongoDB
+    // (mongodb > stiqr > qrcodes). This is the collection that the
+    // EdgeOne function queries when handling /track/:id redirects.
+    // ============================================================
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    const collection = db.collection('qrcodes');
+
+    // Build the update object with only the fields provided
+    const updateFields = { updatedAt: new Date() };
+    if (name !== undefined) updateFields.name = name;
+    if (category !== undefined) updateFields.category = category;
+    if (tags !== undefined) updateFields.tags = tags;
+    if (notes !== undefined) updateFields.notes = notes;
+
+    const result = await collection.updateOne(
+      { id: id },
+      { $set: updateFields }
+    );
+
+    console.log('✅ QR code metadata updated in qrcodes collection!');
+    console.log('   Matched:', result.matchedCount);
+    console.log('   Modified:', result.modifiedCount);
+
     console.log('✅ QR code metadata updated successfully for:', id);
 
     res.json({
