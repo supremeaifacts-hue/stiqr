@@ -168,13 +168,16 @@ router.post('/assets/logos', isAuthenticated, async (req, res) => {
 // Save a QR code
 router.post('/assets/qrcodes', isAuthenticated, async (req, res) => {
   try {
-    const { data, imageData, name, qrCodeId } = req.body;
+    const { data, imageData, name, category, tags, notes, qrCodeId } = req.body;
     
     console.log('=== SAVE QR CODE REQUEST RECEIVED ===');
     console.log('Request body keys:', Object.keys(req.body));
     console.log('data (destination):', data ? data.substring(0, 100) : 'MISSING');
     console.log('imageData length:', imageData ? imageData.length : 'MISSING');
     console.log('name:', name || 'not provided');
+    console.log('category:', category || 'not provided');
+    console.log('tags:', tags || 'not provided');
+    console.log('notes:', notes || 'not provided');
     console.log('qrCodeId:', qrCodeId || 'not provided');
     console.log('User ID:', req.user ? req.user._id : 'NO USER ON REQUEST');
     console.log('User email:', req.user ? req.user.email : 'N/A');
@@ -206,11 +209,15 @@ router.post('/assets/qrcodes', isAuthenticated, async (req, res) => {
       id: qrId,
       data, // Store the original destination URL
       imageData, // QR code image is already encoded with the tracking URL from frontend
-      name: name || 'Untitled QR Code',
+      name: name || 'SCAN ME',
+      category: category || '',
+      tags: tags || [],
+      notes: notes || '',
       scans: 0,
       createdAt: new Date(),
       lastScanned: new Date()
     };
+
 
     user.qrCodes.push(newQrCode);
     
@@ -301,13 +308,17 @@ router.patch('/qrcodes/:id/metadata', isAuthenticated, async (req, res) => {
 // ============================================================
 router.post('/qrcodes', async (req, res) => {
   try {
-    const { id, data, type } = req.body;
+    const { id, data, type, name, category, tags, notes } = req.body;
     
     console.log('=== POST /api/qrcodes REQUEST RECEIVED ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     console.log('id:', id);
     console.log('data:', data ? data.substring(0, 100) : 'MISSING');
     console.log('type:', type || 'not provided');
+    console.log('name:', name || 'not provided');
+    console.log('category:', category || 'not provided');
+    console.log('tags:', tags || 'not provided');
+    console.log('notes:', notes || 'not provided');
     
     if (!id || !data) {
       console.log('❌ Missing required fields: id=' + !!id + ', data=' + !!data);
@@ -323,6 +334,10 @@ router.post('/qrcodes', async (req, res) => {
     const updateFields = {
       id: id,
       data: data,
+      name: name || 'SCAN ME',
+      category: category || '',
+      tags: tags || [],
+      notes: notes || '',
       updatedAt: new Date()
     };
     
@@ -356,7 +371,11 @@ router.post('/qrcodes', async (req, res) => {
       message: 'QR code saved successfully',
       id: id,
       data: data,
-      type: type
+      type: type,
+      name: name || 'SCAN ME',
+      category: category || '',
+      tags: tags || [],
+      notes: notes || ''
     });
     
   } catch (error) {

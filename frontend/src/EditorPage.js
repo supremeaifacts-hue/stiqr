@@ -1165,6 +1165,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
   const [selectedFrame, setSelectedFrame] = useState('none');
   const [framePhrase, setFramePhrase] = useState('SCAN ME');
   const [frameFont, setFrameFont] = useState('Arial');
+  // Metadata fields for QR codes (name, category, tags, notes)
+  // These are saved to MongoDB when creating a new QR code.
+  const [qrName, setQrName] = useState('');
+  const [qrCategory, setQrCategory] = useState('');
+  const [qrTags, setQrTags] = useState([]);
+  const [qrNotes, setQrNotes] = useState('');
   const [frameColor, setFrameColor] = useState('#000000');
   
   const canvasRef = useRef(null);
@@ -1927,6 +1933,10 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
           body: JSON.stringify({
             id: effectiveQrCodeId,
             data: qrContentForDownload,
+            name: framePhrase || 'SCAN ME',
+            category: '',
+            tags: [],
+            notes: '',
           }),
         });
         
@@ -3785,7 +3795,15 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   const qrcodesResponse = await fetch(`${baseUrl}/qrcodes`, {
                     method: 'POST',
                     headers: qrcodesHeaders,
-                    body: JSON.stringify({ id: qrCodeId, data: qrContent, type: selectedType })
+                    body: JSON.stringify({
+                      id: qrCodeId,
+                      data: qrContent,
+                      type: selectedType,
+                      name: qrName || framePhrase || 'SCAN ME',
+                      category: qrCategory || '',
+                      tags: qrTags || [],
+                      notes: qrNotes || ''
+                    })
                   });
                   if (qrcodesResponse.ok) {
                     const qrcodesResult = await qrcodesResponse.json();
@@ -3796,7 +3814,12 @@ const EditorPage = ({ onBack, onGoToDashboard, onGoToProfile, embedded = false, 
                   }
                   
                   console.log('📡 STEP 2: Saving to user account...');
-                  const savedQrCode = await saveQrCode(qrContent, imageData, framePhrase || `QR Code ${new Date().toLocaleDateString()}`, qrCodeId, designCharacteristics, selectedType);
+                  const savedQrCode = await saveQrCode(qrContent, imageData, framePhrase || `QR Code ${new Date().toLocaleDateString()}`, qrCodeId, designCharacteristics, selectedType, {
+                    name: qrName || framePhrase || 'SCAN ME',
+                    category: qrCategory || '',
+                    tags: qrTags || [],
+                    notes: qrNotes || ''
+                  });
                   console.log('✅ STEP 2 SUCCESS: QR code saved to user account:', savedQrCode);
                   
                   if (isEditing) {

@@ -459,12 +459,16 @@ app.get('/track/:id', async (req, res) => {
 // ============================================================
 app.post('/qrcodes', async (req, res) => {
   try {
-    const { id, data, type } = req.body;
+    const { id, data, type, name, category, tags, notes } = req.body;
     
     console.log('=== POST /qrcodes REQUEST RECEIVED ===');
     console.log('id:', id);
     console.log('data:', data ? data.substring(0, 100) : 'MISSING');
     console.log('type:', type || 'not provided');
+    console.log('name:', name || 'not provided');
+    console.log('category:', category || 'not provided');
+    console.log('tags:', tags || 'not provided');
+    console.log('notes:', notes || 'not provided');
     
     if (!id || !data) {
       return res.status(400).json({ error: 'Both id and data are required' });
@@ -483,6 +487,10 @@ app.post('/qrcodes', async (req, res) => {
     const updateFields = {
       id: id,
       data: data,
+      name: name || 'SCAN ME',
+      category: category || '',
+      tags: tags || [],
+      notes: notes || '',
       updatedAt: new Date()
     };
     
@@ -515,7 +523,11 @@ app.post('/qrcodes', async (req, res) => {
       message: 'QR code saved successfully',
       id: id,
       data: data,
-      type: type
+      type: type,
+      name: name || 'SCAN ME',
+      category: category || '',
+      tags: tags || [],
+      notes: notes || ''
     });
   } catch (error) {
     console.error('Error saving QR code to qrcodes collection:', error);

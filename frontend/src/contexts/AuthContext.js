@@ -453,13 +453,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const saveQrCode = async (qrData, imageData, name, qrCodeId = null, designCharacteristics = null, qrType = null) => {
+  const saveQrCode = async (qrData, imageData, name, qrCodeId = null, designCharacteristics = null, qrType = null, metadata = {}) => {
     try {
       console.log('AuthContext: Saving QR code, isAuthenticated:', !!user);
       console.log('AuthContext: QR data:', qrData?.substring(0, 50) + '...');
       console.log('AuthContext: Image data length:', imageData?.length || 0);
       console.log('AuthContext: QR Code ID:', qrCodeId);
       console.log('AuthContext: Design characteristics:', designCharacteristics);
+      console.log('AuthContext: Metadata:', metadata);
+      
+      const { category, tags, notes } = metadata || {};
+
       
       // Get JWT token from localStorage
       const token = localStorage.getItem('jwtToken');
@@ -483,7 +487,11 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({
           id: qrCodeId,
           data: qrData,
-          type: qrType // Include the QR type (pdf, url, wifi, email, sms, whatsapp, social, event, menu)
+          type: qrType, // Include the QR type (pdf, url, wifi, email, sms, whatsapp, social, event, menu)
+          name: name || 'SCAN ME',
+          category: category || '',
+          tags: tags || [],
+          notes: notes || ''
         })
       });
 
@@ -512,10 +520,14 @@ export const AuthProvider = ({ children }) => {
           data: qrData,
           imageData,
           name: name || 'Untitled QR Code',
+          category: category || '',
+          tags: tags || [],
+          notes: notes || '',
           qrCodeId: qrCodeId, // Send QR code ID to backend
           design: designCharacteristics, // Send design characteristics to backend
           type: qrType // Send QR type (wifi, pdf, email, sms, whatsapp, url)
         })
+
       });
 
       console.log('AuthContext: Save QR code response status:', response.status, response.statusText);
