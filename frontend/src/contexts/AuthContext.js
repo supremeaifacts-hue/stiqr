@@ -614,13 +614,14 @@ export const AuthProvider = ({ children }) => {
             imageData: qr.qrImageData || qr.imageData || '',
             qrImageData: qr.qrImageData || qr.imageData || '',
             name: qr.name || qr.id || 'Untitled QR Code',
+            category: qr.category || '',
+            tags: qr.tags || [],
+            notes: qr.notes || '',
             scans: qr.scan_count || qr.scans || 0,
             destination: qr.destination || qr.data || '',
             design: qr.design || null,
             createdAt: qr.createdAt || null
           }));
-
-
 
           console.log('AuthContext: QR Codes fetched and normalized:', qrCodes.length);
         }
@@ -636,6 +637,9 @@ export const AuthProvider = ({ children }) => {
         imageData: qr.qrImageData || qr.imageData || '',
         qrImageData: qr.qrImageData || qr.imageData || '',
         name: qr.name || qr.id || 'Untitled QR Code',
+        category: qr.category || '',
+        tags: qr.tags || [],
+        notes: qr.notes || '',
         scans: qr.scan_count ?? qr.scans ?? 0,
         destination: qr.destination || qr.data || '',
         design: qr.design || null,
