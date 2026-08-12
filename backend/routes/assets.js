@@ -241,7 +241,59 @@ router.post('/assets/qrcodes', isAuthenticated, async (req, res) => {
 });
 
 // ============================================================
+// PATCH /api/qrcodes/:id/metadata
+// Updates only the metadata fields (name, category, tags, notes)
+// of a QR code. Does NOT require or change the destination.
+// ============================================================
+router.patch('/qrcodes/:id/metadata', isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, category, tags, notes } = req.body;
+
+    console.log('=== PATCH /api/qrcodes/:id/metadata REQUEST RECEIVED ===');
+    console.log('QR code ID:', id);
+    console.log('User ID:', req.user ? req.user._id : 'NO USER ON REQUEST');
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const qrCode = user.qrCodes.find(qr => qr.id === id);
+    if (!qrCode) {
+      return res.status(404).json({ error: 'QR code not found' });
+    }
+
+    // Update only the fields provided
+    if (name !== undefined) qrCode.name = name;
+    if (category !== undefined) qrCode.category = category;
+    if (tags !== undefined) qrCode.tags = tags;
+    if (notes !== undefined) qrCode.notes = notes;
+
+    await user.save();
+
+    console.log('✅ QR code metadata updated successfully for:', id);
+
+    res.json({
+      success: true,
+      qrCode: {
+        id: qrCode.id,
+        name: qrCode.name,
+        category: qrCode.category,
+        tags: qrCode.tags,
+        notes: qrCode.notes
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error updating metadata:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Failed to update metadata' });
+  }
+});
+
+// ============================================================
 // NEW ROUTE: POST /api/qrcodes
+
 // Saves QR code to a standalone 'qrcodes' collection.
 // This is the collection that the EdgeOne function queries
 // when handling /track/:id redirects.
@@ -1969,6 +2021,9 @@ router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
       qrCodes: qrCodes.map(qr => ({
         id: qr.id,
         name: qr.name,
+        category: qr.category || '',
+        tags: qr.tags || [],
+        notes: qr.notes || '',
         data: qr.data,
         imageData: qr.imageData,
         scans: qr.scans || 0,
@@ -1976,6 +2031,7 @@ router.get('/assets/qrcodes', isAuthenticated, async (req, res) => {
         lastScanned: qr.lastScanned
       }))
     });
+
   } catch (error) {
     console.error('❌ Error in /api/assets/qrcodes:', error);
     console.error('Stack:', error.stack);

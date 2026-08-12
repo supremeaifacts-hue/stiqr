@@ -193,73 +193,6 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
   }, [qrCode]);
 
   const handleSave = async () => {
-    let finalDestination;
-    if (qrType === 'url') {
-      finalDestination = destination.trim();
-    } else if (qrType === 'pdf' && pdfFile) {
-      // Upload the new PDF file first
-      setUploadingPdf(true);
-      setError(null);
-      
-      try {
-        const token = localStorage.getItem('jwtToken');
-        
-        // Read the PDF file as base64
-        const pdfReader = new FileReader();
-        const pdfBase64 = await new Promise((resolve, reject) => {
-          pdfReader.onload = () => resolve(pdfReader.result);
-          pdfReader.onerror = reject;
-          pdfReader.readAsDataURL(pdfFile);
-        });
-        
-        // Upload to backend
-        const uploadResponse = await fetch(`${API_BASE_URL}/api/upload/pdf`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            fileData: pdfBase64,
-            fileName: pdfFile.name
-          })
-        });
-        
-        if (uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json();
-          console.log('✅ PDF uploaded successfully:', uploadResult.url);
-          finalDestination = uploadResult.url;
-        } else {
-          const uploadError = await uploadResponse.text();
-          console.error('❌ PDF upload failed:', uploadError);
-          setError('Failed to upload PDF file. Please try again.');
-          setUploadingPdf(false);
-          setSaving(false);
-          return;
-        }
-      } catch (uploadErr) {
-        console.error('❌ PDF upload error:', uploadErr);
-        setError('Failed to upload PDF file. Please try again.');
-        setUploadingPdf(false);
-        setSaving(false);
-        return;
-      }
-      
-      setUploadingPdf(false);
-    } else {
-      finalDestination = formatDestinationData(qrType, {
-        ...emailFields,
-        ...smsFields,
-        ...wifiFields,
-        pdfName,
-      });
-    }
-
-    if (!finalDestination.trim()) {
-      setError('Destination is required');
-      return;
-    }
-
     setSaving(true);
     setError(null);
     setSuccess(false);
@@ -273,21 +206,22 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/qrcodes/${qrCode.id}`, {
-        method: 'PUT',
+      // Build the metadata payload. Only send fields that were provided.
+      const payload = {};
+      if (name !== undefined) payload.name = name.trim() || 'SCAN ME';
+      if (category !== undefined) payload.category = category.trim();
+      if (tags !== undefined) payload.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
+      if (notes !== undefined) payload.notes = notes.trim();
+
+      const response = await fetch(`${API_BASE_URL}/api/qrcodes/${qrCode.id}/metadata`, {
+        method: 'PATCH',
         headers,
-        body: JSON.stringify({
-          destination: finalDestination,
-          name: name.trim() || qrCode.name,
-          category: category.trim(),
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-          notes: notes.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(errorData || 'Failed to update QR code');
+        throw new Error(errorData || 'Failed to update QR code metadata');
       }
 
       const result = await response.json();
@@ -297,11 +231,10 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
       if (onSave) {
         onSave({
           ...qrCode,
-          destination: finalDestination,
-          name: name.trim() || qrCode.name,
-          category: category.trim(),
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-          notes: notes.trim(),
+          name: payload.name,
+          category: payload.category,
+          tags: payload.tags,
+          notes: payload.notes,
         });
       }
 
@@ -315,6 +248,7 @@ const EditMetadataModal = ({ qrCode, onClose, onSave, onOpenSocialEditor, onOpen
       setSaving(false);
     }
   };
+
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';

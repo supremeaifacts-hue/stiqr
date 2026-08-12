@@ -1007,8 +1007,9 @@ const Dashboard = ({ onCreate, onViewPricing, onBack, onEditQrCode }) => {
 
                     <div style={{ textAlign: 'center', filter: trialExpired ? 'blur(1px)' : 'none', opacity: trialExpired ? 0.7 : 1 }}>
                       <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff', marginBottom: '5px' }}>
-                        {qrCode.name}
+                        {qrCode.name || 'SCAN ME'}
                       </div>
+
                       <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '3px' }}>
                         📍 {(qrCode.destination || qrCode.data || '').length > 30 ? (qrCode.destination || qrCode.data || '').substring(0, 30) + '...' : qrCode.destination || qrCode.data || ''}
                       </div>

@@ -188,12 +188,25 @@ const UserSchema = new mongoose.Schema({
     },
     name: {
       type: String,
-      default: 'Untitled QR Code'
+      default: 'SCAN ME'
+    },
+    category: {
+      type: String,
+      default: ''
+    },
+    tags: {
+      type: [String],
+      default: []
+    },
+    notes: {
+      type: String,
+      default: ''
     },
     scans: {
       type: Number,
       default: 0
     },
+
     createdAt: {
       type: Date,
       default: Date.now
